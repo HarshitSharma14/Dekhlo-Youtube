@@ -3,7 +3,6 @@ import { signup } from "../controllers/auth.controller.js";
 
 const app = Router();
 
-app.post("/signup", signup);
+app.get("/login", login);
 
-// app.post("/login",login);
 export default app;

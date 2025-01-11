@@ -10,6 +10,9 @@ const channelSchema = new Schema(
       required: [true, "Email is Required."],
       unique: true,
     },
+    password: {
+      type: String,
+    },
     videos: [
       {
         type: Schema.Types.ObjectId,

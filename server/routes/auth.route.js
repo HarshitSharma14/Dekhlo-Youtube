@@ -1,20 +1,23 @@
 import { Router } from "express";
-import passport from "passport";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import jwt from "jsonwebtoken";
+import passport from "passport";
+import dotenv from "dotenv";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 import Channel from "../models/channel.model.js";
-import mongoose from "mongoose";
 
+dotenv.config({ path: "../.env" });
 const app = Router();
-
+const id = process.env.GOOGLE_CLIENT_ID;
+console.log(id);
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret-key";
-
+// Passport Google Strategy
 passport.use(
   new GoogleStrategy(
     {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "/oauth2/redirect/google",
+      clientID:
+        "772059276751-254jqfgqkndq0d1aa20uv34j2pcipbos.apps.googleusercontent.com",
+      clientSecret: "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",
+      callbackURL: "http://localhost:3000/api/v1/auth/oauth2/redirect/google",
     },
     async (accessToken, refreshToken, profile, cb) => {
       try {
@@ -46,7 +49,7 @@ passport.use(
           JWT_SECRET,
           { expiresIn: "1h" } // Token expires in 1 hour
         );
-
+        // console.log(token);
         return cb(null, { token });
       } catch (err) {
         return cb(err);
@@ -55,44 +58,58 @@ passport.use(
   )
 );
 
-// Middleware to protect routes using JWT
-export const authenticateJWT = (req, res, next) => {
-  const token = req.header("Authorization")?.replace("Bearer ", "");
+app.use(passport.initialize());
 
-  if (!token)
-    return res
-      .status(401)
-      .json({ message: "Access denied, no token provided." });
+// Routes
+app.get(
+  "/login/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    session: false,
+  })
+);
 
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
-    if (err)
-      return res.status(403).json({ message: "Invalid or expired token." });
-
-    req.userId = decoded.userId;
-    next();
-  });
-};
-
-// Example usage of protected routes
-
-// app.get("/protected", authenticateJWT, (req, res) => {
-//   res.json({ message: "This is a protected route", userId: req.userId });
-// });
-
-// Example Google OAuth2 route
 app.get(
   "/oauth2/redirect/google",
   passport.authenticate("google", {
-    failureRedirect: "/login",
+    failureRedirect: "http://localhost:5173",
     session: false,
   }),
   (req, res) => {
+    if (!req.user || !req.user.token) {
+      return res.redirect("http://localhost:5173");
+    }
     const token = req.user.token;
-    res.redirect(`/welcome?token=${token}`);
+
+    // Set the token as an HTTP-only cookie
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: false, // Use true in production with HTTPS
+      maxAge: 3600000, // 1 hour
+    });
+    res.redirect("http://localhost:5173/dashboard");
   }
 );
+app.get("/logout", (req, res) => {
+  res.clearCookie("jwt");
+  res.json({ message: "Logged out successfully." });
+});
 
-// app.get("/login", login);
-// app.get('/login/federated/google', passport.authenticate('google'));
+// Protected Route
+app.get("/user", async (req, res) => {
+  const token = req.cookies.jwt;
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await Channel.findById(decoded.userId);
+    res.json(user);
+  } catch (err) {
+    res.status(403).json({ message: "Invalid or expired token" });
+  }
+});
 
 export default app;

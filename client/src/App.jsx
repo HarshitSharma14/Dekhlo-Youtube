@@ -1,12 +1,16 @@
 import React from "react";
-// import {br} from "react-router-dom";
-import Auth from "./pages/auth/Index";
+import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import Home from "./Home";
+import Dashboard from "./Dashboard.jsx";
 
 const App = () => {
   return (
-    <>
-      <Auth />
-    </>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Routes>
+    </Router>
   );
 };
 

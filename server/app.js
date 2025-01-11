@@ -3,25 +3,47 @@ import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
 import mongoose from "mongoose";
+import passport from "passport";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+dotenv.config();
+
+// importing Routes ******************************
+import { loginSignup } from "./controllers/auth.controller.js";
 import authRoutes from "./routes/auth.route.js";
 
-dotenv.config({ path: "./.env" });
+// localConstansts ************************************
 const databaseURL = process.env.DATABASE_URL;
 const app = express();
+const corseOptions = {
+  origin: "http://localhost:5173", // Frontend URL
+  credentials: true,
+};
+const clientID =
+  "772059276751-254jqfgqkndq0d1aa20uv34j2pcipbos.apps.googleusercontent.com";
+const clientSecret = "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";
+const callbackURL = "http://localhost:3000/api/v1/auth/oauth2/redirect/google";
 
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: "http://localhost:5173", // Frontend URL
-    credentials: true,
-  })
+app.use(passport.initialize());
+app.use(cors(corseOptions));
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID,
+      clientSecret,
+      callbackURL,
+    },
+    loginSignup
+  )
 );
+
 // App Routes ************************
 app.use("/api/v1/auth", authRoutes);
 
 app.get("/", (_, res) => {
+  console.log(JWT_SECRET);
   res.send("Home route working on the Youtube app");
 });
 

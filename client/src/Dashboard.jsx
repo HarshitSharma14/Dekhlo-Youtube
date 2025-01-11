@@ -6,7 +6,9 @@ const Dashboard = () => {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3000/api/v1/auth/user", { withCredentials: true })
+      .get("http://localhost:3000/api/v1/auth/channel", {
+        withCredentials: true,
+      })
       .then((response) => setUser(response.data))
       .catch(() => (window.location.href = "/"));
   }, []);

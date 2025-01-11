@@ -1,9 +1,9 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 
 const channelSchema = new Schema(
   {
     channelName: {
-      type: string,
+      type: String,
     },
     email: {
       type: String,
@@ -71,5 +71,5 @@ const channelSchema = new Schema(
   { timestamps: true }
 );
 
-const Channel = models.Channel || model("Channel", channelSchema);
+const Channel = model("Channel", channelSchema);
 export default Channel;

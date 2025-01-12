@@ -1,84 +1,190 @@
-import React from 'react';
+import React, { useState } from "react";
+
+import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
+    Box,
     TextField,
+    Typography,
 } from "@mui/material";
 import Button from '@mui/material/Button';
-
-import FormGroup from '@mui/material/FormGroup';
 import FormControlLabel from '@mui/material/FormControlLabel';
-
+import { Visibility, VisibilityOff } from "@mui/icons-material";
+import {
+    IconButton,
+    InputAdornment
+} from "@mui/material";
+import GoogleIcon from '@mui/icons-material/Google';
 import Checkbox from '@mui/material/Checkbox';
+import { googleLoginUrl, server } from "./utils/constants";
+
+
 
 export const Signup = () => {
+
+    const navigate = useNavigate();
+
+    const [showPassword, setShowPassword] = useState(false);
+
+    const [email, setEmail] = useState("")
+
+    const [password, setPassword] = useState("")
+
+    const validateLogin = () => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!email.length) {
+            toast.error("Email is required.")
+            return false
+        }
+        if (!emailRegex.test(email)) {
+            toast.error("Please enter a valid email.");
+            return false;
+        }
+        if (!password.length) {
+            toast.error("Passowrd is required.")
+            return false
+        }
+
+        return true
+    }
+
+    const handleLogin = async () => {
+        if (validateLogin()) {
+            //to be written
+        }
+        else {
+
+        }
+    }
+
     return (
-        <div className='flex flex-row bg-gradient-to-r from-youtube-dark-blue to-youtube-dark-red'>
-            <div >
-                <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.svg" className='w-[60vw] p-20' alt="Phone image" />
+        <div className='flex lg:flex-row flex-col bg-gradient-to-r from-youtube-dark-blue to-youtube-dark-red h-screen w-screen'>
+
+            {/* Background image for small screens */}
+            <div className="hidden lg:block">
+                <img src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.svg"
+                    className='w-[60vw] p-20'
+                    alt="Phone image"
+                />
             </div>
-            <div className='flex flex-col w-[40vw] h-[100vh] justify-center items-center'>
 
-                <div flex w->
-                    <div className="space-y-8 p-4 max-w-md mx-auto w-[60%] justify-center items-center">
-                        <TextField label="Email" variant="outlined" sx={{
-                            color: 'black',
+            {/* Card */}
+            <div className='absolute lg:static flex flex-col w-full lg:w-[40vw] h-full justify-center items-center'>
+
+                <Box className="card"
+                    sx={{
+                        padding: 4,
+                        borderRadius: 2,
+                        boxShadow: 5,
+                        width: "90%",
+                        maxWidth: "470px",
+                        minHeight: "550px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-evenly",
+                        alignItems: "center",
+                        backgroundColor: "#573c3c1a",
+                        backdropFilter: "blur(10px)",
+                    }}>
+                    <Typography
+                        variant="h6"
+                        mb={2} mt={2}
+                        sx={{
+                            textAlign: "center",
+                            fontWeight: "600",
+                        }}
+                    >
+                        Login
+                    </Typography>
+
+                    <div className="space-y-8 max-w-md mx-auto w-[90%] justify-center items-center">
+                        <TextField label="Email" variant="outlined" value={email} onChange={(e) => {
+                            setEmail(e.target.value)
+                        }} sx={{
                             width: '100%',
-                            borderRadius: '10px',  // Use a high value for fully rounded corners
-                            '& .MuiOutlinedInput-root': {
-                                borderRadius: '10px', // Ensures the input itself is rounded
-                                background: 'transparent'
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: 'black' // Change label color
-                            },
                         }} />
-
-                        {/* <input type="text" placeholder="Email" className="w-80 border rounded-md p-2" aria-label="Username" ></input> */}
-
-                    </div>
-                    <div className="space-y-8 p-4 max-w-md mx-auto w-[60%] justify-center items-center">
-                        <TextField label="Password" variant="outlined" sx={{
-                            color: 'black',
-                            width: '100%',
-
-                            borderRadius: '10px',  // Use a high value for fully rounded corners
-                            '& .MuiOutlinedInput-root': {
-                                borderRadius: '10px', // Ensures the input itself is rounded
-                                background: 'transparent'
-                            },
-                            '& .MuiInputLabel-root': {
-                                color: 'black' // Change label color
-                            },
-                            // '& .MuiInputLabel-root.Mui-focused': {
-                            //     color: 'green' // Change label color when focused
-                            // }
-                        }} />
-                        {/* <input type="password" placeholder="Password" className="w-80 border rounded-md p-2" aria-label="Email"></input> */}
                     </div>
 
-                    <div className='mb-5'>
-                        <span className='mr-12'>
-                            <FormControlLabel control={<Checkbox defaultChecked />} label="Label" />
+                    <div className="space-y-8 max-w-md mx-auto w-[90%] justify-center items-center">
+                        <TextField label="Password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => { setPassword(e.target.value) }} variant="outlined"
+                            sx={{ width: '100%' }}
+                            slotProps={{
+                                input: {
+                                    endAdornment: (
+                                        <InputAdornment position="end">
+                                            <IconButton
+                                                onClick={() => setShowPassword((e) => !e)}
+                                                edge="end"
+                                            >
+                                                {showPassword ? (
+                                                    <VisibilityOff />
+                                                ) : (
+                                                    <Visibility />
+                                                )}
+                                            </IconButton>
+                                        </InputAdornment>
+                                    ),
+                                },
+                            }}
+                        />
+                    </div>
+
+                    <div className='w-[80%] flex justify-between items-center'>
+                        <span>
+                            <FormControlLabel control={<Checkbox defaultChecked />} label="Remember me" sx={{
+                                '& .MuiFormControlLabel-label': {
+                                    fontSize: '0.9rem', // Adjust size as needed
+                                }
+                            }} />
                         </span>
-                        <span className='ml-12'>
-                            <a href="#" className="text-blue-900">Forgot Password ?</a>
+                        <span className='ml-12 flex justify-self-end'>
+                            <a href="#" className="text-blue-900">Forgot Password?</a>
                         </span>
                     </div>
 
                     <Button variant="contained" sx={{
-                        width: '52%',
+                        width: '90%',
+                        height: '50px',
+                        padding: '10px',
+                        fontSize: '1rem',
+                        type: 'submit',
                         backgroundColor: 'rgb(59, 113, 182)',
-                    }}>Sign In</Button>
+                    }}>Log In</Button>
 
-
-                    <div>
-                        <div class="flex-grow border-t border-gray-300"></div>
-                        <span class="mx-2 text-gray-500 font-semibold">OR</span>
-                        <div class="flex-grow border-t border-gray-300"></div>
+                    <div className="flex items-center w-[60%]">
+                        <div className="flex-grow border-t border-[#e5e7eb]"></div>
+                        <div className="mx-4 text-white font-semibold">OR</div>
+                        <div className="flex-grow border-t border-[#e5e7eb]"></div>
                     </div>
-                </div>
-            </div>
-        </div>
+
+                    <div className="w-full flex justify-center">
+                        <a href={googleLoginUrl} className="w-[90%]">
+                            <Button variant="contained"
+                                onClick={() => navigate()}
+                                sx={{
+                                    width: '100%',
+                                    height: '50px',
+                                    fontSize: '1rem',
+                                    padding: '10px',
+                                    backgroundColor: 'rgb(59, 113, 182)',
+                                }}>
+                                <GoogleIcon fontSize="large" color="action" className="pr-3" />
+                                Continue with Google
+                            </Button>
+                        </a>
+                    </div>
+                </Box>
+            </div >
+        </div >
     );
 };
 
 export default Signup;
+
+
+
+
+
+
+
+

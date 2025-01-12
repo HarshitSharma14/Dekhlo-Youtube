@@ -10,6 +10,7 @@ dotenv.config();
 // importing Routes ******************************
 import { loginSignup } from "./controllers/auth.controller.js";
 import authRoutes from "./routes/auth.route.js";
+import channelRoutes from "./routes/channel.route.js";
 
 // localConstansts ************************************
 const databaseURL = process.env.DATABASE_URL;
@@ -40,6 +41,7 @@ passport.use(
 
 // App Routes ************************
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/channel", channelRoutes);
 
 app.get("/", (_, res) => {
   console.log(JWT_SECRET);

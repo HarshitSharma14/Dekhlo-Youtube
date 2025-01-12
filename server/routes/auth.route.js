@@ -1,4 +1,3 @@
-import dotenv from "dotenv";
 import { Router } from "express";
 import passport from "passport";
 import {
@@ -7,7 +6,6 @@ import {
   oauth2_redirect,
 } from "../controllers/auth.controller.js";
 
-dotenv.config({ path: "../.env" });
 const app = Router();
 
 // login with Google Route *****************************************

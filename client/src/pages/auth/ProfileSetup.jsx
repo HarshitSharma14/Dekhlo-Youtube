@@ -15,8 +15,10 @@ import {
   Typography,
 } from "@mui/material";
 import { ThemeProvider, createTheme } from "@mui/material/styles";
-import React, { useState } from "react";
+import axios from "axios";
+import React, { useEffect, useState } from "react";
 import "./ProfileSetup.css";
+import toast from "react-hot-toast";
 
 const darkTheme = createTheme({
   palette: {
@@ -43,15 +45,13 @@ const ProfileSetup = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     name: "",
-    profilePhotoUrl:
-      "https://lh3.googleusercontent.com/a/ACg8ocJsHfMs1Aq_fSZqQPfoV84cH4AMATJ6Endmw6he3S97BwFXow=s96-c",
+    profilePhotoUrl: "",
     profilePhotoFile: null,
     bio: "",
     password: "",
     confirmPassword: "",
   });
   const [formErrors, setFormErrors] = useState({
-    name: "",
     password: "",
     confirmPassword: "",
   });
@@ -60,34 +60,17 @@ const ProfileSetup = () => {
 
   //constants *********************************************************************
   const steps = ["Profile Setup", "Bio", "Password"];
-  const isConfirmPasswordDisabled = formData.password === "";
+  const isConfirmPasswordDisabled =
+    formData.password === "" || formData.password.length < 6;
   const isPasswordMatch = formData.password === formData.confirmPassword;
+  let buttonDisabled = false;
 
   // Functions *********************************************************************
-  const handleNext = () => {
-    let errors = { name: "", password: "" };
-
-    if (currentStep === 0 && !formData.name) {
-      errors.name = "Full Name is required.";
-    }
-
-    if (currentStep === 2 && !formData.password) {
-      errors.password = "Password is required.";
-    }
-    setFormErrors(errors);
-
-    // Proceed to the next step only if there are no errors
-    if (!errors.name && !errors.password) {
-      setCurrentStep(currentStep + 1);
-    }
-  };
-
   const handleChange = (e) => {
-    setFormErrors({ ...formErrors, [e.target.name]: "" });
     const { name, value } = e.target;
-
     setFormData({ ...formData, [name]: value });
 
+    setFormErrors({ ...formErrors, [e.target.name]: "" });
     // Check for password length and match confirm password ***************
     if (name === "password" && value.length < 6) {
       setFormErrors((prev) => ({
@@ -123,14 +106,60 @@ const ProfileSetup = () => {
       profilePhotoUrl: URL.createObjectURL(e.target.files[0]),
     });
   };
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     console.log("Form Submitted:", formData);
-    if (currentStep < 2) {
+    if (currentStep < 2 && formData.profilePhotoUrl) {
       setCurrentStep(currentStep + 1);
       return;
     }
+    buttonDisabled = true;
+    const toastId = toast.loading("Submiting...");
+    try {
+      const data = await axios.post(
+        "http://localhost:3000/api/v1/channel/update-profile",
+
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      toast.success("Submited", { toastId });
+    } catch (error) {
+      console.log(error);
+      toast.error(error || "Something went wrong", { toastId });
+    } finally {
+      buttonDisabled = false;
+    }
   };
+
+  const getChannelInfo = async () => {
+    const toatId = toast.loading("Fetching channel info...");
+    try {
+      const channel = await axios.get(
+        "http://localhost:3000/api/v1/auth/channel",
+        {
+          withCredentials: true,
+        }
+      );
+      setFormData({
+        ...formData,
+        name: channel.data.channelName,
+        profilePhotoUrl: channel.data.profilePhoto.toString(),
+      });
+      toast.success("Channel info fetched successfully", { id: toatId });
+    } catch (error) {
+      console.log("Error fetching channel info", error);
+      toast.error("Error fetching channel info", { id: toatId });
+    }
+  };
+
+  useEffect(() => {
+    getChannelInfo();
+  }, []);
 
   return (
     <ThemeProvider theme={darkTheme}>
@@ -214,7 +243,12 @@ const ProfileSetup = () => {
                           : null
                       }
                     >
-                      <AccountCircle />
+                      <AccountCircle
+                        sx={{
+                          width: "100%",
+                          height: "100%",
+                        }}
+                      />
                     </Avatar>
                     <IconButton
                       color="primary"
@@ -248,8 +282,6 @@ const ProfileSetup = () => {
                     label="Full Name"
                     name="name"
                     fullWidth
-                    error={!!formErrors.name}
-                    helperText={formErrors.name}
                     value={formData.name}
                     onChange={handleChange}
                     required
@@ -336,7 +368,6 @@ const ProfileSetup = () => {
                     fullWidth
                     value={formData.confirmPassword}
                     error={!!formErrors.confirmPassword}
-                    // helperText={formErrors.confirmPassword}
                     onChange={handleChange}
                     required
                     disabled={isConfirmPasswordDisabled}
@@ -381,6 +412,7 @@ const ProfileSetup = () => {
                 <Button
                   variant="outlined"
                   onClick={() => setCurrentStep(currentStep - 1)}
+                  disabled={buttonDisabled}
                 >
                   Previous
                 </Button>
@@ -388,8 +420,8 @@ const ProfileSetup = () => {
               {currentStep < 2 ? (
                 <Button
                   variant="contained"
-                  onClick={handleNext}
-                  disabled={!formData.name}
+                  onClick={() => setCurrentStep(currentStep + 1)}
+                  disabled={!formData.name || !formData.profilePhotoUrl}
                 >
                   Next
                 </Button>
@@ -400,7 +432,9 @@ const ProfileSetup = () => {
                   sx={{
                     bgcolor: "green",
                   }}
-                  disabled={!isPasswordMatch || !formData.password}
+                  disabled={
+                    !isPasswordMatch || !formData.password || buttonDisabled
+                  }
                 >
                   Submit
                 </Button>

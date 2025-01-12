@@ -40,10 +40,13 @@ const darkTheme = createTheme({
 });
 
 const ProfileSetup = () => {
+  // UseStates **********************************************************************
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     name: "",
-    profilePhoto: null,
+    profilePhotoUrl:
+      "https://lh3.googleusercontent.com/a/ACg8ocJsHfMs1Aq_fSZqQPfoV84cH4AMATJ6Endmw6he3S97BwFXow=s96-c",
+    profilePhotoFile: null,
     bio: "",
     password: "",
     confirmPassword: "",
@@ -56,16 +59,15 @@ const ProfileSetup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setConfirmShowPassword] = useState(false);
 
-  const togglePasswordVisibility = () => {
-    setShowPassword((prev) => !prev);
-  };
-  const toggleConfirmPasswordVisibility = () => {
-    setConfirmShowPassword((prev) => !prev);
-  };
+  //constants *********************************************************************
   const steps = ["Profile Setup", "Bio", "Password"];
+  const isConfirmPasswordDisabled = formData.password === "";
+  const isPasswordMatch = formData.password === formData.confirmPassword;
 
+  // Functions *********************************************************************
   const handleNext = () => {
     let errors = { name: "", password: "" };
+
     if (currentStep === 0 && !formData.name) {
       errors.name = "Full Name is required.";
     }
@@ -81,15 +83,13 @@ const ProfileSetup = () => {
     }
   };
 
-  const handlePrev = () => {
-    if (currentStep > 0) setCurrentStep(currentStep - 1);
-  };
-
   const handleChange = (e) => {
     setFormErrors({ ...formErrors, [e.target.name]: "" });
     const { name, value } = e.target;
+
     setFormData({ ...formData, [name]: value });
-    // Update validation errors
+
+    // Check for password length and match confirm password ***************
     if (name === "password" && value.length < 6) {
       setFormErrors((prev) => ({
         ...prev,
@@ -116,24 +116,28 @@ const ProfileSetup = () => {
       }
     }
   };
-  const isConfirmPasswordDisabled = formData.password === "";
-  const isPasswordMatch = formData.password === formData.confirmPassword;
 
   const handleFileChange = (e) => {
-    setFormData({ ...formData, profilePhoto: e.target.files[0] });
+    setFormData({
+      ...formData,
+      profilePhotoFile: e.target.files[0],
+      profilePhotoUrl: URL.createObjectURL(e.target.files[0]),
+    });
   };
-
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (currentStep < 2) setCurrentStep(currentStep + 1);
     console.log("Form Submitted:", formData);
+    if (currentStep < 2) {
+      setCurrentStep(currentStep + 1);
+      return;
+    }
   };
 
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
       <Box
-        className="profile-setup-container"
+        className="profile-setup-container  bg-gradient-to-r from-youtube-dark-blue to-youtube-dark-red"
         sx={{
           display: "flex",
           justifyContent: "center",
@@ -142,16 +146,17 @@ const ProfileSetup = () => {
         }}
       >
         <Box
-          className=""
+          className="card"
           sx={{
-            backgroundColor: "background.paper",
             padding: 4,
             borderRadius: 2,
-            boxShadow: 3,
+            boxShadow: 5,
             width: "70vh",
             minHeight: "498px",
             display: "flex",
             flexDirection: "column",
+            backgroundColor: "#573c3c1a",
+            backdropFilter: "blur(10px)",
           }}
         >
           {/* Stepper */}
@@ -205,8 +210,8 @@ const ProfileSetup = () => {
                         border: "3px solid black",
                       }}
                       src={
-                        formData.profilePhoto
-                          ? URL.createObjectURL(formData.profilePhoto)
+                        formData.profilePhotoUrl
+                          ? formData.profilePhotoUrl
                           : null
                       }
                     >
@@ -309,7 +314,7 @@ const ProfileSetup = () => {
                         endAdornment: (
                           <InputAdornment position="end">
                             <IconButton
-                              onClick={togglePasswordVisibility}
+                              onClick={() => setShowPassword((e) => !e)}
                               edge="end"
                             >
                               {showPassword ? (
@@ -342,7 +347,7 @@ const ProfileSetup = () => {
                         endAdornment: (
                           <InputAdornment position="end">
                             <IconButton
-                              onClick={togglePasswordVisibility}
+                              onClick={() => setConfirmShowPassword((e) => !e)}
                               edge="end"
                             >
                               {showConfirmPassword ? (
@@ -374,16 +379,30 @@ const ProfileSetup = () => {
               sx={{ display: "flex", justifyContent: "space-between", mt: 4 }}
             >
               {currentStep > 0 && (
-                <Button variant="outlined" onClick={handlePrev}>
+                <Button
+                  variant="outlined"
+                  onClick={() => setCurrentStep(currentStep - 1)}
+                >
                   Previous
                 </Button>
               )}
               {currentStep < 2 ? (
-                <Button variant="contained" onClick={handleNext}>
+                <Button
+                  variant="contained"
+                  onClick={handleNext}
+                  disabled={!formData.name}
+                >
                   Next
                 </Button>
               ) : (
-                <Button variant="contained" type="submit">
+                <Button
+                  variant="contained"
+                  type="submit"
+                  sx={{
+                    bgcolor: "green",
+                  }}
+                  disabled={!isPasswordMatch || !formData.password}
+                >
                   Submit
                 </Button>
               )}

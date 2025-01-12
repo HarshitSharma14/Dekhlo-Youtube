@@ -2,7 +2,12 @@
 export default {
   content: ["./index.html", "./src/**/*.{js,ts,jsx,tsx}"],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        "youtube-dark-red": "#350101c4",
+        "youtube-dark-blue": "#070321a3",
+      },
+    },
   },
   plugins: [],
 };

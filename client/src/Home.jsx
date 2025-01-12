@@ -8,6 +8,9 @@ const Home = () => {
   return (
     <div style={{ textAlign: "center", marginTop: "50px" }}>
       <h1>Sign in with Google</h1>
+      <div className=" bg-black text-white">
+        nothing
+      </div>
       <button onClick={handleLogin}>Login with Google</button>
     </div>
   );

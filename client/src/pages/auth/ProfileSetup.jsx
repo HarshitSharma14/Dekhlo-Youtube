@@ -1,22 +1,21 @@
-import React, { useState } from "react";
-import {
-  TextField,
-  Button,
-  Box,
-  Stepper,
-  Step,
-  StepLabel,
-  Typography,
-  Avatar,
-  IconButton,
-  CssBaseline,
-  InputAdornment,
-  FormHelperText,
-} from "@mui/material";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import PhotoCamera from "@mui/icons-material/PhotoCamera";
+import {
+  Avatar,
+  Box,
+  Button,
+  CssBaseline,
+  IconButton,
+  InputAdornment,
+  Step,
+  StepLabel,
+  Stepper,
+  TextField,
+  Typography,
+} from "@mui/material";
+import { ThemeProvider, createTheme } from "@mui/material/styles";
+import React, { useState } from "react";
 import "./ProfileSetup.css";
 
 const darkTheme = createTheme({

@@ -57,13 +57,13 @@ const ProfileSetup = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setConfirmShowPassword] = useState(false);
+  const [isSubmiting, setIsSubmiting] = useState(false);
 
   //constants *********************************************************************
   const steps = ["Profile Setup", "Bio", "Password"];
   const isConfirmPasswordDisabled =
     formData.password === "" || formData.password.length < 6;
   const isPasswordMatch = formData.password === formData.confirmPassword;
-  let buttonDisabled = false;
 
   // Functions *********************************************************************
   const handleChange = (e) => {
@@ -106,20 +106,33 @@ const ProfileSetup = () => {
       profilePhotoUrl: URL.createObjectURL(e.target.files[0]),
     });
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Form Submitted:", formData);
-    if (currentStep < 2 && formData.profilePhotoUrl) {
+    if (currentStep === 0) {
+      if (formData.profilePhotoUrl) setCurrentStep(currentStep + 1);
+      return;
+    }
+    if (currentStep === 1) {
       setCurrentStep(currentStep + 1);
       return;
     }
-    buttonDisabled = true;
-    const toastId = toast.loading("Submiting...");
+    console.log(currentStep);
+    console.log("Form Submitted:", formData);
+    setIsSubmiting(true);
+    // const toastId = toast.loading("Submiting...");
+    const dataToSend = {
+      channelName: formData.name,
+      profilePhotoFile: formData.profilePhotoFile,
+      profilePhotoUrl: formData.profilePhotoUrl,
+      bio: formData.bio,
+      password: formData.password,
+    };
+    console.log(dataToSend);
     try {
       const data = await axios.post(
         "http://localhost:3000/api/v1/channel/update-profile",
-
-        formData,
+        dataToSend,
         {
           withCredentials: true,
           headers: {
@@ -127,13 +140,12 @@ const ProfileSetup = () => {
           },
         }
       );
-      toast.success("Submited", { toastId });
+      toast.success("Submited", { id: toastId });
     } catch (error) {
       console.log(error);
-      toast.error(error || "Something went wrong", { toastId });
-    } finally {
-      buttonDisabled = false;
+      toast.error(error || "Something went wrong", { id: toastId });
     }
+    setIsSubmiting(false);
   };
 
   const getChannelInfo = async () => {
@@ -277,7 +289,7 @@ const ProfileSetup = () => {
                   </IconButton>
                 </Box>
                 <TextField
-                  label="Full Name"
+                  label="Channel Name"
                   name="name"
                   fullWidth
                   value={formData.name}
@@ -406,7 +418,7 @@ const ProfileSetup = () => {
               <Button
                 variant="outlined"
                 onClick={() => setCurrentStep(currentStep - 1)}
-                disabled={buttonDisabled}
+                disabled={isSubmiting}
               >
                 Previous
               </Button>
@@ -426,9 +438,7 @@ const ProfileSetup = () => {
                 sx={{
                   bgcolor: "green",
                 }}
-                disabled={
-                  !isPasswordMatch || !formData.password || buttonDisabled
-                }
+                disabled={!isPasswordMatch || !formData.password || isSubmiting}
               >
                 Submit
               </Button>

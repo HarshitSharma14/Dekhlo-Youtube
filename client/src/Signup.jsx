@@ -22,39 +22,65 @@ import { googleLoginUrl, server } from "./utils/constants";
 
 export const Signup = () => {
 
-    const navigate = useNavigate();
+    const [isLoggingIn, setIsLoggingIn] = useState(false)
 
+    const navigate = useNavigate();
+    const [validEmail, setValidEmail] = useState(true)
     const [showPassword, setShowPassword] = useState(false);
 
     const [email, setEmail] = useState("")
 
+    const [formErrors, setFormErrors] = useState({
+        password: "",
+        email: "",
+    });
+
+    const [validPassword, setValidPassword] = useState(true)
     const [password, setPassword] = useState("")
 
-    const validateLogin = () => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!email.length) {
-            toast.error("Email is required.")
-            return false
-        }
-        if (!emailRegex.test(email)) {
-            toast.error("Please enter a valid email.");
-            return false;
-        }
-        if (!password.length) {
-            toast.error("Passowrd is required.")
-            return false
-        }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-        return true
-    }
-
-    const handleLogin = async () => {
-        if (validateLogin()) {
-            //to be written
+    const handleChange = (e) => {
+        if (e.target.name === "email") {
+            setFormErrors({ ...formErrors, email: "" });
+            setValidEmail(emailRegex.test(email))
+            setEmail(e.target.value)
+            if (!emailRegex.test(email)) {
+                setFormErrors({ ...formErrors, email: "Please enter a valid email." });
+            }
         }
         else {
-
+            setFormErrors({ ...formErrors, password: "" });
+            setValidPassword(!(password.length < 6))
+            setPassword(e.target.value)
+            if (password.length < 6) {
+                setFormErrors({ ...formErrors, password: "Password must be atleast 6 characters long." });
+            }
         }
+    }
+
+    // const validateLogin = () => {
+    //     if (!email.length) {
+    //         toast.error("Email is required.")
+    //         return false
+    //     }
+    //     if (!emailRegex.test(email)) {
+    //         toast.error("Please enter a valid email.");
+    //         return false;
+    //     }
+    //     if (!password.length) {
+    //         toast.error("Passowrd is required.")
+    //         return false
+    //     }
+
+    //     return true
+    // }
+
+    const handleLogin = async () => {
+
+        setIsLoggingIn(true);
+        // code
+        setIsLoggingIn(false);
     }
 
     return (
@@ -98,15 +124,15 @@ export const Signup = () => {
                     </Typography>
 
                     <div className="space-y-8 max-w-md mx-auto w-[90%] justify-center items-center">
-                        <TextField label="Email" variant="outlined" value={email} onChange={(e) => {
-                            setEmail(e.target.value)
-                        }} sx={{
+                        <TextField label="Email" required variant="outlined" name="email" value={email} onChange={handleChange} sx={{
                             width: '100%',
-                        }} />
+                        }}
+                            error={!validEmail}
+                            helperText={formErrors.email} />
                     </div>
 
                     <div className="space-y-8 max-w-md mx-auto w-[90%] justify-center items-center">
-                        <TextField label="Password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => { setPassword(e.target.value) }} variant="outlined"
+                        <TextField label="Password" required name="password" type={showPassword ? "text" : "password"} value={password} onChange={handleChange} variant="outlined"
                             sx={{ width: '100%' }}
                             slotProps={{
                                 input: {
@@ -126,6 +152,8 @@ export const Signup = () => {
                                     ),
                                 },
                             }}
+                            error={!validPassword}
+                            helperText={formErrors.password}
                         />
                     </div>
 
@@ -149,7 +177,7 @@ export const Signup = () => {
                         fontSize: '1rem',
                         type: 'submit',
                         backgroundColor: 'rgb(59, 113, 182)',
-                    }}>Log In</Button>
+                    }} onClick={handleLogin} disabled={!validEmail || !validPassword || isLoggingIn || !email.length}>Log In</Button>
 
                     <div className="flex items-center w-[60%]">
                         <div className="flex-grow border-t border-[#e5e7eb]"></div>
@@ -160,14 +188,13 @@ export const Signup = () => {
                     <div className="w-full flex justify-center">
                         <a href={googleLoginUrl} className="w-[90%]">
                             <Button variant="contained"
-                                onClick={() => navigate()}
                                 sx={{
                                     width: '100%',
                                     height: '50px',
                                     fontSize: '1rem',
                                     padding: '10px',
                                     backgroundColor: 'rgb(59, 113, 182)',
-                                }}>
+                                }} disabled={isLoggingIn} onClick={() => setIsLoggingIn(true)}>
                                 <GoogleIcon fontSize="large" color="action" className="pr-3" />
                                 Continue with Google
                             </Button>

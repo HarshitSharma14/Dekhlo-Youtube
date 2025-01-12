@@ -7,6 +7,7 @@ const App = () => {
     <Router>
       <Routes>
         <Route path="/" element={<ProfileSetup />} />
+        <Route path="/*" element={<div>no page</div>} />
       </Routes>
     </Router>
   );

@@ -43,19 +43,21 @@ export const Signup = () => {
     const handleChange = (e) => {
         if (e.target.name === "email") {
             setFormErrors({ ...formErrors, email: "" });
-            setValidEmail(emailRegex.test(email))
-            setEmail(e.target.value)
-            if (!emailRegex.test(email)) {
+            const newEmail = e.target.value;
+            setEmail(newEmail)
+            setValidEmail(emailRegex.test(newEmail))
+            if (!emailRegex.test(newEmail)) {
                 setFormErrors({ ...formErrors, email: "Please enter a valid email." });
             }
         }
         else {
             setFormErrors({ ...formErrors, password: "" });
-            setValidPassword(!(password.length < 6))
-            setPassword(e.target.value)
-            if (password.length < 6) {
+            const newPassword = e.target.value;
+            setPassword(newPassword);
+            if (newPassword.length < 6) {
                 setFormErrors({ ...formErrors, password: "Password must be atleast 6 characters long." });
             }
+            setValidPassword(!(newPassword.length < 6))
         }
     }
 
@@ -94,7 +96,7 @@ export const Signup = () => {
                 />
             </div>
 
-            {/* Card */}
+            {/******************************* Card ***************************************/}
             <div className='absolute lg:static flex flex-col w-full lg:w-[40vw] h-full justify-center items-center'>
 
                 <Box className="card"
@@ -177,7 +179,7 @@ export const Signup = () => {
                         fontSize: '1rem',
                         type: 'submit',
                         backgroundColor: 'rgb(59, 113, 182)',
-                    }} onClick={handleLogin} disabled={!validEmail || !validPassword || isLoggingIn || !email.length}>Log In</Button>
+                    }} onClick={handleLogin} disabled={!validEmail || !validPassword || isLoggingIn || !email.length || !password.length}>Log In</Button>
 
                     <div className="flex items-center w-[60%]">
                         <div className="flex-grow border-t border-[#e5e7eb]"></div>

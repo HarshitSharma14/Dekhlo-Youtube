@@ -30,24 +30,25 @@ export const Signup = () => {
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  const handleChange = (e) => {
-    if (e.target.name === "email") {
-      setFormErrors({ ...formErrors, email: "" });
-      setValidEmail(emailRegex.test(email));
-      setEmail(e.target.value);
-      if (!emailRegex.test(email)) {
-        setFormErrors({ ...formErrors, email: "Please enter a valid email." });
-      }
-    } else {
-      setFormErrors({ ...formErrors, password: "" });
-      setValidPassword(!(password.length < 6));
-      setPassword(e.target.value);
-      if (password.length < 6) {
-        setFormErrors({
-          ...formErrors,
-          password: "Password must be atleast 6 characters long.",
-        });
-      }
+    const handleChange = (e) => {
+        if (e.target.name === "email") {
+            setFormErrors({ ...formErrors, email: "" });
+            const newEmail = e.target.value;
+            setEmail(newEmail)
+            setValidEmail(emailRegex.test(newEmail))
+            if (!emailRegex.test(newEmail)) {
+                setFormErrors({ ...formErrors, email: "Please enter a valid email." });
+            }
+        }
+        else {
+            setFormErrors({ ...formErrors, password: "" });
+            const newPassword = e.target.value;
+            setPassword(newPassword);
+            if (newPassword.length < 6) {
+                setFormErrors({ ...formErrors, password: "Password must be atleast 6 characters long." });
+            }
+            setValidPassword(!(newPassword.length < 6))
+        }
     }
   };
 
@@ -85,36 +86,34 @@ export const Signup = () => {
         />
       </div>
 
-      {/* Card */}
-      <div className="absolute lg:static flex flex-col w-full lg:w-[40vw] h-full justify-center items-center">
-        <Box
-          className="card"
-          sx={{
-            padding: 4,
-            borderRadius: 2,
-            boxShadow: 5,
-            width: "90%",
-            maxWidth: "470px",
-            minHeight: "550px",
-            display: "flex",
-            flexDirection: "column",
-            justifyContent: "space-evenly",
-            alignItems: "center",
-            backgroundColor: "#573c3c1a",
-            backdropFilter: "blur(10px)",
-          }}
-        >
-          <Typography
-            variant="h6"
-            mb={2}
-            mt={2}
-            sx={{
-              textAlign: "center",
-              fontWeight: "600",
-            }}
-          >
-            Login
-          </Typography>
+            {/******************************* Card ***************************************/}
+            <div className='absolute lg:static flex flex-col w-full lg:w-[40vw] h-full justify-center items-center'>
+
+                <Box className="card"
+                    sx={{
+                        padding: 4,
+                        borderRadius: 2,
+                        boxShadow: 5,
+                        width: "90%",
+                        maxWidth: "470px",
+                        minHeight: "550px",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-evenly",
+                        alignItems: "center",
+                        backgroundColor: "#573c3c1a",
+                        backdropFilter: "blur(10px)",
+                    }}>
+                    <Typography
+                        variant="h6"
+                        mb={2} mt={2}
+                        sx={{
+                            textAlign: "center",
+                            fontWeight: "600",
+                        }}
+                    >
+                        Login
+                    </Typography>
 
           <div className="space-y-8 max-w-md mx-auto w-[90%] justify-center items-center">
             <TextField
@@ -180,23 +179,14 @@ export const Signup = () => {
             </span>
           </div>
 
-          <Button
-            variant="contained"
-            sx={{
-              width: "90%",
-              height: "50px",
-              padding: "10px",
-              fontSize: "1rem",
-              type: "submit",
-              backgroundColor: "rgb(59, 113, 182)",
-            }}
-            onClick={handleLogin}
-            disabled={
-              !validEmail || !validPassword || isLoggingIn || !email.length
-            }
-          >
-            Log In
-          </Button>
+                    <Button variant="contained" sx={{
+                        width: '90%',
+                        height: '50px',
+                        padding: '10px',
+                        fontSize: '1rem',
+                        type: 'submit',
+                        backgroundColor: 'rgb(59, 113, 182)',
+                    }} onClick={handleLogin} disabled={!validEmail || !validPassword || isLoggingIn || !email.length || !password.length}>Log In</Button>
 
           <div className="flex items-center w-[60%]">
             <div className="flex-grow border-t border-[#e5e7eb]"></div>

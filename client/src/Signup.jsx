@@ -18,7 +18,8 @@ import GoogleIcon from '@mui/icons-material/Google';
 import Checkbox from '@mui/material/Checkbox';
 import { googleLoginUrl, server } from "./utils/constants";
 
-
+import axios from "axios"
+import { server } from "./utils/constants";
 
 export const Signup = () => {
 
@@ -61,27 +62,11 @@ export const Signup = () => {
         }
     }
 
-    // const validateLogin = () => {
-    //     if (!email.length) {
-    //         toast.error("Email is required.")
-    //         return false
-    //     }
-    //     if (!emailRegex.test(email)) {
-    //         toast.error("Please enter a valid email.");
-    //         return false;
-    //     }
-    //     if (!password.length) {
-    //         toast.error("Passowrd is required.")
-    //         return false
-    //     }
-
-    //     return true
-    // }
 
     const handleLogin = async () => {
 
         setIsLoggingIn(true);
-        // code
+        const response = await axios(`${server / login}`,)
         setIsLoggingIn(false);
     }
 

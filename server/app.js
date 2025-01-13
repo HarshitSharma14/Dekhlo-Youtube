@@ -23,7 +23,7 @@ const clientID = process.env.GOOGLE_CLIENT_ID;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const callbackURL = "http://localhost:3000/api/v1/auth/oauth2/redirect/google";
 
-// Middleware
+// Middleware ******************************************
 app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
@@ -39,10 +39,11 @@ passport.use(
   )
 );
 
-// App Routes ************************
+// App Routes ******************************************
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/channel", channelRoutes);
 
+// Home Route jsut to test ******************************
 app.get("/", (_, res) => {
   console.log(JWT_SECRET);
   res.send("Home route working on the Youtube app");

@@ -27,10 +27,8 @@ app.get(
   oauth2_redirect
 );
 
-// Logout Route ***********************************
+// Normal Routes ****************************************************
 app.get("/logout", logout);
-
-// Protected Route
 app.get("/channel", getChannelInfo);
 
 export default app;

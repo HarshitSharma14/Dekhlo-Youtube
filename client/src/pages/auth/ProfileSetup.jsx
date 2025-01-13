@@ -19,6 +19,7 @@ import axios from "axios";
 import React, { useEffect, useState } from "react";
 import "./ProfileSetup.css";
 import toast from "react-hot-toast";
+import { Form } from "react-router-dom";
 
 const darkTheme = createTheme({
   palette: {
@@ -120,7 +121,7 @@ const ProfileSetup = () => {
     console.log(currentStep);
     console.log("Form Submitted:", formData);
     setIsSubmiting(true);
-    // const toastId = toast.loading("Submiting...");
+    const toastId = toast.loading("Submiting...");
     const dataToSend = {
       channelName: formData.name,
       profilePhotoFile: formData.profilePhotoFile,
@@ -128,6 +129,14 @@ const ProfileSetup = () => {
       bio: formData.bio,
       password: formData.password,
     };
+
+    // const dataToSend = new FormData();
+    // dataToSend.append("channelName", formData.name);
+    // dataToSend.append("profilePhotoFile", formData.profilePhotoFile);
+    // dataToSend.append("bio", formData.bio);
+    // dataToSend.append("profilePhotoUrl", formData.profilePhotoUrl);
+    // dataToSend.append("password", formData.password);
+
     console.log(dataToSend);
     try {
       const data = await axios.post(

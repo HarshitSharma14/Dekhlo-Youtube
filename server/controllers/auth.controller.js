@@ -5,6 +5,8 @@ import jwt from "jsonwebtoken";
 
 const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 console.log(JWT_SECRET);
+const maxAge = 24 * 60 * 60 * 1000;
+
 
 export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
   try {
@@ -35,7 +37,7 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
     const token = jwt.sign(
       { userId: channel._id },
       JWT_SECRET,
-      { expiresIn: "1h" } // Token expires in 1 hour
+      { expiresIn: maxAge } // Token expires in 1 hour
     );
     // console.log(token);
     return cb(null, { token, profileAlreadyExist });
@@ -55,7 +57,7 @@ export const oauth2_redirect = (req, res) => {
   res.cookie("jwt", token, {
     httpOnly: true,
     secure: false, // Use true in production with HTTPS
-    maxAge: 3600000, // 1 hour
+    maxAge, // 1 day
   });
   if (!profileAlreadyExist) res.redirect("http://localhost:5173/profile-setup");
   else res.redirect("http://localhost:5173/");
@@ -80,3 +82,39 @@ export const getChannelInfo = async (req, res) => {
     res.status(403).json({ message: "Invalid or expired token" });
   }
 };
+
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body
+
+    if (!email || !password) {
+      return response.status(400).send("Please enter both email and password");
+    }
+
+    const user = await Channel.findOne({ email })
+
+    if (!user) {
+      return response.status(404).send("User with the given email not found.")
+    }
+
+    const auth = await compare(password, user.password)
+    if (!auth) {
+      return response.status(401).send("Password is incorrect.")
+    }
+    delete user.password
+
+    response.cookie("jwt", createToken(email, user.id), {
+      maxAge,
+      secure: true,
+      sameSite: "None",
+    });
+
+    return response.status(200).send(user)
+
+  }
+  catch (error) {
+    console.log(error);
+    return response.status(500).send("Internal Server Error")
+
+  }
+}

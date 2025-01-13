@@ -6,6 +6,8 @@ import {
   oauth2_redirect,
 } from "../controllers/auth.controller.js";
 
+import { login } from "../controllers/auth.controller.js";
+
 const app = Router();
 
 // login with Google Route *****************************************
@@ -17,6 +19,8 @@ app.get(
   })
 );
 
+
+
 // Google redirects here after authentication
 app.get(
   "/oauth2/redirect/google",
@@ -27,10 +31,12 @@ app.get(
   oauth2_redirect
 );
 
-// Logout Route ***********************************
+// Routes ***********************************
+app.get("/login", login)
+
 app.get("/logout", logout);
 
-// Protected Route
 app.get("/channel", getChannelInfo);
+
 
 export default app;

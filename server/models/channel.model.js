@@ -1,4 +1,6 @@
 import mongoose, { Schema, model } from "mongoose";
+import bcrypt from "bcrypt";
+import { genSalt } from "bcrypt"
 
 const channelSchema = new Schema(
   {
@@ -73,6 +75,12 @@ const channelSchema = new Schema(
   },
   { timestamps: true }
 );
+
+channelSchema.pre("save", async function (next) {
+  const salt = await genSalt()
+  this.password = await bcrypt.hash(this.password, salt)
+  next();
+})
 
 const Channel = model("Channel", channelSchema);
 export default Channel;

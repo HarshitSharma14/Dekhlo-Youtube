@@ -11,6 +11,7 @@ dotenv.config();
 import { loginSignup } from "./controllers/auth.controller.js";
 import authRoutes from "./routes/auth.route.js";
 import channelRoutes from "./routes/channel.route.js";
+import { JWT_SECRET } from "./utils/constants.js";
 
 // localConstansts ************************************
 const databaseURL = process.env.DATABASE_URL;
@@ -56,5 +57,5 @@ app.listen(port, () => {
   mongoose
     .connect(databaseURL)
     .then(() => console.log("DB Connection success"))
-    .catch((e) => console.log(e.message));
+    .catch((e) => console.log("DB Connection error: ", e.message));
 });

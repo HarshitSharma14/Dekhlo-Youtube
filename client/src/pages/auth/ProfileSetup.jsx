@@ -5,7 +5,6 @@ import {
   Avatar,
   Box,
   Button,
-  CssBaseline,
   IconButton,
   InputAdornment,
   Step,
@@ -14,32 +13,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
-import "./ProfileSetup.css";
 import toast from "react-hot-toast";
-import { Form } from "react-router-dom";
-
-const darkTheme = createTheme({
-  palette: {
-    mode: "dark",
-    primary: {
-      main: "#90caf9",
-    },
-    secondary: {
-      main: "#f48fb1",
-    },
-    background: {
-      default: "#121212",
-      paper: "#1e1e1e",
-    },
-    text: {
-      primary: "#ffffff",
-      secondary: "#b0bec5",
-    },
-  },
-});
+import {
+  GET_CHANNEL_DETAILS,
+  UPDATE_CHANNEL_INFO_ROUTE,
+} from "../../utils/constants";
+import "./ProfileSetup.css";
 
 const ProfileSetup = () => {
   // UseStates **********************************************************************
@@ -122,37 +103,29 @@ const ProfileSetup = () => {
     console.log("Form Submitted:", formData);
     setIsSubmiting(true);
     const toastId = toast.loading("Submiting...");
-    const dataToSend = {
-      channelName: formData.name,
-      profilePhotoFile: formData.profilePhotoFile,
-      profilePhotoUrl: formData.profilePhotoUrl,
-      bio: formData.bio,
-      password: formData.password,
-    };
 
-    // const dataToSend = new FormData();
-    // dataToSend.append("channelName", formData.name);
-    // dataToSend.append("profilePhotoFile", formData.profilePhotoFile);
-    // dataToSend.append("bio", formData.bio);
-    // dataToSend.append("profilePhotoUrl", formData.profilePhotoUrl);
-    // dataToSend.append("password", formData.password);
+    const dataToSend = new FormData();
+    dataToSend.append("channelName", formData.name);
+    dataToSend.append("profilePhotoFile", formData.profilePhotoFile);
+    dataToSend.append("bio", formData.bio);
+    dataToSend.append("profilePhotoUrl", formData.profilePhotoUrl);
+    dataToSend.append("password", formData.password);
 
     console.log(dataToSend);
     try {
-      const data = await axios.post(
-        "http://localhost:3000/api/v1/channel/update-profile",
-        dataToSend,
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      console.log(UPDATE_CHANNEL_INFO_ROUTE);
+
+      const data = await axios.post(UPDATE_CHANNEL_INFO_ROUTE, dataToSend, {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
       toast.success("Submited", { id: toastId });
     } catch (error) {
-      console.log(error);
-      toast.error(error || "Something went wrong", { id: toastId });
+      toast.error(error?.response?.data?.message || "Something went wrong", {
+        id: toastId,
+      });
     }
     setIsSubmiting(false);
   };
@@ -160,24 +133,28 @@ const ProfileSetup = () => {
   const getChannelInfo = async () => {
     const toatId = toast.loading("Fetching channel info...");
     try {
-      const channel = await axios.get(
-        "http://localhost:3000/api/v1/auth/channel",
-        {
-          withCredentials: true,
-        }
-      );
+      const channel = await axios.get(GET_CHANNEL_DETAILS, {
+        withCredentials: true,
+      });
       setFormData({
         ...formData,
         name: channel.data.channelName,
         profilePhotoUrl: channel.data.profilePhoto.toString(),
       });
-      toast.success("Channel info fetched successfully", { id: toatId });
+      toast.success("Channel info retreived successfully", { id: toatId });
     } catch (error) {
-      console.log("Error fetching channel info", error);
-      toast.error("Error fetching channel info", { id: toatId });
+      console.log(
+        "Error fetching channel info",
+        error?.response?.data?.message
+      );
+      toast.error(
+        error?.response?.data?.message || "Error fetching channel info",
+        { id: toatId }
+      );
     }
   };
 
+  // useEffects *********************************************************************
   useEffect(() => {
     getChannelInfo();
   }, []);
@@ -209,7 +186,24 @@ const ProfileSetup = () => {
         }}
       >
         {/* Stepper */}
-        <Stepper activeStep={currentStep} alternativeLabel>
+        <Stepper
+          activeStep={currentStep}
+          alternativeLabel
+          sx={{
+            ".MuiStepLabel-label": {
+              color: "rgba(255, 255, 255, 0.7)", // Label color for dark theme
+            },
+            ".MuiStepIcon-root": {
+              color: "rgba(255, 255, 255, 0.5)", // Default step icon color
+            },
+            ".MuiStepIcon-root.Mui-active": {
+              color: "#4caf50", // Active step icon color
+            },
+            ".MuiStepIcon-root.Mui-completed": {
+              color: "#2e7d32", // Completed step icon color
+            },
+          }}
+        >
           {steps.map((label, index) => (
             <Step key={index}>
               <StepLabel />
@@ -426,7 +420,10 @@ const ProfileSetup = () => {
             {currentStep > 0 && (
               <Button
                 variant="outlined"
-                onClick={() => setCurrentStep(currentStep - 1)}
+                onClick={() => {
+                  setCurrentStep(currentStep - 1);
+                  // setFormData({ ...formData, confirmPassword: "" });
+                }}
                 disabled={isSubmiting}
               >
                 Previous
@@ -435,7 +432,11 @@ const ProfileSetup = () => {
             {currentStep < 2 ? (
               <Button
                 variant="contained"
-                onClick={() => setCurrentStep(currentStep + 1)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  setCurrentStep(currentStep + 1);
+                  return;
+                }}
                 disabled={!formData.name || !formData.profilePhotoUrl}
               >
                 Next

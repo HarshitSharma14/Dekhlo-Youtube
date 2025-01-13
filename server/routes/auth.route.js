@@ -1,10 +1,6 @@
 import { Router } from "express";
 import passport from "passport";
-import {
-  getChannelInfo,
-  logout,
-  oauth2_redirect,
-} from "../controllers/auth.controller.js";
+import { logout, oauth2_redirect } from "../controllers/auth.controller.js";
 
 const app = Router();
 
@@ -29,6 +25,4 @@ app.get(
 
 // Normal Routes ****************************************************
 app.get("/logout", logout);
-app.get("/channel", getChannelInfo);
-
 export default app;

@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import GoogleIcon from '@mui/icons-material/Google';
 import Checkbox from '@mui/material/Checkbox';
-import { googleLoginUrl, server } from "./utils/constants";
+import { googleLoginUrl, loginUrl, server } from "./utils/constants";
 
 import axios from "axios"
 
@@ -67,7 +67,8 @@ export const Signup = () => {
         try {
 
             setIsLoggingIn(true);
-            const response = await axios(`${server}/login}`, { email, password }, { withCredentials: true })
+
+            const response = await axios.post(loginUrl, { email, password }, { withCredentials: true })
 
 
             console.log(response)

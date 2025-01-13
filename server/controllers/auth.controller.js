@@ -1,3 +1,4 @@
+import { compare } from "bcrypt";
 import Channel from "../models/channel.model.js";
 import jwt from "jsonwebtoken";
 // import dotenv from "dotenv";
@@ -87,34 +88,46 @@ export const login = async (req, res) => {
   try {
     const { email, password } = req.body
 
+    console.log(req.body)
+
     if (!email || !password) {
-      return response.status(400).send("Please enter both email and password");
+      return res.status(400).send("Please enter both email and password");
     }
 
     const user = await Channel.findOne({ email })
 
+    console.log(user)
+
     if (!user) {
-      return response.status(404).send("User with the given email not found.")
+      return res.status(404).send("User with the given email not found.")
     }
 
     const auth = await compare(password, user.password)
     if (!auth) {
-      return response.status(401).send("Password is incorrect.")
+      return res.status(401).send("Password is incorrect.")
     }
-    delete user.password
+    const userObj = user.toObject()
 
-    response.cookie("jwt", createToken(email, user.id), {
-      maxAge,
-      secure: true,
-      sameSite: "None",
+    delete userObj.password
+
+    const token = jwt.sign(
+      { userId: Channel._id },
+      JWT_SECRET,
+      { expiresIn: maxAge }
+    );
+
+    res.cookie("jwt", token, {
+      httpOnly: true,
+      secure: false, // Use true in production with HTTPS
+      maxAge, // 1 day
     });
 
-    return response.status(200).send(user)
+    return res.status(200).send(userObj)
 
   }
   catch (error) {
     console.log(error);
-    return response.status(500).send("Internal Server Error")
+    return res.status(500).send("Internal Server Error")
 
   }
 }

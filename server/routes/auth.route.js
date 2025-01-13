@@ -32,7 +32,7 @@ app.get(
 );
 
 // Routes ***********************************
-app.get("/login", login)
+app.post("/login", login)
 
 app.get("/logout", logout);
 

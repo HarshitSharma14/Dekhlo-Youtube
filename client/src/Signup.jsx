@@ -13,9 +13,10 @@ import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import { useNavigate } from "react-router-dom";
-import { GOOGLE_LOGIN_URL, server } from "./utils/constants";
+import { GOOGLE_LOGIN_URL, LOGIN_ROUTE, server } from "./utils/constants";
 
 import axios from "axios";
+import toast from "react-hot-toast";
 
 export const Signup = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -60,8 +61,28 @@ export const Signup = () => {
   };
 
   const handleLogin = async () => {
-    setIsLoggingIn(true);
-    const response = await axios(`${server}/login`);
+    try {
+      setIsLoggingIn(true);
+      const response = await axios.post(
+        LOGIN_ROUTE,
+        { email, password },
+        { withCredentials: true }
+      );
+
+      console.log(response);
+    } catch (e) {
+      if (e.response) {
+        if (e.response.status === 400) {
+          toast.error("Please enter both email and password.");
+        } else if (e.response.status === 401) {
+          toast.error("Passowrd Incorrect");
+        } else if (e.response.status === 404) {
+          toast.error("User hasn't signed up yet. Please sign up");
+        }
+      } else {
+        toast.error("Network error. Please check your connection."); // Handle network errors
+      }
+    }
     setIsLoggingIn(false);
   };
 

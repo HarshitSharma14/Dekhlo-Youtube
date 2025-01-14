@@ -1,4 +1,5 @@
-import mongoose, { Schema, model } from "mongoose";
+import bcrypt from "bcrypt";
+import { Schema, model } from "mongoose";
 
 const channelSchema = new Schema(
   {
@@ -73,6 +74,19 @@ const channelSchema = new Schema(
   },
   { timestamps: true }
 );
+
+channelSchema.pre("findOneAndUpdate", async function (next) {
+  const update = this.getUpdate();
+  if (update.password) {
+    const salt = await bcrypt.genSalt();
+    update.password = await bcrypt.hash(update.password, salt);
+    this.setUpdate(update);
+  }
+
+  // if (!this.isModified("password")) return next();
+  // this.password = bcrypt.hash(this.password, salt);
+  next();
+});
 
 const Channel = model("Channel", channelSchema);
 export default Channel;

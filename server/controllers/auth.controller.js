@@ -1,12 +1,15 @@
 import Channel from "../models/channel.model.js";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../utils/constants.js";
+import { compare } from "bcrypt";
 
 /* jwt not working */
 // import dotenv from "dotenv";
 // dotenv.config();
+
 // const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 // console.log(JWT_SECRET);
+const maxAge = 24 * 60 * 60 * 1000;
 
 export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
   try {
@@ -35,9 +38,9 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
 
     // Generate JWT for the channel
     const token = jwt.sign(
-      { userId: channel._id },
+      { channelId: channel._id },
       JWT_SECRET,
-      { expiresIn: "1h" } // Token expires in 1 hour
+      { expiresIn: maxAge } // Token expires in 1 hour
     );
     // console.log(token);
     return cb(null, { token, profileAlreadyExist });
@@ -57,7 +60,7 @@ export const oauth2_redirect = (req, res) => {
   res.cookie("jwt", token, {
     httpOnly: true,
     secure: false, // Use true in production with HTTPS
-    maxAge: 3600000, // 1 hour
+    maxAge, // 1 day
   });
   if (!profileAlreadyExist) res.redirect("http://localhost:5173/profile-setup");
   else res.redirect("http://localhost:5173/");
@@ -66,4 +69,39 @@ export const oauth2_redirect = (req, res) => {
 export const logout = (req, res) => {
   res.clearCookie("jwt");
   res.json({ message: "Logged out successfully." });
+};
+
+export const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    console.log(req.body);
+
+    if (!email || !password) {
+      return res.status(400).send("Please enter both email and password");
+    }
+
+    const channel = await Channel.findOne({ email });
+
+    if (!channel) {
+      return res.status(404).send("Channel with the given email not found.");
+    }
+
+    const auth = await compare(password, channel.password);
+    if (!auth) {
+      return res.status(401).send("Password is incorrect.");
+    }
+
+    delete channel.password;
+
+    res.cookie("jwt", createToken(email, channel.id), {
+      maxAge,
+      secure: true,
+      sameSite: "None",
+    });
+
+    return res.status(200).send(channel);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).send("Internal Server Error");
+  }
 };

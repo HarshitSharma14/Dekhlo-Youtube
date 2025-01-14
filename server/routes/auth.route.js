@@ -2,6 +2,9 @@ import { Router } from "express";
 import passport from "passport";
 import { logout, oauth2_redirect } from "../controllers/auth.controller.js";
 
+import { login } from "../controllers/auth.controller.js";
+import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
+
 const app = Router();
 
 // login with Google Route *****************************************
@@ -23,6 +26,8 @@ app.get(
   oauth2_redirect
 );
 
-// Normal Routes ****************************************************
-app.get("/logout", logout);
+// Routes ***********************************
+app.post("/login", login);
+app.get("/logout", isUserLoggedIn, logout);
+
 export default app;

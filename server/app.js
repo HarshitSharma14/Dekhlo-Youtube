@@ -4,14 +4,19 @@ import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
 import passport from "passport";
+import cloudinary from "cloudinary";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 console.log("just after");
 dotenv.config();
+
 // importing Routes ******************************
-import { loginSignup } from "./controllers/auth.controller.js";
 import authRoutes from "./routes/auth.route.js";
 import channelRoutes from "./routes/channel.route.js";
+
+// Other Imports *********************************
+import { loginSignup } from "./controllers/auth.controller.js";
 import { JWT_SECRET } from "./utils/constants.js";
+import { errorHandlerMiddleware } from "./middlewares/error.middlewares.js";
 
 // localConstansts ************************************
 const databaseURL = process.env.DATABASE_URL;
@@ -23,6 +28,13 @@ const corseOptions = {
 const clientID = process.env.GOOGLE_CLIENT_ID;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 const callbackURL = "http://localhost:3000/api/v1/auth/oauth2/redirect/google";
+
+// config ********************************************
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 // Middleware ******************************************
 app.use(express.json());
@@ -50,6 +62,10 @@ app.get("/", (_, res) => {
   res.send("Home route working on the Youtube app");
 });
 
+// Middleware to handle error ***************************
+app.use(errorHandlerMiddleware);
+
+// App starting *****************************************
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);

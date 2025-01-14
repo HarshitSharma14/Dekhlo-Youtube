@@ -1,25 +1,24 @@
 import { Router } from "express";
 import multer from "multer";
-import { getChannelInfo } from "../controllers/channel.controller.js";
+import {
+  getChannelInfo,
+  updateProfile,
+} from "../controllers/channel.controller.js";
+import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
+
 const app = Router();
 
-const multerUpload = multer({
-  limits: {
-    fileSize: 1024 * 1024 * 5,
-  },
-});
+// multer config ***************************************
+const storage = multer.memoryStorage();
+const upload = multer({ storage: storage });
 
+// Routes **********************************************
 app.get("/get-info", getChannelInfo);
-
 app.post(
   "/update-profile",
-  multerUpload.single("profilePhotoFile"),
-  (req, res) => {
-    if (!req.file) console.log("google use kar");
-    else console.log("file use kar");
-    // console.log(req.body);
-    res.status(400).json({ message: "backend error" });
-  }
+  isUserLoggedIn,
+  upload.single("profilePhotoFile"),
+  updateProfile
 );
 
 export default app;

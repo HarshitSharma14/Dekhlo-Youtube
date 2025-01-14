@@ -16,6 +16,7 @@ import {
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import {
   GET_CHANNEL_DETAILS,
   UPDATE_CHANNEL_INFO_ROUTE,
@@ -46,6 +47,7 @@ const ProfileSetup = () => {
   const isConfirmPasswordDisabled =
     formData.password === "" || formData.password.length < 6;
   const isPasswordMatch = formData.password === formData.confirmPassword;
+  const navigate = useNavigate();
 
   // Functions *********************************************************************
   const handleChange = (e) => {
@@ -121,7 +123,8 @@ const ProfileSetup = () => {
           "Content-Type": "multipart/form-data",
         },
       });
-      toast.success("Submited", { id: toastId });
+      toast.success("Submited successfully", { id: toastId });
+      navigate("/");
     } catch (error) {
       toast.error(error?.response?.data?.message || "Something went wrong", {
         id: toastId,
@@ -140,6 +143,7 @@ const ProfileSetup = () => {
         ...formData,
         name: channel.data.channelName,
         profilePhotoUrl: channel.data.profilePhoto.toString(),
+        bio: channel.data.bio,
       });
       toast.success("Channel info retreived successfully", { id: toatId });
     } catch (error) {

@@ -149,7 +149,8 @@ const ProfileSetup = () => {
     } catch (error) {
       console.log(
         "Error fetching channel info",
-        error?.response?.data?.message
+        error?.response?.data?.message,
+        error.response
       );
       toast.error(
         error?.response?.data?.message || "Error fetching channel info",

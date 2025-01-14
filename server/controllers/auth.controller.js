@@ -1,7 +1,9 @@
-import Channel from "../models/channel.model.js";
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "../utils/constants.js";
 import { compare } from "bcrypt";
+import Channel from "../models/channel.model.js";
+import { JWT_SECRET } from "../utils/constants.js";
+import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
+import { ErrorHandler } from "../utils/utility.js";
 
 /* jwt not working */
 // import dotenv from "dotenv";
@@ -71,37 +73,40 @@ export const logout = (req, res) => {
   res.json({ message: "Logged out successfully." });
 };
 
-export const login = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-    console.log(req.body);
+export const login = AsyncTryCatch(async (req, res, next) => {
+  const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).send("Please enter both email and password");
-    }
+  console.log(req.body);
 
-    const channel = await Channel.findOne({ email });
-
-    if (!channel) {
-      return res.status(404).send("Channel with the given email not found.");
-    }
-
-    const auth = await compare(password, channel.password);
-    if (!auth) {
-      return res.status(401).send("Password is incorrect.");
-    }
-
-    delete channel.password;
-
-    res.cookie("jwt", createToken(email, channel.id), {
-      maxAge,
-      secure: true,
-      sameSite: "None",
-    });
-
-    return res.status(200).send(channel);
-  } catch (error) {
-    console.log(error);
-    return res.status(500).send("Internal Server Error");
+  if (!email || !password) {
+    return next(new ErrorHandler(400, "Please enter both email and password"));
   }
-};
+
+  const channel = await Channel.findOne({ email });
+
+  console.log(channel);
+
+  if (!channel) {
+    return next(new ErrorHandler(404, "User does not exist"));
+  }
+
+  const auth = await compare(password, channel.password);
+  if (!auth) {
+    return next(new ErrorHandler(401, "Invalid Email or Password"));
+  }
+  const userObj = channel.toObject();
+
+  delete userObj.password;
+
+  const token = jwt.sign({ channelId: channel._id }, JWT_SECRET, {
+    expiresIn: maxAge,
+  });
+
+  res.cookie("jwt", token, {
+    httpOnly: true,
+    secure: false, // Use true in production with HTTPS
+    maxAge, // 1 day
+  });
+
+  return res.status(200).send(userObj);
+});

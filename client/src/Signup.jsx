@@ -1,5 +1,3 @@
-import React, { useState } from "react";
-
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import GoogleIcon from "@mui/icons-material/Google";
 import {
@@ -12,11 +10,12 @@ import {
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import { useNavigate } from "react-router-dom";
-import { GOOGLE_LOGIN_URL, LOGIN_ROUTE, server } from "./utils/constants";
+import React, { useState } from "react";
+import { GOOGLE_LOGIN_URL, LOGIN_ROUTE } from "./utils/constants";
 
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 export const Signup = () => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -61,8 +60,11 @@ export const Signup = () => {
   };
 
   const handleLogin = async () => {
+    setIsLoggingIn(true);
+
+    const toastId = toast.loading("Logging in...");
+
     try {
-      setIsLoggingIn(true);
       const response = await axios.post(
         LOGIN_ROUTE,
         { email, password },
@@ -70,18 +72,12 @@ export const Signup = () => {
       );
 
       console.log(response);
+      toast.success("User logged in successfully", { id: toastId });
+      navigate("/");
     } catch (e) {
-      if (e.response) {
-        if (e.response.status === 400) {
-          toast.error("Please enter both email and password.");
-        } else if (e.response.status === 401) {
-          toast.error("Passowrd Incorrect");
-        } else if (e.response.status === 404) {
-          toast.error("User hasn't signed up yet. Please sign up");
-        }
-      } else {
-        toast.error("Network error. Please check your connection."); // Handle network errors
-      }
+      toast.error(e.response?.data?.message || "Something went wrong", {
+        id: toastId,
+      });
     }
     setIsLoggingIn(false);
   };

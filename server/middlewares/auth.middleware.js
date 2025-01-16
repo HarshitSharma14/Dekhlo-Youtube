@@ -9,7 +9,8 @@ export const isUserLoggedIn = AsyncTryCatch((req, res, next) => {
     return next(new ErrorHandler(401, "Please Login to access this resource"));
 
   const decodedData = jwt.verify(token, JWT_SECRET);
-  console.log(decodedData);
+  // console.log(decodedData);
   req.channelId = decodedData.channelId;
+  console.log("exiting middleware")
   next();
 });

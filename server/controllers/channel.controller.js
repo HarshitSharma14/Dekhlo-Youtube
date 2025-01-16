@@ -2,8 +2,9 @@ import Channel from "../models/channel.model.js";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../utils/constants.js";
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
-import { UploadSinglePhotoToCloudinary } from "../utils/features.js";
+import { UploadSinglePhotoToCloudinary, UploadVideoAndThumbnail } from "../utils/features.js";
 import { ErrorHandler } from "../utils/utility.js";
+import Video from "../models/video.model.js";
 
 // const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 // console.log(JWT_SECRET);
@@ -45,3 +46,39 @@ export const updateProfile = AsyncTryCatch(async (req, res, next) => {
     .status(200)
     .json({ message: "Profile updated successfully", channel: channel });
 });
+
+export const updateVideo = AsyncTryCatch(async (req, res, next) => {
+  console.log("inside")
+  const { title, description, channelId, isPrivate, canComment, category } = req.body;
+  console.log(channelId)
+  console.log(req.files.video)
+  console.log(req.files.thumbnail)
+  if (!req.files.thumbnail || !req.files.video || !title || !channelId) {
+    return next(new ErrorHandler(400, "Please provide all the required fields"));
+  }
+
+  console.log("inside2")
+
+
+  const { videoUrlNew, thumbnailUrlNew } = await UploadVideoAndThumbnail(req);
+  console.log("inside3")
+
+  const videonew = await new Video({
+    title,
+    description,
+    videoUrl: videoUrlNew,
+    thumbnailUrl: thumbnailUrlNew,
+    channel: channelId,
+    isPrivate,
+    canComment,
+    category,
+    duration
+  })
+
+  console.log("done")
+
+  await videonew.save()
+
+  return res.status(201).json({ message: "Video uploaded successfully", videonew })
+
+})

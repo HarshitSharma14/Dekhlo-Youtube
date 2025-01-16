@@ -1,10 +1,16 @@
-import mongoose, { Schema, SchemaType, model, models } from "mongoose";
+import mongoose from "mongoose";
+const { Schema, model, models } = mongoose;
+import { videoCategoryEnum } from "../utils/constants.js";
 
 const videoSchema = new Schema(
   {
     title: {
       type: String,
       required: [true, "Video Title required"],
+    },
+    category: {
+      type: String,
+      enum: videoCategoryEnum, required: true
     },
     description: {
       type: String,
@@ -26,14 +32,14 @@ const videoSchema = new Schema(
       default: 0,
     },
     duration: {
-      type: Number,
+      type: Number, //in seconds
       required: true,
     },
     channel: {
       type: Schema.Types.ObjectId,
       ref: "Channel",
     },
-    private: {
+    isPrivate: {
       type: Boolean,
       default: false,
     },
@@ -47,6 +53,7 @@ const videoSchema = new Schema(
       type: Boolean,
       default: true,
     },
+
   },
   { timestamps: true }
 );

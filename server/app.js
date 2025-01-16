@@ -17,6 +17,7 @@ import channelRoutes from "./routes/channel.route.js";
 import { loginSignup } from "./controllers/auth.controller.js";
 import { JWT_SECRET } from "./utils/constants.js";
 import { errorHandlerMiddleware } from "./middlewares/error.middlewares.js";
+import { getVideosForHomePage } from "./controllers/home.controller.js";
 
 // localConstansts ************************************
 const databaseURL = process.env.DATABASE_URL;
@@ -60,7 +61,9 @@ passport.use(
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/channel", channelRoutes);
 
-// Home Route jsut to test ******************************
+// Single Routes  ******************************
+app.get("/api/v1/home/videos", getVideosForHomePage);
+
 app.get("/", (_, res) => {
   console.log(JWT_SECRET);
   res.send("Home route working on the Youtube app");

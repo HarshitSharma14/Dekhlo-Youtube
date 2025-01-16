@@ -58,6 +58,6 @@ const videoSchema = new Schema(
   { timestamps: true }
 );
 
-const Video = models.Video || model("Video", videoSchema);
+const Video = model("Video", videoSchema);
 
 export default Video;

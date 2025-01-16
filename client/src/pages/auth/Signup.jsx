@@ -11,7 +11,7 @@ import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
 import React, { useState } from "react";
-import { GOOGLE_LOGIN_URL, LOGIN_ROUTE } from "./utils/constants";
+import { GOOGLE_LOGIN_URL, LOGIN_ROUTE } from "../../utils/constants";
 
 import axios from "axios";
 import toast from "react-hot-toast";

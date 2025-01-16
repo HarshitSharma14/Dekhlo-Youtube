@@ -20,5 +20,6 @@ app.post(
   upload.single("profilePhotoFile"),
   updateProfile
 );
+app.post("/upload-video", isUserLoggedIn);
 
 export default app;

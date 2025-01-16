@@ -8,13 +8,12 @@ import { ErrorHandler } from "../utils/utility.js";
 // const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 // console.log(JWT_SECRET);
 
-export const getChannelInfo = AsyncTryCatch(async (req, res) => {
-  // is is neccessory to logged in to access this come later on this ****************************** <<--
+export const getChannelInfo = AsyncTryCatch(async (req, res, next) => {
+  // is is neccessory to logged in to access this come later on this (TO BE CHANGED ) ****************************** <<--
   const token = req.cookies.jwt;
   console.log(token);
   if (!token) {
     return next(new ErrorHandler(401, "Unnauthorize"));
-    return res.status(401).json({ message: "Unauthorized" });
   }
   const decoded = jwt.verify(token, JWT_SECRET);
   const channel = await Channel.findById(decoded.channelId);

@@ -1,3 +1,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+/* General Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  overflow-y: auto; /* Enables full-page scrolling */
+}
+::-webkit-scrollbar {
+  width: 12px; /* Width of the vertical scrollbar */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #555; /* Dark thumb color */
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #777; /* Lighter color on hover */
+}
+
+::-webkit-scrollbar-track {
+  background: #2c2c2c; /* Matches the sidebar background */
+}

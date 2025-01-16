@@ -1,4 +1,4 @@
-import mongoose, { Schema, SchemaType, model, models } from "mongoose";
+import mongoose, { Schema, SchemaType, model } from "mongoose";
 
 const videoSchema = new Schema(
   {
@@ -51,6 +51,6 @@ const videoSchema = new Schema(
   { timestamps: true }
 );
 
-const Video = models.Video || model("Video", videoSchema);
+const Video = model("Video", videoSchema);
 
 export default Video;

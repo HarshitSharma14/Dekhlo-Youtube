@@ -1,12 +1,17 @@
 import { Box, Button, Drawer } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
+import { useAppStore } from "../store";
 
-const Sidebar = ({ isHome, open, func }) => {
+const Sidebar = ({ isHome }) => {
   //                                 <<-- open and func are temp, will be removed by redux
+
+  const { isSidebarOpen, setIsSidebarOpen } = useAppStore()
+
+
 
   // useState *******************************************************************************
   const [drawerVariant, setDrawerVariant] = useState("persistent");
-  const [isDrawerOpen, setIsDrawerOpen] = useState(open);
+  // const [isDrawerOpen, setIsDrawerOpen] = useState(isSidebarOpen);
 
   // constants *******************************************************************************
   const sidebarRef = useRef(null);
@@ -66,10 +71,10 @@ const Sidebar = ({ isHome, open, func }) => {
   return (
     <Drawer
       variant={drawerVariant}
-      open={isDrawerOpen}
+      // open={isDrawerOpen}
       onClose={() => {
-        setIsDrawerOpen(false);
-        func(false);
+        setIsSidebarOpen();
+        // func(false);
       }} // Only relevant for `temporary`
       sx={{
         width: "250px",

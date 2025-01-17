@@ -100,14 +100,14 @@ const Home = () => {
           {isSidebarOpen && <Siderbar isHome={isHome} />}
         </aside>
         {/* temp button to open sidebare  */}
-        <Button
+        {/* <Button
           onClick={(e) => {
             e.preventDefault();
             setIsSidebarOpen();
           }}
         >
           click
-        </Button>
+        </Button> */}
 
         {/* Main content of the pages starts here */}
         <main className="main-content ">

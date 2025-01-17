@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-const { Schema, model, models } = mongoose;
+const { Schema, model } = mongoose;
 import { videoCategoryEnum } from "../utils/constants.js";
 
 const videoSchema = new Schema(

@@ -3,6 +3,7 @@ import { Toaster } from "react-hot-toast";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import LoadingPage from "./component/LoadingPage.jsx";
 import { LocalDiningSharp } from "@mui/icons-material";
+import UpdateVideo from "./pages/home/UpdateVideo.jsx";
 
 // Routes imports ****************************************
 const Home = lazy(() => import("./pages/home/Home.jsx"));
@@ -24,12 +25,9 @@ const router = createBrowserRouter([
         path: "/",
         element: <HomeContent />,
       },
+
       {
         path: "/subs",
-        element: <Signup />,
-      },
-      {
-        path: "/video",
         element: <ProfileSetup />,
       },
     ],
@@ -51,6 +49,14 @@ const router = createBrowserRouter([
     element: (
       <Suspense fallback={<div>Loading...</div>}>
         <ProfileSetup />
+      </Suspense>
+    ),
+  },
+  {
+    path: "/update-video",
+    element: (
+      <Suspense fallback={<div>Loading...</div>}>
+        <UpdateVideo />{" "}
       </Suspense>
     ),
   },

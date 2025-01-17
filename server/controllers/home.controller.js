@@ -12,30 +12,34 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
   //   .populate("watchHistory");
   // console.log(v.following);
   // res.status(200).json({ v });
-
+  console.log("in");
   const token = req.cookies.jwt;
   let channelId;
   try {
-    channelId = jwt.verify(token, JWT_SECRET);
+    const decodedData = jwt.verify(token, JWT_SECRET);
+    channelId = decodedData.channelId;
   } catch (error) {
     channelId = null;
   }
+  // let seenIds = [];
+  // seenIds = req.body;
+  // console.log(seenIds);
+  console.log(req.body);
   const { seenIds = [] } = req.body;
-
   const limit = 20;
   const totalVideoCount = await Video.countDocuments();
   const totalPages = Math.ceil(totalVideoCount / limit) || 0;
+  const seenVideoIds = seenIds;
 
   let videosToRecomend = [];
   if (channelId) {
+    console.log("user loggdd in");
     const user = await Channel.findById(channelId)
       .populate("following", "creator")
       .populate("likedVideos")
       .populate("watchHistory");
 
-    const seenVideoIds = seenIds;
-
-    const followedChannelVideos = await Video.find({
+    const followedChannelVideosNotWatched = await Video.find({
       channel: {
         $in: user.following.map((follow) => follow.creator), // <<<<<<<<<<<<<<<-------------- here too
       } /* check it */,
@@ -47,7 +51,13 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
       },
     })
       .sort({ views: -1 })
-      .limit(limit);
+      .limit(limit)
+      .populate("channel", "channelName profilePhoto")
+      .select(
+        "title thumbnailUrl _id  duration channel videoUrl views createdAt"
+      );
+
+    // +console.log("followed channel vids", followedChannelVideosNotWatched);
 
     const likedChannelVideosNotWatched = await Video.find({
       channel: { $in: user.likedVideos.map((video) => video.channel) },
@@ -55,15 +65,22 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
         $nin: [
           ...user.watchHistory.map((watched) => watched._id),
           ...seenVideoIds,
+          ...followedChannelVideosNotWatched.map((vid) => vid._id),
         ],
       },
     })
       .sort({ views: -1 }) // Sort by views (most popular first)
-      .limit(limit);
+      .limit(limit)
+      .populate("channel", "channelName profilePhoto")
+      .select(
+        "title thumbnailUrl _id  duration channel videoUrl views createdAt"
+      );
+
+    // console.log("liked channel vids", likedChannelVideosNotWatched);
 
     const personalizedVideos = [
       ...likedChannelVideosNotWatched,
-      ...followedChannelVideos,
+      ...followedChannelVideosNotWatched,
     ];
 
     // Remove duplicates by ensuring unique video IDs
@@ -86,10 +103,17 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
       _id: { $nin: [...videosToRecomend.map((v) => v._id), ...seenVideoIds] }, // Exclude already selected videos
     })
       .sort({ views: -1, uploadDate: -1 })
-      .limit(limit - videosToRecomend.length);
+      .limit(limit - videosToRecomend.length)
+      .populate("channel", "channelName profilePhoto")
+      .select(
+        "title thumbnailUrl _id  duration channel videoUrl views createdAt"
+      );
+
+    // console.log("trending vids", trendingVideos);
 
     videosToRecomend = [...videosToRecomend, ...trendingVideos];
   }
+
   res.status(200).json({
     videos: videosToRecomend,
     totalPages,

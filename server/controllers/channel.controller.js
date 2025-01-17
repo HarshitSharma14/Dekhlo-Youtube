@@ -2,7 +2,10 @@ import Channel from "../models/channel.model.js";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../utils/constants.js";
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
-import { UploadSinglePhotoToCloudinary } from "../utils/features.js";
+import {
+  UploadSinglePhotoToCloudinary,
+  UploadVideoAndThumbnail,
+} from "../utils/features.js";
 import { ErrorHandler } from "../utils/utility.js";
 import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
@@ -179,4 +182,48 @@ export const createNewPlaylist = AsyncTryCatch(async (req, res, next) => {
     $push: { playlist: newPlaylist },
   });
   res.status(200).json({ message: "Playlist created successfully" });
+});
+
+export const updateVideo = AsyncTryCatch(async (req, res, next) => {
+  console.log("inside");
+  const {
+    title,
+    description,
+    channelId,
+    isPrivate,
+    canComment,
+    category,
+    duration = 3,
+  } = req.body;
+
+  if (!req.files.thumbnail || !req.files.video || !title || !channelId) {
+    return next(
+      new ErrorHandler(400, "Please provide all the required fields")
+    );
+  }
+
+  console.log("inside2");
+
+  const { videoUrlNew, thumbnailUrlNew } = await UploadVideoAndThumbnail(req);
+  // console.log(videoUrlNew, thumbnailUrlNew);
+  console.log("inside3");
+
+  const videonew = new Video({
+    title,
+    description,
+    videoUrl: videoUrlNew,
+    thumbnailUrl: thumbnailUrlNew,
+    channel: channelId,
+    isPrivate,
+    canComment,
+    category,
+    duration,
+  });
+
+  console.log("done");
+  await videonew.save();
+
+  return res
+    .status(201)
+    .json({ message: "Video uploaded successfully", videonew });
 });

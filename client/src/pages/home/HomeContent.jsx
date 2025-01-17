@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import VideoCard from "../../component/VideoCard";
 import { Box } from "@mui/material";
+import axios from "axios";
+import { GET_HOME_VIDEOS_ROUTE } from "../../utils/constants";
 
 const videos = [
   {
@@ -342,7 +344,39 @@ const videos = [
 ];
 
 const HomeContent = () => {
-  console.log("home conteent");
+  // usestate ************************************************************************
+  const [videos, setVideos] = useState([]);
+  const [seenIds, setSeenIds] = useState([]);
+
+  // functions **************************************************************************
+  //                  <<----- fetch videos from backend
+  const getVideos = async () => {
+    try {
+      console.log("seend", seenIds);
+      const res = await axios.post(
+        GET_HOME_VIDEOS_ROUTE,
+        { seenIds },
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      console.log(res.data);
+      setVideos((e) => [...e, ...res.data?.videos]);
+      setSeenIds((e) => [...e, ...res.data?.videos?.map((vid) => vid._id)]);
+    } catch (error) {
+      console.log("err", error);
+    }
+  };
+
+  // use effect **********************************************************************************
+  //                   <<----- Fetch data for the first time
+  useEffect(() => {
+    getVideos();
+  }, []);
+
   return (
     <>
       <Box
@@ -354,12 +388,14 @@ const HomeContent = () => {
       >
         {videos.map((video) => (
           <VideoCard
-            key={video.id}
-            thumbnail={video.thumbnail}
-            title={video.title}
-            channelName={video.channelName}
-            views={video.views}
-            uploadTime={video.uploadTime}
+            key={video?._id}
+            thumbnail={video?.thumbnailUrl}
+            title={video?.title}
+            channelName={video?.channel.channelName}
+            views={video?.views}
+            uploadTime={video?.createdAt}
+            channelProfile={video?.channel.profilePhoto}
+            videoUrl={video?.videoUrl}
           />
         ))}
       </Box>

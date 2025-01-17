@@ -23,8 +23,9 @@ import { getVideosForHomePage } from "./controllers/home.controller.js";
 // localConstansts ************************************
 const databaseURL = process.env.DATABASE_URL;
 const app = express();
-const corseOptions = {
+const corsOptions = {
   origin: "http://localhost:5173", // Frontend URL
+  methods: ["GET", "POST", "PUT", "DELETE"], // Methods you want to allow
   credentials: true,
 };
 const clientID = process.env.GOOGLE_CLIENT_ID;
@@ -42,7 +43,10 @@ cloudinary.config({
 app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
-app.use(cors(corseOptions));
+app.use(cors(corsOptions));
+app.use(express.json({ limit: "100mb" })); // Adjust as needed, e.g., '50mb', '100mb', etc.
+app.use(express.urlencoded({ limit: "100mb", extended: true }));
+
 passport.use(
   new GoogleStrategy(
     {
@@ -60,7 +64,7 @@ app.use("/api/v1/channel", channelRoutes);
 app.use("/api/v1/video", videoRoutes);
 
 // Single Routes  ******************************
-app.get("/api/v1/home/videos", getVideosForHomePage);
+app.post("/api/v1/home/videos", getVideosForHomePage);
 
 app.get("/", (_, res) => {
   console.log(JWT_SECRET);

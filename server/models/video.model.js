@@ -1,10 +1,17 @@
-import mongoose, { Schema, SchemaType, model } from "mongoose";
+import mongoose from "mongoose";
+const { Schema, model } = mongoose;
+import { videoCategoryEnum } from "../utils/constants.js";
 
 const videoSchema = new Schema(
   {
     title: {
       type: String,
       required: [true, "Video Title required"],
+    },
+    category: {
+      type: String,
+      enum: videoCategoryEnum,
+      required: true,
     },
     description: {
       type: String,
@@ -13,7 +20,7 @@ const videoSchema = new Schema(
       type: String,
       required: [true, "Video url required"],
     },
-    thumbnaiUrl: {
+    thumbnailUrl: {
       type: String,
       default: "", // default thumbnail
     },
@@ -26,14 +33,14 @@ const videoSchema = new Schema(
       default: 0,
     },
     duration: {
-      type: Number,
+      type: Number, //in seconds
       required: true,
     },
     channel: {
       type: Schema.Types.ObjectId,
       ref: "Channel",
     },
-    private: {
+    isPrivate: {
       type: Boolean,
       default: false,
     },
@@ -47,6 +54,7 @@ const videoSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    embedding: { type: [Number], required: false },
   },
   { timestamps: true }
 );

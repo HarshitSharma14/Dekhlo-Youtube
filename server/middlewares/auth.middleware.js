@@ -15,5 +15,6 @@ export const isUserLoggedIn = AsyncTryCatch(async (req, res, next) => {
     return next(new ErrorHandler(404, "User not found"));
   }
   req.channelId = decodedData.channelId;
+  console.log("exiting middleware");
   next();
 });

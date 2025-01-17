@@ -225,8 +225,8 @@ const SidebarNavigatioButtons = ({
     >
       {isFilled
         ? React.cloneElement(filledIcon, {
-            sx: { ...iconStyle, color: "white" },
-          })
+          sx: { ...iconStyle, color: "white" },
+        })
         : React.cloneElement(outlineIcon, { sx: iconStyle })}
       <p
         style={{

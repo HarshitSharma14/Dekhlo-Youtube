@@ -47,20 +47,20 @@ export const updateProfile = AsyncTryCatch(async (req, res, next) => {
 });
 
 export const updateVideo = AsyncTryCatch(async (req, res, next) => {
-  console.log("inside")
-  const { title, description, channelId, isPrivate, canComment, category } = req.body;
-  console.log(channelId)
-  console.log(req.files.video)
-  console.log(req.files.thumbnail)
+  // console.log("inside")
+  const { title, description, channelId, isPrivate, canComment, category, duration } = req.body;
+  // console.log(channelId)
+  // console.log(req.files.video)
+  // console.log(req.files.thumbnail)
   if (!req.files.thumbnail || !req.files.video || !title || !channelId) {
     return next(new ErrorHandler(400, "Please provide all the required fields"));
   }
 
-  console.log("inside2")
+  // console.log("inside2")
 
 
   const { videoUrlNew, thumbnailUrlNew } = await UploadVideoAndThumbnail(req);
-  console.log("inside3")
+  // console.log("inside3")
 
   const videonew = await new Video({
     title,

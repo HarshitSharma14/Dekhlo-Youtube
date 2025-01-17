@@ -19,7 +19,7 @@ const videoSchema = new Schema(
       type: String,
       required: [true, "Video url required"],
     },
-    thumbnaiUrl: {
+    thumbnailUrl: {
       type: String,
       default: "", // default thumbnail
     },

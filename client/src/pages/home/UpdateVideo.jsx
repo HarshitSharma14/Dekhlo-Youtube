@@ -10,10 +10,12 @@ import SaveIcon from '@mui/icons-material/Save';
 import { convertLength } from '@mui/material/styles/cssUtils';
 import axios from 'axios';
 import { useAppStore } from '../../store';
+import { useNavigate } from 'react-router-dom';
+
+
 
 const UpdateVideo = () => {
 
-    const { channelInfo, setChannelInfo } = useAppStore()
     useEffect(() => {
 
         try {
@@ -31,33 +33,47 @@ const UpdateVideo = () => {
         }
     }, []);
 
+    const navigate = useNavigate()
+    const { channelInfo, setChannelInfo } = useAppStore()
 
+    // use states******************************************
     const [isActive, setIsActive] = useState([false, false])
     const [videoUploaded, setVideoUploaded] = useState(false);
     const [imageSrc, setImageSrc] = useState(null);
-
     const [videoDetails, setVideoDetails] = useState(
         {
             title: "", description: "", category: "others", thumbnailFile: null, duration: 0, videoFile: null, canComment: "true", isPrivate: "false"
         })
+    const [uploading, setUploading] = useState(false)
 
+    //refs**********************************************
     const videoUploadRef = useRef()
     const photoUploadRef = useRef()
-    let file = null
     const videoRef = useRef(null);
     const canvasRef = useRef(null);
-
     const titleBoxRef = useRef(null);
     const descBoxRef = useRef(null);
 
+
+    let file = null
+
     const handleSubmit = async () => {
 
-        if (!videoDetails.title || !videoDetails.thumbnailFile || !videoDetails.videoFile) {
-            toast.error("something's wrong")
+        setUploading(true)
+
+        if (!videoDetails.thumbnailFile || !videoDetails.videoFile) {
+            toast.error("Upload the video")
+            return
         }
-        console.log(videoDetails.thumbnailFile)
-        console.log(videoDetails.videoFile)
-        console.log(channelInfo)
+        if (!videoDetails.title) {
+            toast.error("Give a title to your video");
+            return
+        }
+
+
+        // console.log(videoDetails.thumbnailFile)
+        // console.log(videoDetails.videoFile)
+        // console.log(channelInfo)
         const formData = new FormData();
         formData.append('title', videoDetails.title);
         formData.append('description', videoDetails.description);
@@ -67,14 +83,29 @@ const UpdateVideo = () => {
         formData.append('isPrivate', videoDetails.isPrivate);
         formData.append('canComment', videoDetails.canComment);
         formData.append('channelId', channelInfo._id)
+        formData.append('duration', videoDetails.duration)
 
-        const response = await axios.post(UPDATE_VIDEO_INFO, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }, withCredentials: true
-        })
+        const toastId = toast.loading("Uploading video...");
 
-        console.log(response.data)
+        try {
+
+            const response = await axios.post(UPDATE_VIDEO_INFO, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data'
+                }, withCredentials: true
+            })
+
+            toast.success("Video uploaded successfully.", { id: toastId })
+            navigate("/")
+
+        }
+        catch (e) {
+            toast.error(e.response?.data?.message || "Something went wrong", {
+                id: toastId
+            })
+        }
+
+        // console.log(response.data)
 
     }
 
@@ -110,10 +141,10 @@ const UpdateVideo = () => {
     }
 
     const handleVideoUpload = (e) => {
-        file = e.target.files[0]
+        const videoFile = e.target.files[0]
         // console.log(file)
-        setVideoDetails((prev) => ({ ...prev, videoFile: file }))
-        const videoURL = URL.createObjectURL(file);
+        setVideoDetails((prev) => ({ ...prev, videoFile: videoFile }))
+        const videoURL = URL.createObjectURL(videoFile);
         const video = videoRef.current;
         video.src = videoURL;
 
@@ -147,9 +178,9 @@ const UpdateVideo = () => {
     }
 
     const handlePhotoUpload = (e) => {
-        file = e.target.files[0]
-        setImageSrc(URL.createObjectURL(file))
-        setVideoDetails((prevDetails) => ({ ...prevDetails, thumbnailFile: file }))
+        const thumbnailFile = e.target.files[0]
+        setImageSrc(URL.createObjectURL(thumbnailFile))
+        setVideoDetails((prevDetails) => ({ ...prevDetails, thumbnailFile: thumbnailFile }))
 
     }
 
@@ -222,7 +253,7 @@ const UpdateVideo = () => {
                                     (
                                         <div className='w-full h-full rounded-lg flex justify-center cursor-pointer items-center' onClick={handleAttachmentClick}>
                                             Upload video here
-                                            <input className='hidden' type="file" ref={videoUploadRef} onChange={handleVideoUpload} />
+                                            <input className='hidden' disabled={uploading} type="file" ref={videoUploadRef} onChange={handleVideoUpload} />
                                         </div>
                                     )}
                                 <video ref={videoRef} style={{ display: 'none' }} />
@@ -234,11 +265,12 @@ const UpdateVideo = () => {
                             <Box onClick={handleAttachmentClick} className="pt-5 pb-5">
                                 <AddAPhotoIcon sx={{ marginRight: "10px" }} />Change thumbnail
                             </Box>
-                            <input type="file" className='hidden' ref={photoUploadRef} onChange={handlePhotoUpload} />
+                            <input type="file" className='hidden' ref={photoUploadRef} disabled={uploading} onChange={handlePhotoUpload} />
                             <Box>
                                 <TextField
                                     id="category"
                                     select
+                                    disabled={uploading}
                                     value={videoDetails.category}
                                     onChange={(event) => setVideoDetails((prev) => ({ ...prev, category: event.target.value }))}
                                     label="Video Category"
@@ -264,8 +296,8 @@ const UpdateVideo = () => {
                                             color: '#e5e7eb',
                                         },
                                     }}>
-                                    {CATEGORY_ENUM.map((option) => (
-                                        <MenuItem key={option} value={option}>
+                                    {CATEGORY_ENUM.map((option, index) => (
+                                        <MenuItem key={index} value={option}>
                                             {option}
                                         </MenuItem>
                                     ))}
@@ -283,6 +315,7 @@ const UpdateVideo = () => {
                             onClick={() => handleFocus(0)}>
                             <h3 className='text-[#dadfe1]'>Title</h3>
                             <textarea
+                                disabled={uploading}
                                 className="w-full border-none rounded-md focus:outline-none focus:ring-0 overflow-y-auto resize-none bg-transparent"
                                 rows="2"
                                 value={videoDetails.title}
@@ -297,6 +330,7 @@ const UpdateVideo = () => {
                             onClick={() => handleFocus(1)}>
                             <h3 className='text-[#dadfe1]'>Description</h3>
                             <textarea
+                                disabled={uploading}
                                 className="w-full border-none rounded-md focus:outline-none focus:ring-0 overflow-y-auto resize-none bg-transparent"
                                 rows="5"
                                 value={videoDetails.description}
@@ -309,6 +343,7 @@ const UpdateVideo = () => {
                             <Box>
                                 <FormLabel component="legend" sx={{ color: "#dadfe1" }}>Video visibility</FormLabel>
                                 <RadioGroup
+                                    disabled={uploading}
                                     row
                                     aria-labelledby="demo-form-control-label-placement"
                                     name="position"
@@ -316,10 +351,10 @@ const UpdateVideo = () => {
                                     value={videoDetails.isPrivate}
                                     onChange={(event) => setVideoDetails((prev) => ({ ...prev, isPrivate: event.target.value }))}
                                     sx={{ color: "#dadfe1" }}>
-                                    <FormControlLabel value="false" control={<Radio />} label="Public" />
+                                    <FormControlLabel value="false" control={<Radio disabled={uploading} />} label="Public" />
                                     <FormControlLabel
                                         value="true"
-                                        control={<Radio />}
+                                        control={<Radio disabled={uploading} />}
                                         label="Private"
                                         labelPlacement="start"
                                         sx={{ color: "#dadfe1" }} />
@@ -327,10 +362,12 @@ const UpdateVideo = () => {
                             </Box>
                             <Box className="flex justify-between items-center">
                                 <FormControlLabel
+                                    disabled={uploading}
                                     control={<Checkbox id='canComment' onChange={(event) => setVideoDetails((prev) => ({ ...prev, canComment: event.target.checked ? "true" : "false" }))} defaultChecked color="default" />}
                                     label="Allow comments"
                                     sx={{ color: "#dadfe1" }} />
                                 <Button
+                                    disabled={uploading}
                                     color="default"
                                     component="label"
                                     variant="contained"

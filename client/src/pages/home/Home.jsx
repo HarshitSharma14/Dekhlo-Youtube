@@ -15,6 +15,7 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Header from "../../component/Header";
 import Siderbar from "../../component/Siderbar";
 import "./Home.css";
+import { useAppStore } from "../../store";
 
 const Home = () => {
   // useStates ************************************************************************
@@ -26,7 +27,9 @@ const Home = () => {
   const location = useLocation();
   const sidebarRef = useRef(null);
 
+  const { isSidebarOpen, setIsSidebarOpen } = useAppStore()
   //useEffect **********************************************************************
+
 
   //              <<-- checking for the home route to drill prop in sidebar
   useEffect(() => {
@@ -84,7 +87,7 @@ const Home = () => {
 
   return (
     <div className="app-container">
-      <Header />
+      <Header isDisabled={false} />
       <div className="main-layout">
         <aside
           className="sidebar "
@@ -93,14 +96,14 @@ const Home = () => {
             alignItems: "center",
           }}
         >
-          {(!open || !bigWindow || !isHome) && <PermanentSideBar />}
-          {open && <Siderbar isHome={isHome} open={open} func={setOpen} />}
+          {(!isSidebarOpen || !bigWindow || !isHome) && <PermanentSideBar />}
+          {isSidebarOpen && <Siderbar isHome={isHome} />}
         </aside>
         {/* temp button to open sidebare  */}
         <Button
           onClick={(e) => {
             e.preventDefault();
-            setOpen(true);
+            setIsSidebarOpen();
           }}
         >
           click

@@ -10,15 +10,17 @@ import {
   MenuItem,
   useMediaQuery,
 } from "@mui/material";
+import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
+import MenuIcon from '@mui/icons-material/Menu';
 import {
-  Menu as MenuIcon,
   Search as SearchIcon,
-  Notifications as NotificationsIcon,
   AddCircle as CreateIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
+import { UPDATE_VIDEO_INFO } from "../utils/constants";
+import { useAppStore } from "../store";
 
-const Header = () => {
+const Header = ({ isDisabled }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -31,90 +33,126 @@ const Header = () => {
     setAnchorEl(null);
   };
 
-  // Navigate to home when YouTube logo is clicked
-  const handleLogoClick = () => {
-    navigate("/");
-  };
+  const { isSidebarOpen, setIsSidebarOpen } = useAppStore()
+
+
+
 
   return (
-    <AppBar
-      //   position="sticky"
-      sx={{
-        background: "linear-gradient(to bottom, #0c0c0c, #121212)",
-        boxShadow: "none",
-      }}
-    >
-      <Toolbar
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+    <header className="sticky top-0 bg-[#121212] shadow-none h-[70px]">
+      <div className="flex h-full px-4 justify-between items-center">
         {/* Left Section: Hamburger Icon & Logo */}
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <IconButton
-            edge="start"
-            color="inherit"
+        <div className="flex items-center">
+          <button
+            disabled={isDisabled}
+            onClick={setIsSidebarOpen}
             aria-label="menu"
-            sx={{ mr: 2 }}
+            className="mr-2 text-white hover:bg-gray-700 ml-2 rounded-full"
           >
-            <MenuIcon />
-          </IconButton>
-          <Button
-            onClick={handleLogoClick}
-            sx={{ color: "white", fontWeight: "bold", fontSize: "24px" }}
+            <MenuIcon fontSize="medium" />
+          </button>
+          <button
+
+            disabled={isDisabled}
+            onClick={() => navigate("/")}
+            className="w-[123px] h-[56px] cursor-default text-white font-bold text-2xl"
           >
-            YouTube
-          </Button>
+            <span className="yt-icon-shape flex justify-center items-center">
+              <img src="../../assets/logo.png" className="w-[93px] h-[20px]" />
+            </span>
+          </button>
         </div>
 
         {/* Center Section: Search Bar */}
-        <div
-          style={{
-            flex: 1,
-            maxWidth: "600px",
-            display: "flex",
-            alignItems: "center",
-          }}
-        >
-          <SearchIcon sx={{ color: "white", marginRight: 1 }} />
-          <InputBase
+        <div className="hidden items-center border mr-1 border-s-2 border-[#303030] h-[40px] rounded-3xl w-[600px] max-w-full bg-[#121212] overflow-hidden xs:flex">
+          <input disabled={isDisabled}
+
+            className="flex-1 min-w-[30px] bg-[#121212] text-white px-4 outline-none placeholder-gray-500"
             placeholder="Search"
-            sx={{
-              backgroundColor: "#333",
-              borderRadius: "20px",
-              paddingLeft: "10px",
-              color: "white",
-              width: "100%",
-              maxWidth: isMobile ? "80%" : "100%",
-            }}
           />
+          <button disabled={isDisabled}
+            className="border-l h-full bg-[#222222] border-[#303030] px-5 flex items-center justify-center hover:bg-[#303030]">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="currentColor"
+              height="24"
+              viewBox="0 0 24 24"
+              width="24"
+              className="text-white"
+            >
+              <path
+                clipRule="evenodd"
+                d="M16.296 16.996a8 8 0 11.707-.708l3.909 3.91-.707.707-3.909-3.909zM18 11a7 7 0 00-14 0 7 7 0 1014 0z"
+                fillRule="evenodd"
+              ></path>
+            </svg>
+          </button>
         </div>
 
         {/* Right Section: Create Button, Notifications, User Avatar */}
-        <div style={{ display: "flex", alignItems: "center" }}>
-          <IconButton color="inherit" sx={{ mr: 2 }}>
-            <CreateIcon />
-          </IconButton>
-          <IconButton color="inherit" sx={{ mr: 2 }}>
-            <NotificationsIcon />
-          </IconButton>
-          <IconButton color="inherit" onClick={handleAvatarClick}>
-            <Avatar sx={{ bgcolor: "gray" }} alt="User Avatar" />
-          </IconButton>
-          <Menu
-            anchorEl={anchorEl}
-            open={Boolean(anchorEl)}
-            onClose={handleAvatarClose}
-            sx={{ mt: "40px" }}
+        <div className="flex items-center">
+          <button disabled={isDisabled} className=" xs:hidden p-2 mr-2 justify-self-end flex items-center justify-center hover:bg-[#303030]">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="currentColor"
+              height="24"
+              viewBox="0 0 24 24"
+              width="24"
+              className="text-white"
+            >
+              <path
+                clipRule="evenodd"
+                d="M16.296 16.996a8 8 0 11.707-.708l3.909 3.91-.707.707-3.909-3.909zM18 11a7 7 0 00-14 0 7 7 0 1014 0z"
+                fillRule="evenodd"
+              ></path>
+            </svg>
+          </button>
+          <button onClick={() => navigate("/update-video")} disabled={isDisabled} className="text-white flex flex-row  bg-[#222222] hover:bg-gray-700 p-2 mr-2 w-[90px] h-[40px] border border-s-2  rounded-3xl border-[#303030]">
+            {/* Replace CreateIcon with SVG */}
+            <span className="pr-1 mt-[1px]"><svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 4v16m8-8H4"
+              />
+            </svg></span>
+            <span className="pr-1 ">Create</span>
+
+          </button >
+          <button disabled={isDisabled} className="text-white hover:bg-gray-700 p-2 rounded-full mr-1">
+            <NotificationsNoneIcon />
+
+          </button>
+
+          <button disabled={isDisabled}
+            onClick={handleAvatarClick}
+            className="text-white hover:bg-gray-700 p-2 rounded-full"
           >
-            <MenuItem onClick={handleAvatarClose}>Profile</MenuItem>
-            <MenuItem onClick={handleAvatarClose}>Logout</MenuItem>
-          </Menu>
+            <div className="w-8 h-8 bg-gray-500 rounded-full" />
+          </button>
+          {anchorEl && (
+            <div
+              className="absolute top-[70px] bg-white rounded shadow-lg py-2"
+              onClick={handleAvatarClose}
+            >
+              <button disabled={isDisabled} className="px-4 py-2 text-gray-700 hover:bg-gray-100">
+                Profile
+              </button>
+              <button disabled={isDisabled} className="px-4 py-2 text-gray-700 hover:bg-gray-100">
+                Logout
+              </button>
+            </div>
+          )}
         </div>
-      </Toolbar>
-    </AppBar>
+      </div>
+    </header>
   );
 };
 

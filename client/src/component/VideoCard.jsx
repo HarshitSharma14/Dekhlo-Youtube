@@ -16,6 +16,7 @@ const VideoCard = ({
   const [isInView, setIsInView] = useState(false);
   const cardRef = useRef(null);
   const videoRef = useRef(null);
+  const hoverTimeoutRef = useRef(null);
 
   const navigate = useNavigate();
 
@@ -58,28 +59,33 @@ const VideoCard = ({
     }
   };
   return (
-    <div
-      ref={cardRef}
-      onClick={() => navigate("/vid")}
-      className="video-card"
-      onMouseEnter={() => {
-        setTimeout(() => {
-          setIsHovered(true);
-          handleHover();
-        }, 400);
-      }}
-      onMouseLeave={() => {
-        setIsHovered(false);
-        handleMouseLeave();
-      }}
-    >
-      <div className="video-card-thumbnail">
+    <div ref={cardRef} onClick={() => navigate("/vid")} className="video-card">
+      <div
+        className="video-card-thumbnail"
+        onMouseEnter={() => {
+          // Clear any previous timeout
+          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+
+          // Set a timeout for hover effect
+          hoverTimeoutRef.current = setTimeout(() => {
+            setIsHovered(true);
+            handleHover();
+          }, 300);
+        }}
+        onMouseLeave={() => {
+          // Clear the timeout on mouse leave
+          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+
+          setIsHovered(false);
+          handleMouseLeave();
+        }}
+      >
         {isInView && (
           <video
             ref={videoRef}
             src={videoUrl} // Start loading the video when in view
             muted
-            // controls
+            controls
             loop
             className={`video-preview ${isHovered ? "hovered" : ""}`}
             preload="auto" // Preload the video to allow buffering

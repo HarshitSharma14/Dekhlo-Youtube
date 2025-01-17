@@ -1,6 +1,8 @@
 import React, { lazy, Suspense } from "react";
 import { Toaster } from "react-hot-toast";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import LoadingPage from "./component/LoadingPage.jsx";
+import { LocalDiningSharp } from "@mui/icons-material";
 
 // Routes imports ****************************************
 const Home = lazy(() => import("./pages/home/Home.jsx"));
@@ -12,7 +14,7 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: (
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<LoadingPage />}>
         <Home />
       </Suspense>
     ),
@@ -22,7 +24,19 @@ const router = createBrowserRouter([
         path: "/",
         element: <HomeContent />,
       },
+      {
+        path: "/subs",
+        element: <Signup />,
+      },
+      {
+        path: "/video",
+        element: <ProfileSetup />,
+      },
     ],
+  },
+  {
+    path: "/loading",
+    element: <LoadingPage />,
   },
   {
     path: "/signup",

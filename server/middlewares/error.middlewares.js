@@ -2,6 +2,11 @@ export const errorHandlerMiddleware = (err, req, res, next) => {
   err.message ||= "Internal Server Error";
   err.statusCode ||= 500;
 
+  if (err.name === "CastError") {
+    err.message = `Invalid Formate of path ${err.path}`;
+    err.statusCode = 400;
+  }
+
   return res.status(err.statusCode).json({
     success: false,
     message: err.message,

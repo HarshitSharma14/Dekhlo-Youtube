@@ -29,7 +29,7 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
   let videosToRecomend = [];
   if (channelId) {
     const user = await Channel.findById(channelId)
-      .populate("following", "videos")
+      .populate("following", "creator")
       .populate("likedVideos")
       .populate("watchHistory");
 

@@ -12,6 +12,7 @@ dotenv.config();
 // importing Routes ******************************
 import authRoutes from "./routes/auth.route.js";
 import channelRoutes from "./routes/channel.route.js";
+import videoRoutes from "./routes/video.route.js";
 
 // Other Imports *********************************
 import { loginSignup } from "./controllers/auth.controller.js";
@@ -56,6 +57,7 @@ passport.use(
 // App Routes ******************************************
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/channel", channelRoutes);
+app.use("/api/v1/video", videoRoutes);
 
 // Single Routes  ******************************
 app.get("/api/v1/home/videos", getVideosForHomePage);

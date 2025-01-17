@@ -19,6 +19,7 @@ import {
 import { useNavigate } from "react-router-dom";
 
 const Header = () => {
+  console.log("header");
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
@@ -118,4 +119,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default React.memo(Header);

@@ -10,15 +10,16 @@ import {
   SubscriptionsRounded as SubscriptionsIcon,
   SubscriptionsOutlined,
 } from "@mui/icons-material";
-import { Button } from "@mui/material";
+import { Box, Button, Drawer } from "@mui/material";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Header from "../../component/Header";
 import Siderbar from "../../component/Siderbar";
 import "./Home.css";
 
 const Home = () => {
+  console.log("home");
   // useStates ************************************************************************
-  const [isHome, setIsHome] = useState(false);
+  const [isVideoPlayer, setIsVideoPlayer] = useState(false);
   const [bigWindow, setBigWindow] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -30,11 +31,11 @@ const Home = () => {
 
   //              <<-- checking for the home route to drill prop in sidebar
   useEffect(() => {
-    if (location.pathname == "/") setIsHome(true);
-    else setIsHome(false);
+    if (location.pathname == "/video") setIsVideoPlayer(true);
+    else setIsVideoPlayer(false);
 
     return () => {
-      setIsHome(false);
+      setIsVideoPlayer(false);
     };
   }, [location.pathname]);
 
@@ -84,7 +85,22 @@ const Home = () => {
 
   return (
     <div className="app-container">
-      <Header />
+      <Box
+        sx={{
+          display: bigWindow && "none",
+          zIndex: "1201",
+          height: "70px",
+          width: "250px",
+          left: "-250px",
+          bgcolor: "blue",
+          position: "absolute",
+          marginLeft: open ? "250px" : "0px",
+          transition: open && "margin-left 225ms",
+        }}
+      >
+        boxdfhadsjfdjf
+      </Box>
+      <Header disabled={false} />
       <div className="main-layout">
         <aside
           className="sidebar "
@@ -93,21 +109,23 @@ const Home = () => {
             alignItems: "center",
           }}
         >
-          {(!open || !bigWindow || !isHome) && <PermanentSideBar />}
-          {open && <Siderbar isHome={isHome} open={open} func={setOpen} />}
+          {!isVideoPlayer && (!open || !bigWindow) && <PermanentSideBar />}
+
+          {/* Always render the Sidebar to avoid the flash effect seeming a component mount time taken */}
+
+          <Siderbar isVideoPlayer={isVideoPlayer} open={open} func={setOpen} />
         </aside>
-        {/* temp button to open sidebare  */}
-        <Button
-          onClick={(e) => {
-            e.preventDefault();
-            setOpen(true);
-          }}
-        >
-          click
-        </Button>
 
         {/* Main content of the pages starts here */}
-        <main className="main-content ">
+        <main className="main-content">
+          {/* temp button to open sidebare  */}
+          <Button
+            onClick={(e) => {
+              setOpen(true);
+            }}
+          >
+            click
+          </Button>
           <Outlet />
         </main>
       </div>

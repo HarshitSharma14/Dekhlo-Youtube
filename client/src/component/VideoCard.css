@@ -23,9 +23,10 @@
   border-radius: 14px;
   overflow: hidden;
   position: relative;
-  transition: border-radius 0.3s ease-in-out;
+  /* transition: border-radius 0.3s ease-in-out; */
 }
 .video-card-thumbnail:hover {
+  transition: border-radius 0.3s ease-in-out;
   border-radius: 0;
 }
 /* Image style for the thumbnail */

@@ -15,22 +15,9 @@
   /* width: 70px; */
   overflow: hidden;
   padding-right: 10px;
-  /* height: calc(100vh - 70px); 
-  position: sticky; 
-  top: 70px; */
-}
-.sidebar:hover {
-  overflow-y: auto; /* Show scrollbar when hovering over sidebar */
-}
-.sidebar ul {
-  list-style: none;
-  padding: 10px;
-}
-
-.sidebar li {
-  padding: 10px;
-  cursor: pointer;
-  border-bottom: 1px solid #eee;
+  height: calc(100vh - 70px); /* Full height minus header */
+  position: sticky; /* Ensures it stays visible when scrolling the main content */
+  top: 70px;
 }
 
 /* Main Content */

@@ -10,7 +10,8 @@ const videoSchema = new Schema(
     },
     category: {
       type: String,
-      enum: videoCategoryEnum, required: true
+      enum: videoCategoryEnum,
+      required: true,
     },
     description: {
       type: String,
@@ -53,7 +54,7 @@ const videoSchema = new Schema(
       type: Boolean,
       default: true,
     },
-
+    embedding: { type: [Number], required: false },
   },
   { timestamps: true }
 );

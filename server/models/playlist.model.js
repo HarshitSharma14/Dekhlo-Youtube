@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 
 const playlistSchema = new Schema(
   {
@@ -18,7 +18,7 @@ const playlistSchema = new Schema(
     ],
     private: {
       type: Boolean,
-      default: false,
+      default: true,
     },
   },
   {
@@ -26,6 +26,6 @@ const playlistSchema = new Schema(
   }
 );
 
-const Playlist = models.Playlist || model("Playlist", playlistSchema);
+const Playlist = model("Playlist", playlistSchema);
 
 export default Playlist;

@@ -3,11 +3,23 @@ import streamifier from 'streamifier';
 
 export const UploadSinglePhotoToCloudinary = async (req) => {
   try {
-    const base64Image = `data:${req.file.mimetype
-      };base64,${req.file.buffer.toString("base64")}`;
+    const result = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: "image",
+          folder: "ProfilePhoto", // Specify the Cloudinary folder
+        },
+        (error, result) => {
+          if (error) {
+            reject(error); // Reject the promise if there's an error
+          } else {
+            resolve(result); // Resolve the promise with the result
+          }
+        }
+      );
 
-    const result = await cloudinary.uploader.upload(base64Image, {
-      resource_type: "image", folder: "profile-photos",
+      // Pipe the file buffer to the Cloudinary stream
+      streamifier.createReadStream(req.file.buffer).pipe(stream);
     });
 
     console.log(result.secure_url.toString());
@@ -20,70 +32,46 @@ export const UploadSinglePhotoToCloudinary = async (req) => {
   }
 };
 export const UploadVideoAndThumbnail = async (req) => {
+  console.log("in uploading space");
   try {
-    // Ensure files are present
-    if (!req.files.video || !req.files.thumbnail) {
-      throw new Error('Video and thumbnail files are required');
-    }
-
-    // Log files to debug
-    console.log('Thumbnail:', req.files.thumbnail[0]);
-    console.log('Video:', req.files.video[0]);
-
-    // Upload thumbnail (Base64 method)
-    const base64Image = `data:${req.files.thumbnail[0].mimetype};base64,${req.files.thumbnail[0].buffer.toString('base64')}`;
-    const thumbnailResult = await cloudinary.uploader.upload(base64Image, {
-      resource_type: 'image',
-      folder: 'thumbnails',
-    });
-    console.log('Thumbnail uploaded:', thumbnailResult.secure_url);
-
-    // Upload video (Stream method)
-    const uploadVideoStream = (buffer, folder) => {
-
-      return new Promise((resolve, reject) => {
-        console.log('Starting video upload...');
-        const uploadStream = cloudinary.uploader.upload_stream(
-          { resource_type: 'video' },
+    // Helper function to upload a single file
+    const uploadFile = (file, options) =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          options,
           (error, result) => {
-            if (error) {
-              console.error('Error in Cloudinary upload stream:', error);
-
-              return reject(error);
-            }
-            console.log('Video uploaded successfully:', result);
-
-            resolve(result);
+            if (error) reject(error);
+            else resolve(result);
           }
         );
-        console.log('Starting to pipe buffer to Cloudinary upload stream...');
-        streamifier.createReadStream(buffer)
-          .on('error', (err) => {
-            console.error('Error while reading the stream:', err);
-          })
-          .pipe(uploadStream)
-          .on('finish', () => {
-            console.log('Stream finished successfully.');
-          })
-          .on('error', (err) => {
-            console.error('Error while piping stream:', err);
-          });
-
+        streamifier.createReadStream(file.buffer).pipe(stream);
       });
-    };
 
-    const videoFileBuffer = req.files.video[0].buffer;
-    const videoResult = await uploadVideoStream(videoFileBuffer, 'videos');
-    console.log('Video uploaded:', videoResult.secure_url);
-
-    // Return the uploaded file URLs
+    console.log("created Stream");
+    // Upload the photo
+    const photoResult = req.files?.thumbnail
+      ? await uploadFile(req.files.thumbnail[0], {
+        resource_type: "image",
+        folder: "Thumbnails", // Store photos in 'Photos' folder
+      })
+      : null;
+    console.log("photo uploaded");
+    // Upload the video
+    const videoResult = req.files?.video
+      ? await uploadFile(req.files.video[0], {
+        resource_type: "video",
+        folder: "Videos", // Store videos in 'Videos' folder
+      })
+      : null;
+    console.log("video uplaoded");
+    // Response with the uploaded file details
     return {
-      message: 'Files uploaded successfully',
-      videoUrlNew: videoResult.secure_url,
-      thumbnailUrlNew: thumbnailResult.secure_url,
+      message: "Files uploaded successfully",
+      videoUrlNew: videoResult?.secure_url || null,
+      thumbnailUrlNew: photoResult?.secure_url || null,
     };
   } catch (error) {
-    console.error('Error uploading files to Cloudinary:', error);
+    console.error("Error uploading files to Cloudinary:", error);
     throw error;
   }
 };

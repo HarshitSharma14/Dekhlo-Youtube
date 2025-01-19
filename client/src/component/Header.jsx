@@ -156,4 +156,4 @@ const Header = ({ isDisabled }) => {
   );
 };
 
-export default Header;
+export default React.memo(Header);

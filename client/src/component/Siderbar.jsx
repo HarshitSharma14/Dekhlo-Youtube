@@ -1,8 +1,12 @@
-import { Box, Button, Drawer } from "@mui/material";
+import { Box, Button, ClickAwayListener, Drawer } from "@mui/material";
+import { blue } from "@mui/material/colors";
 import React, { useEffect, useRef, useState } from "react";
 import { useAppStore } from "../store";
 
-const Sidebar = ({ isHome }) => {
+// const Sidebar = ({ isHome }) => {
+import { useNavigate } from "react-router-dom";
+
+const Sidebar = ({ isVideoPlayer }) => {
   //                                 <<-- open and func are temp, will be removed by redux
 
   const { isSidebarOpen, setIsSidebarOpen } = useAppStore()
@@ -15,13 +19,19 @@ const Sidebar = ({ isHome }) => {
 
   // constants *******************************************************************************
   const sidebarRef = useRef(null);
+  const navigate = useNavigate();
 
   // useEffects ********************************************************************************
+
+  //                  <<-- Always render the Sidebar to avoid the flash effect seeming a component mount time taken
+  // useEffect(() => {
+  //   setIsSidebarOpen();
+  // }, [isSidebarOpen]);
 
   //                   <<-- Checking widnow size to show suitabel side bar
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth >= 1000 && isHome) {
+      if (window.innerWidth >= 1000 && !isVideoPlayer) {
         setDrawerVariant("persistent");
       } else {
         setDrawerVariant("temporary");
@@ -73,10 +83,12 @@ const Sidebar = ({ isHome }) => {
       variant={drawerVariant}
       // open={isDrawerOpen}
       onClose={() => {
-        setIsSidebarOpen();
+        setIsSidebarOpen()
+      }
         // func(false);
-      }} // Only relevant for `temporary`
+      } // Only relevant for `temporary`
       sx={{
+        display: isSidebarOpen ? "block" : "none",
         width: "250px",
         height: "calc(100vh - 70px)",
         top: "70px",
@@ -99,14 +111,34 @@ const Sidebar = ({ isHome }) => {
         }}
       >
         <p>Sidebar Content</p> {/*       <<-- start your sidebar from her  */}
-        {/* <Button
+        <Button
           onClick={() => {
-            setIsDrawerOpen(false);
-            func(false);
+            navigate("/");
+            if (drawerVariant === "temporary") {
+              setIsSidebarOpen()
+            }
           }}
         >
+          home
+        </Button>
+        <Button
+          onClick={() => {
+            navigate("/subs");
+            if (drawerVariant === "temporary") {
+              setIsSidebarOpen()
+            }
+          }}
+        >
+          subs
+        </Button>
+        <Button
+          onClick={() => {
+            setIsSidebarOpen()
+          }
+          }
+        >
           close
-        </Button> */}
+        </Button>
       </Box>
     </Drawer>
   );

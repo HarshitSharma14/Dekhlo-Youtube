@@ -12,6 +12,7 @@ dotenv.config();
 // importing Routes ******************************
 import authRoutes from "./routes/auth.route.js";
 import channelRoutes from "./routes/channel.route.js";
+import videoRoutes from "./routes/video.route.js";
 
 // Other Imports *********************************
 import { loginSignup } from "./controllers/auth.controller.js";
@@ -24,7 +25,7 @@ const databaseURL = process.env.DATABASE_URL;
 const app = express();
 const corsOptions = {
   origin: "http://localhost:5173", // Frontend URL
-  methods: ['GET', 'POST', 'PUT', 'DELETE'], // Methods you want to allow
+  methods: ["GET", "POST", "PUT", "DELETE"], // Methods you want to allow
   credentials: true,
 };
 const clientID = process.env.GOOGLE_CLIENT_ID;
@@ -43,8 +44,8 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
 app.use(cors(corsOptions));
-app.use(express.json({ limit: '100mb' })); // Adjust as needed, e.g., '50mb', '100mb', etc.
-app.use(express.urlencoded({ limit: '100mb', extended: true }));
+app.use(express.json({ limit: "100mb" })); // Adjust as needed, e.g., '50mb', '100mb', etc.
+app.use(express.urlencoded({ limit: "100mb", extended: true }));
 
 passport.use(
   new GoogleStrategy(
@@ -60,9 +61,10 @@ passport.use(
 // App Routes ******************************************
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/channel", channelRoutes);
+app.use("/api/v1/video", videoRoutes);
 
 // Single Routes  ******************************
-app.get("/api/v1/home/videos", getVideosForHomePage);
+app.post("/api/v1/home/videos", getVideosForHomePage);
 
 app.get("/", (_, res) => {
   console.log(JWT_SECRET);

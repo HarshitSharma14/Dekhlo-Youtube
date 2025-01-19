@@ -41,13 +41,17 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
 
     const followedChannelVideosNotWatched = await Video.find({
       channel: {
-        $in: user.following.map((follow) => follow.creator), // <<<<<<<<<<<<<<<-------------- here too
-      } /* check it */,
+        $in: [...user.following.map((follow) => follow.creator)],
+        $nin: channelId, //          <<<<<<<<<<<<<<<-------------- here too
+      },
       _id: {
         $nin: [
           ...user.watchHistory.map((watched) => watched._id),
           ...seenVideoIds,
         ],
+      },
+      isPrivate: {
+        $nin: true,
       },
     })
       .sort({ views: -1 })
@@ -60,13 +64,19 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
     // +console.log("followed channel vids", followedChannelVideosNotWatched);
 
     const likedChannelVideosNotWatched = await Video.find({
-      channel: { $in: user.likedVideos.map((video) => video.channel) },
+      channel: {
+        $in: [...user.likedVideos.map((video) => video.channel)],
+        $nin: channelId, //          <<<<<<<<<<<<<<<-------------- here too
+      },
       _id: {
         $nin: [
           ...user.watchHistory.map((watched) => watched._id),
           ...seenVideoIds,
           ...followedChannelVideosNotWatched.map((vid) => vid._id),
         ],
+      },
+      isPrivate: {
+        $nin: true,
       },
     })
       .sort({ views: -1 }) // Sort by views (most popular first)
@@ -100,7 +110,13 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
   // If unauthenticated or not enough videos, fetch trending videos
   if (!channelId || videosToRecomend.length < limit) {
     const trendingVideos = await Video.find({
-      _id: { $nin: [...videosToRecomend.map((v) => v._id), ...seenVideoIds] }, // Exclude already selected videos
+      channel: {
+        $nin: channelId,
+      },
+      _id: { $nin: [...videosToRecomend.map((v) => v._id), ...seenVideoIds] },
+      isPrivate: {
+        $nin: true,
+      },
     })
       .sort({ views: -1, uploadDate: -1 })
       .limit(limit - videosToRecomend.length)

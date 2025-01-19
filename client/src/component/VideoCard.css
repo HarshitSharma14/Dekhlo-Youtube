@@ -25,10 +25,13 @@
   position: relative;
   /* transition: border-radius 0.3s ease-in-out; */
 }
-.video-card-thumbnail:hover {
+.thumbnail-transition {
   transition: border-radius 0.3s ease-in-out;
   border-radius: 0;
 }
+/* .video-card-thumbnail:hover {
+ 
+} */
 /* Image style for the thumbnail */
 .video-card-thumbnail img {
   width: 100%;

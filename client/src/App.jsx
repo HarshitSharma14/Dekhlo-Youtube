@@ -1,9 +1,14 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  useLocation,
+} from "react-router-dom";
 import LoadingPage from "./component/LoadingPage.jsx";
 import { LocalDiningSharp } from "@mui/icons-material";
 import UpdateVideo from "./pages/home/UpdateVideo.jsx";
+import { useAppStore } from "./store/index.js";
 
 // Routes imports ****************************************
 const Home = lazy(() => import("./pages/home/Home.jsx"));

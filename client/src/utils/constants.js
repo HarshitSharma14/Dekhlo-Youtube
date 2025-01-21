@@ -21,5 +21,6 @@ export const LOGIN_ROUTE = `${AUTH_ROUTE}/login`;
 export const CHANNEL_ROUTE = `${server}/channel`;
 export const UPDATE_CHANNEL_INFO_ROUTE = `${CHANNEL_ROUTE}/update-profile`;
 export const GET_CHANNEL_DETAILS = `${CHANNEL_ROUTE}/get-info`;
-
 export const UPDATE_VIDEO_INFO = `${CHANNEL_ROUTE}/update-videoinfo`;
+
+export const VIDEO_ROUTE = `${server}/video`;

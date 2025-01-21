@@ -9,12 +9,15 @@ import LoadingPage from "./component/LoadingPage.jsx";
 import { LocalDiningSharp } from "@mui/icons-material";
 import UpdateVideo from "./pages/home/UpdateVideo.jsx";
 import { useAppStore } from "./store/index.js";
+import VideoPlayer from "./pages/home/VideoPlayer.jsx";
+import ChannelLandingPage from "./pages/channel/ChannelLandingPage.jsx";
 
 // Routes imports ****************************************
 const Home = lazy(() => import("./pages/home/Home.jsx"));
 const Signup = lazy(() => import("./pages/auth/Signup.jsx"));
 const ProfileSetup = lazy(() => import("./pages/auth/ProfileSetup.jsx"));
 const HomeContent = lazy(() => import("./pages/home/HomeContent.jsx"));
+// const UpdateVideo = lazy(() => import("./pages/home/UpdateVideo.jsx"));
 
 const router = createBrowserRouter([
   {
@@ -34,6 +37,23 @@ const router = createBrowserRouter([
       {
         path: "/subs",
         element: <ProfileSetup />,
+      },
+
+      {
+        path: "/video-player/:videoId",
+        element: (
+          <Suspense fallback={<div>Loading...</div>}>
+            <VideoPlayer />
+          </Suspense>
+        ),
+      },
+      {
+        path: "/channel/:channelId",
+        element: (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ChannelLandingPage />
+          </Suspense>
+        ),
       },
     ],
   },
@@ -62,6 +82,14 @@ const router = createBrowserRouter([
     element: (
       <Suspense fallback={<div>Loading...</div>}>
         <UpdateVideo />{" "}
+      </Suspense>
+    ),
+  },
+  {
+    path: "/video-player/:videoId",
+    element: (
+      <Suspense fallback={<div>Loading...</div>}>
+        <VideoPlayer />{" "}
       </Suspense>
     ),
   },

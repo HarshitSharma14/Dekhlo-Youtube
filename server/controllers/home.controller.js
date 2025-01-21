@@ -6,12 +6,6 @@ import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
 
 export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
-  // const v = await Channel.findById("678424c15e73e9479fc1231d")
-  //   .populate("following", "creator")                             <<<<<<<<--------------- check it for population
-  //   .populate("likedVideos")
-  //   .populate("watchHistory");
-  // console.log(v.following);
-  // res.status(200).json({ v });
   console.log("in");
   const token = req.cookies.jwt;
   let channelId;
@@ -24,15 +18,21 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
   // let seenIds = [];
   // seenIds = req.body;
   // console.log(seenIds);
-  console.log(req.body);
+  // console.log(req.body);
   const { seenIds = [] } = req.body;
   const limit = 20;
-  const totalVideoCount = await Video.countDocuments();
-  const totalPages = Math.ceil(totalVideoCount / limit) || 0;
+  let totalVideoCount = 0;
+  totalVideoCount = await Video.countDocuments({});
   const seenVideoIds = seenIds;
 
   let videosToRecomend = [];
   if (channelId) {
+    totalVideoCount = await Video.countDocuments({
+      channel: {
+        $nin: channelId,
+      },
+    });
+    // console.log(totalVideoCount);
     console.log("user loggdd in");
     const user = await Channel.findById(channelId)
       .populate("following", "creator")
@@ -129,7 +129,8 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
 
     videosToRecomend = [...videosToRecomend, ...trendingVideos];
   }
-
+  const totalPages = Math.ceil(totalVideoCount / limit) || 0;
+  console.log("video to send", videosToRecomend);
   res.status(200).json({
     videos: videosToRecomend,
     totalPages,

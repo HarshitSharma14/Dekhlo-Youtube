@@ -20,7 +20,7 @@ const LoadingPage = () => {
 
   return (
     <div className="app-container">
-      <Header disabled={true} />
+      <Header isDisabled={true} />
       <div className="main-layout">
         <aside
           className="sidebar "
@@ -33,7 +33,7 @@ const LoadingPage = () => {
 
         <main
           className="main-content"
-          //   style={{ borderLeft: "1px solid #b3b3b3" }}
+        //   style={{ borderLeft: "1px solid #b3b3b3" }}
         >
           <Box
             sx={{

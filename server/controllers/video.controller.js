@@ -6,8 +6,9 @@ import jwt from "jsonwebtoken";
 
 // view video *************************************************************
 export const getVideo = AsyncTryCatch(async (req, res, next) => {
-  const { videoId } = req.params;
 
+  const { videoId } = req.params;
+  console.log(videoId)
   const video = await Video.findByIdAndUpdate(
     videoId,
     { $inc: { views: 1 } },
@@ -20,7 +21,7 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
   await Channel.findByIdAndUpdate(video.channel, { $inc: { views: 1 } });
 
   const token = req.cookies.jwt;
-  if (!token) return res.status(200);
+  if (!token) return res.status(200).json({ video });
 
   const decodedData = jwt.verify(token, JWT_SECRET);
   await Channel.findByIdAndUpdate(decodedData.channelId, {

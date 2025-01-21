@@ -96,10 +96,12 @@ const Sidebar = ({ isVideoPlayer }) => {
         toggelSidebar();
       }}
       sx={{
-        display: isSidebarOpen ? "block" : "none",
+        display: drawerVariant === "persistent" && !isSidebarOpen && "none",
+        // display: isSidebarOpen ? "block" : "none",
         width: "250px",
         height: "calc(100vh - 70px)",
         top: "70px",
+
         "& .MuiDrawer-paper": {
           width: "250px",
           background: "#121212",

@@ -4,6 +4,7 @@ import { formatUploadTime } from "../utils/helper.js";
 import { useNavigate } from "react-router-dom";
 
 const VideoCard = ({
+  id,
   thumbnail,
   title,
   channelName,
@@ -84,13 +85,17 @@ const VideoCard = ({
   return (
     <div
       ref={cardRef}
-      onClick={() => navigate("/vid")}
+      // onClick={() => navigate("/vid")}
       className="video-card"
+      style={{
+        height: "320px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+      }}
       onMouseEnter={() => {
-        // Clear any previous timeout
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
 
-        // Set a timeout for hover effect
         hoverTimeoutRef.current = setTimeout(() => {
           setIsHovered(true);
           handleHover();
@@ -105,15 +110,19 @@ const VideoCard = ({
       }}
     >
       <div
+        style={{
+          height: "70%",
+        }}
         className={`video-card-thumbnail ${
           isHovered ? "thumbnail-transition" : ""
         }`}
       >
         {isInView && (
           <div
-            className="video-container"
+            className={`video-container ${isHovered ? "hovered" : ""}`}
             style={{
               position: "relative",
+              width: "100%",
             }}
           >
             <video
@@ -204,6 +213,10 @@ const VideoCard = ({
           alt={title}
           className={`thumbnail ${isHovered ? "hidden" : ""}`}
           loading="lazy"
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
         />
       </div>
 

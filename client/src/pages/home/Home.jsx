@@ -7,6 +7,7 @@ import {
   HistoryOutlined,
   HomeRounded as HomeIcon,
   HomeOutlined,
+  Menu as MenuIcon,
   SubscriptionsRounded as SubscriptionsIcon,
   SubscriptionsOutlined,
 } from "@mui/icons-material";
@@ -16,13 +17,13 @@ import Header from "../../component/Header";
 import Siderbar from "../../component/Siderbar";
 import "./Home.css";
 import { useAppStore } from "../../store";
+import { VIDEO_ROUTE } from "../../utils/constants";
 
 const Home = () => {
   // console.log("home");
   // useStates ************************************************************************
   const [isVideoPlayer, setIsVideoPlayer] = useState(false);
   const [bigWindow, setBigWindow] = useState(false);
-  const [open, setOpen] = useState(false);
 
   // constants *************************************************************************
   const location = useLocation();
@@ -51,6 +52,7 @@ const Home = () => {
       setSidebarActivity(activeOn.isSubscriptionVideos);
     else if (location.pathname == "/history")
       setSidebarActivity(activeOn.isWatchHistory);
+    else setSidebarActivity(null);
   }, [location.pathname]);
 
   //              <<-- checking for the home route to drill prop in sidebar
@@ -107,8 +109,37 @@ const Home = () => {
     };
   }, []);
 
+  const containerRef = useRef(null);
+  useEffect(() => {
+    console.log("elelment", containerRef.current);
+    const handleScroll = () => {
+      const element = containerRef.current;
+      if (element) {
+        const isAtBottom =
+          element.scrollHeight - element.scrollTop === element.clientHeight;
+        if (isAtBottom) {
+          console.log("Reached the end of the scroll bar!");
+        }
+      }
+      console.log("scrolling");
+    };
+    const element = containerRef.current;
+    if (element) {
+      element.addEventListener("scroll", handleScroll);
+    }
+
+    return () => {
+      if (element) {
+        element.removeEventListener("scroll", handleScroll);
+      }
+    };
+  }, []);
+
+  // function for onclick for a video card
+
   return (
-    <div className="app-container">
+    <div className="app-container" ref={containerRef}>
+      {/* <Header isDisabled={false} /> */}
       <Box
         sx={{
           display: bigWindow && !isVideoPlayer && "none",
@@ -119,24 +150,33 @@ const Home = () => {
           bgcolor: "#121212",
           position: "absolute",
           marginLeft: isSidebarOpen ? "250px" : "0px",
-          transition: isSidebarOpen && "margin-left 200ms",
+          transition: "margin-left 200ms",
         }}
       >
         <div
+          className="flex items-center ml-4 "
           style={{
-            display: "flex",
-            width: "100%",
             height: "100%",
-            alignItems: "center",
-            justifyContent: "space-around",
-            padding: "10px",
           }}
         >
-          <div>ham icon</div>
-          <div>Youtueb logo</div>
+          <button
+            onClick={toggelSidebar}
+            aria-label="menu"
+            className=" text-white hover:bg-gray-700  rounded-full w-10 h-10"
+          >
+            <MenuIcon fontSize="medium" />
+          </button>
+          <button
+            onClick={() => navigate("/")}
+            className="w-[123px] h-[56px] cursor-default text-white font-bold text-2xl"
+          >
+            <span className="yt-icon-shape flex justify-center items-center">
+              <img src="../../assets/logo.png" className="w-[93px] h-[20px]" />
+            </span>
+          </button>
         </div>
       </Box>
-      <Header disabled={false} />
+      <Header isDisabled={false} />
       <div className="main-layout">
         <aside
           className="sidebar "
@@ -156,15 +196,6 @@ const Home = () => {
 
         {/* Main content of the pages starts here */}
         <main className="main-content">
-          {/* temp button to open sidebare  */}
-          <Button
-            onClick={(e) => {
-              setOpen(true);
-              toggelSidebar();
-            }}
-          >
-            click
-          </Button>
           <Outlet />
         </main>
       </div>
@@ -207,7 +238,7 @@ const PermanentSideBar = () => {
         isFilled={sidebarActivity.isSubscriptionVideos}
         filledIcon={<SubscriptionsIcon />}
         outlineIcon={<SubscriptionsOutlined />}
-        navigateLink={"/subs"}
+        navigateLink={"/channel/1"}
         name={"Subs"}
         activeOn={activeOn.isSubscriptionVideos}
       />

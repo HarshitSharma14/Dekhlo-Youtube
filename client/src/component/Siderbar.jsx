@@ -1,31 +1,41 @@
-import { Box, Button, ClickAwayListener, Drawer } from "@mui/material";
-import { blue } from "@mui/material/colors";
+import { Box, Button, Drawer } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
-import { useAppStore } from "../store";
-
-// const Sidebar = ({ isHome }) => {
 import { useNavigate } from "react-router-dom";
+import { useAppStore } from "../store";
+import "./Sidebar.css";
 
+import {
+  FormatListBulleted as FormatListBulletedIcon,
+  FormatListBulletedOutlined,
+  History as HistoryIcon,
+  HistoryOutlined,
+  HomeRounded as HomeIcon,
+  HomeOutlined,
+  PlaylistPlay as PlaylistPlayIcon,
+  PlaylistPlayOutlined,
+  Settings,
+  SubscriptionsRounded as SubscriptionsIcon,
+  SubscriptionsOutlined,
+  ThumbUp as ThumbUpIcon,
+  ThumbUpOutlined,
+  WatchLater as WatchLaterIcon,
+  WatchLaterOutlined,
+} from "@mui/icons-material";
 const Sidebar = ({ isVideoPlayer }) => {
   //                                 <<-- open and func are temp, will be removed by redux
 
-  const { isSidebarOpen, setIsSidebarOpen } = useAppStore()
-
-
-
   // useState *******************************************************************************
   const [drawerVariant, setDrawerVariant] = useState("persistent");
-  // const [isDrawerOpen, setIsDrawerOpen] = useState(isSidebarOpen);
 
   // constants *******************************************************************************
   const sidebarRef = useRef(null);
-  const navigate = useNavigate();
+  const { isSidebarOpen, toggelSidebar, sidebarActivity } = useAppStore();
 
   // useEffects ********************************************************************************
 
-  //                  <<-- Always render the Sidebar to avoid the flash effect seeming a component mount time taken
+  //                  <<-- Always render the Sidebar to avoid the flash effect seeming a component mount time taken not neccessory after use of zustang
   // useEffect(() => {
-  //   setIsSidebarOpen();
+  //   setIsDrawerOpen(open);
   // }, [isSidebarOpen]);
 
   //                   <<-- Checking widnow size to show suitabel side bar
@@ -81,21 +91,20 @@ const Sidebar = ({ isVideoPlayer }) => {
   return (
     <Drawer
       variant={drawerVariant}
-      // open={isDrawerOpen}
+      open={isSidebarOpen}
       onClose={() => {
-        setIsSidebarOpen()
-      }
-        // func(false);
-      } // Only relevant for `temporary`
+        toggelSidebar();
+      }}
       sx={{
-        display: isSidebarOpen ? "block" : "none",
+        display: drawerVariant === "persistent" && !isSidebarOpen && "none",
+        // display: isSidebarOpen ? "block" : "none",
         width: "250px",
         height: "calc(100vh - 70px)",
         top: "70px",
+
         "& .MuiDrawer-paper": {
           width: "250px",
-          // bgcolor: "blue",
-          bgcolor: "transparent",
+          background: "#121212",
           height: "calc(100vh - 70px)",
           position: "relative",
         },
@@ -110,38 +119,147 @@ const Sidebar = ({ isVideoPlayer }) => {
           height: "100%",
         }}
       >
-        <p>Sidebar Content</p> {/*       <<-- start your sidebar from her  */}
-        <Button
-          onClick={() => {
-            navigate("/");
-            if (drawerVariant === "temporary") {
-              setIsSidebarOpen()
-            }
-          }}
+        <div className="section top-section">
+          <SidebarNavigatioButtons
+            isFilled={sidebarActivity.isHome}
+            filledIcon={<HomeIcon />}
+            outlineIcon={<HomeOutlined />}
+            navigateLink={"/"}
+            name={"Home"}
+            drawerVariant={drawerVariant}
+          />
+          <SidebarNavigatioButtons
+            isFilled={sidebarActivity.isSubscriptionVideos}
+            filledIcon={<SubscriptionsIcon />}
+            outlineIcon={<SubscriptionsOutlined />}
+            navigateLink={"/subs"}
+            name={"Subs"}
+            drawerVariant={drawerVariant}
+          />
+        </div>
+        <div className="section you-section">
+          <p>You</p>
+          <SidebarNavigatioButtons
+            isFilled={sidebarActivity.isWatchHistory}
+            filledIcon={<HistoryIcon />}
+            outlineIcon={<HistoryOutlined />}
+            navigateLink={"/history"}
+            name={"History"}
+            drawerVariant={drawerVariant}
+          />
+          <SidebarNavigatioButtons
+            isFilled={sidebarActivity.isPlaylist}
+            filledIcon={<PlaylistPlayIcon />}
+            outlineIcon={<PlaylistPlayOutlined />}
+            navigateLink={"/playlist"}
+            name={"Playlist"}
+            drawerVariant={drawerVariant}
+          />
+          <SidebarNavigatioButtons
+            isFilled={sidebarActivity.isWatchLater}
+            filledIcon={<WatchLaterIcon />}
+            outlineIcon={<WatchLaterOutlined />}
+            navigateLink={"/watch-later"}
+            name={"Watch Later"}
+            drawerVariant={drawerVariant}
+          />
+          <SidebarNavigatioButtons
+            isFilled={sidebarActivity.isLikedVideos}
+            filledIcon={<ThumbUpIcon />}
+            outlineIcon={<ThumbUpOutlined />}
+            navigateLink={"/watch-later"}
+            name={"Liked Videos"}
+            drawerVariant={drawerVariant}
+          />
+        </div>
+        <div
+          className="section subscription-section"
+          style={{ border: "none" }}
         >
-          home
-        </Button>
-        <Button
-          onClick={() => {
-            navigate("/subs");
-            if (drawerVariant === "temporary") {
-              setIsSidebarOpen()
-            }
-          }}
-        >
-          subs
-        </Button>
-        <Button
-          onClick={() => {
-            setIsSidebarOpen()
-          }
-          }
-        >
-          close
-        </Button>
+          <p>Others</p>
+          <SidebarNavigatioButtons
+            isFilled={sidebarActivity.isSubscriptionChannels}
+            filledIcon={<FormatListBulletedIcon />}
+            outlineIcon={<FormatListBulletedOutlined />}
+            navigateLink={"/subscribed-channels"}
+            name={"All Subscriptions"}
+            drawerVariant={drawerVariant}
+          />
+          <SidebarNavigatioButtons
+            isFilled={sidebarActivity.isSettings}
+            filledIcon={<Settings />}
+            outlineIcon={<Settings />}
+            navigateLink={"/history"}
+            name={"Settings"}
+            drawerVariant={drawerVariant}
+          />
+        </div>
+        {/* <div className="section setting-section" style={{ border: "none" }}>
+         
+        </div> */}
+        {/* <div></div>
+        <div></div> */}
       </Box>
     </Drawer>
   );
 };
 
 export default Sidebar;
+
+const SidebarNavigatioButtons = ({
+  name,
+  filledIcon,
+  outlineIcon,
+  navigateLink,
+  isFilled,
+  drawerVariant,
+}) => {
+  // constants *******************************************
+  const navigate = useNavigate();
+  const { toggelSidebar } = useAppStore();
+
+  const sidebarIconsStyleConfig = {
+    width: "25px",
+    height: "25px",
+    mb: "3px",
+    color: "white",
+  };
+  const sidebarButtonStyleConfig = {
+    color: "#b3b3b3",
+    display: "flex",
+    borderRadius: "10px",
+    justifyContent: "flex-start",
+    alignContent: "center",
+    alignItems: "center",
+    gap: "30px",
+    width: "100%",
+    height: "40px",
+    mb: "1px",
+    bgcolor: isFilled ? "#272727" : "transparent",
+    "&: hover": {
+      bgcolor: "#3a3a3a", // Hover background color (you can choose any color)
+    },
+  };
+  const sidebarButtonNamesStyleConfig = {
+    fontSize: "13px",
+    fontWeight: "500",
+    color: "white",
+  };
+
+  return (
+    <Button
+      onClick={() => {
+        navigate(navigateLink);
+        if (drawerVariant === "temporary") toggelSidebar();
+      }}
+      sx={sidebarButtonStyleConfig}
+    >
+      {isFilled
+        ? React.cloneElement(filledIcon, {
+            sx: sidebarIconsStyleConfig,
+          })
+        : React.cloneElement(outlineIcon, { sx: sidebarIconsStyleConfig })}
+      <p style={sidebarButtonNamesStyleConfig}>{name}</p>
+    </Button>
+  );
+};

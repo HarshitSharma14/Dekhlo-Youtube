@@ -128,6 +128,9 @@ export const getSubscribedChannelVideos = AsyncTryCatch(
       channel: {
         $in: channel.following.map((follow) => follow.creator),
       },
+      isPrivate: {
+        $nin: true,
+      },
     })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)

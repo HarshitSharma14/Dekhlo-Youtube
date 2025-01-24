@@ -1,10 +1,17 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  useLocation,
+} from "react-router-dom";
 import LoadingPage from "./component/LoadingPage.jsx";
 import { LocalDiningSharp } from "@mui/icons-material";
 import UpdateVideo from "./pages/home/UpdateVideo.jsx";
+import { useAppStore } from "./store/index.js";
 import VideoPlayer from "./pages/home/VideoPlayer.jsx";
+import ChannelLandingPage from "./pages/channel/ChannelLandingPage.jsx";
+import ChannelVideos from "./pages/channel/ChannelVideos.jsx";
 
 // Routes imports ****************************************
 const Home = lazy(() => import("./pages/home/Home.jsx"));
@@ -32,14 +39,41 @@ const router = createBrowserRouter([
         path: "/subs",
         element: <ProfileSetup />,
       },
+
       {
         path: "/video-player/:videoId",
         element: (
           <Suspense fallback={<div>Loading...</div>}>
-            <VideoPlayer />{" "}
+            <VideoPlayer />
           </Suspense>
         ),
-      }
+      },
+      {
+        path: "/channel/:channelId/",
+        element: (
+          <Suspense fallback={<div>Loading...</div>}>
+            <ChannelLandingPage />
+          </Suspense>
+        ),
+        children: [
+          {
+            path: "videos",
+            element: (
+              <Suspense fallback={<div>Loading...</div>}>
+                <HomeContent />
+              </Suspense>
+            ),
+          },
+          {
+            path: "playlist",
+            element: (
+              <Suspense fallback={<div>Loading...</div>}>
+                <ChannelVideos />
+              </Suspense>
+            ),
+          },
+        ],
+      },
     ],
   },
   {

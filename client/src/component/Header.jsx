@@ -10,8 +10,8 @@ import {
   MenuItem,
   useMediaQuery,
 } from "@mui/material";
-import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
-import MenuIcon from '@mui/icons-material/Menu';
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import MenuIcon from "@mui/icons-material/Menu";
 import {
   Search as SearchIcon,
   AddCircle as CreateIcon,
@@ -33,26 +33,22 @@ const Header = ({ isDisabled }) => {
     setAnchorEl(null);
   };
 
-  const { isSidebarOpen, setIsSidebarOpen } = useAppStore()
-
-
-
+  const { toggelSidebar } = useAppStore();
 
   return (
-    <header className="sticky top-0 bg-[#121212] shadow-none h-[70px]">
+    <header className="sticky top-0 bg-[#121212] shadow-none h-[70px] z-10">
       <div className="flex h-full px-4 justify-between items-center">
         {/* Left Section: Hamburger Icon & Logo */}
         <div className="flex items-center">
           <button
             disabled={isDisabled}
-            onClick={setIsSidebarOpen}
+            onClick={toggelSidebar}
             aria-label="menu"
-            className="mr-2 text-white hover:bg-gray-700 ml-2 rounded-full"
+            className=" text-white hover:bg-gray-700  rounded-full w-10 h-10"
           >
             <MenuIcon fontSize="medium" />
           </button>
           <button
-
             disabled={isDisabled}
             onClick={() => navigate("/")}
             className="w-[123px] h-[56px] cursor-default text-white font-bold text-2xl"
@@ -65,13 +61,15 @@ const Header = ({ isDisabled }) => {
 
         {/* Center Section: Search Bar */}
         <div className="hidden items-center border mr-1 border-s-2 border-[#303030] h-[40px] rounded-3xl w-[600px] max-w-full bg-[#121212] overflow-hidden xs:flex">
-          <input disabled={isDisabled}
-
+          <input
+            disabled={isDisabled}
             className="flex-1 min-w-[30px] bg-[#121212] text-white px-4 outline-none placeholder-gray-500"
             placeholder="Search"
           />
-          <button disabled={isDisabled}
-            className="border-l h-full bg-[#222222] border-[#303030] px-5 flex items-center justify-center hover:bg-[#303030]">
+          <button
+            disabled={isDisabled}
+            className="border-l h-full bg-[#222222] border-[#303030] px-5 flex items-center justify-center hover:bg-[#303030]"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="currentColor"
@@ -91,7 +89,10 @@ const Header = ({ isDisabled }) => {
 
         {/* Right Section: Create Button, Notifications, User Avatar */}
         <div className="flex items-center">
-          <button disabled={isDisabled} className=" xs:hidden p-2 mr-2 justify-self-end flex items-center justify-center hover:bg-[#303030]">
+          <button
+            disabled={isDisabled}
+            className=" xs:hidden p-2 mr-2 justify-self-end flex items-center justify-center hover:bg-[#303030]"
+          >
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="currentColor"
@@ -107,31 +108,39 @@ const Header = ({ isDisabled }) => {
               ></path>
             </svg>
           </button>
-          <button onClick={() => navigate("/update-video")} disabled={isDisabled} className="text-white flex flex-row  bg-[#222222] hover:bg-gray-700 p-2 mr-2 w-[90px] h-[40px] border border-s-2  rounded-3xl border-[#303030]">
+          <button
+            onClick={() => navigate("/update-video")}
+            disabled={isDisabled}
+            className="text-white flex flex-row  bg-[#222222] hover:bg-gray-700 p-2 mr-2 w-[90px] h-[40px] border border-s-2  rounded-3xl border-[#303030]"
+          >
             {/* Replace CreateIcon with SVG */}
-            <span className="pr-1 mt-[1px]"><svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 4v16m8-8H4"
-              />
-            </svg></span>
+            <span className="pr-1 mt-[1px]">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M12 4v16m8-8H4"
+                />
+              </svg>
+            </span>
             <span className="pr-1 ">Create</span>
-
-          </button >
-          <button disabled={isDisabled} className="text-white hover:bg-gray-700 p-2 rounded-full mr-1">
+          </button>
+          <button
+            disabled={isDisabled}
+            className="text-white hover:bg-gray-700 p-2 rounded-full mr-1"
+          >
             <NotificationsNoneIcon />
-
           </button>
 
-          <button disabled={isDisabled}
+          <button
+            disabled={isDisabled}
             onClick={handleAvatarClick}
             className="text-white hover:bg-gray-700 p-2 rounded-full"
           >
@@ -142,10 +151,16 @@ const Header = ({ isDisabled }) => {
               className="absolute top-[70px] bg-white rounded shadow-lg py-2"
               onClick={handleAvatarClose}
             >
-              <button disabled={isDisabled} className="px-4 py-2 text-gray-700 hover:bg-gray-100">
+              <button
+                disabled={isDisabled}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100"
+              >
                 Profile
               </button>
-              <button disabled={isDisabled} className="px-4 py-2 text-gray-700 hover:bg-gray-100">
+              <button
+                disabled={isDisabled}
+                className="px-4 py-2 text-gray-700 hover:bg-gray-100"
+              >
                 Logout
               </button>
             </div>

@@ -1,0 +1,10 @@
+.section {
+  border-bottom: 1px solid #d0cfcf52;
+  padding-bottom: 15px;
+  margin-bottom: 15px;
+}
+
+.section > p {
+  margin: 14px 0;
+  font-size: 14px;
+}

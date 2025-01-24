@@ -61,7 +61,7 @@ const VideoCard = ({
     }
   };
   return (
-    <div ref={cardRef} onClick={() => navigate("/vid")} className="video-card">
+    <div ref={cardRef} onClick={() => navigate(`/video-player/${id}`)} className="video-card">
       <div
         className="video-card-thumbnail"
         onMouseEnter={() => {

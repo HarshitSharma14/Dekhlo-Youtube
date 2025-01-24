@@ -20,9 +20,12 @@ const VideoPlayer = () => {
         getVideoData()
     }, [])
 
+    const id = useParams().videoId
     return (
-        <div className='w-screen h-screen bg-red'>
 
+
+        <div className='w-screen h-screen bg-red'>
+            {id}
         </div>
     )
 }

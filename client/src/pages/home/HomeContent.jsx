@@ -391,6 +391,7 @@ const HomeContent = () => {
           "@media(max-width: 680px)": { justifyContent: "center" },
         }}
 
+
       >
         {videos.map((video) => (
           <VideoCard

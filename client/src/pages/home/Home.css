@@ -37,7 +37,7 @@
 .main-content {
   flex: 1;
   padding-top: 0;
-  padding-left: 1vw;
+  padding-left: 0;
   transition: all 225ms ease-out;
 }
 

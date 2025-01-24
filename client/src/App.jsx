@@ -11,6 +11,7 @@ import UpdateVideo from "./pages/home/UpdateVideo.jsx";
 import { useAppStore } from "./store/index.js";
 import VideoPlayer from "./pages/home/VideoPlayer.jsx";
 import ChannelLandingPage from "./pages/channel/ChannelLandingPage.jsx";
+import ChannelVideos from "./pages/channel/ChannelVideos.jsx";
 
 // Routes imports ****************************************
 const Home = lazy(() => import("./pages/home/Home.jsx"));
@@ -48,12 +49,30 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/channel/:channelId",
+        path: "/channel/:channelId/",
         element: (
           <Suspense fallback={<div>Loading...</div>}>
             <ChannelLandingPage />
           </Suspense>
         ),
+        children: [
+          {
+            path: "videos",
+            element: (
+              <Suspense fallback={<div>Loading...</div>}>
+                <HomeContent />
+              </Suspense>
+            ),
+          },
+          {
+            path: "playlist",
+            element: (
+              <Suspense fallback={<div>Loading...</div>}>
+                <ChannelVideos />
+              </Suspense>
+            ),
+          },
+        ],
       },
     ],
   },

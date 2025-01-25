@@ -12,6 +12,7 @@ const VideoCard = ({
   uploadTime,
   channelProfile,
   videoUrl,
+  isInChannel = false,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isInView, setIsInView] = useState(false);
@@ -88,7 +89,7 @@ const VideoCard = ({
       // onClick={() => navigate("/vid")}
       className="video-card"
       style={{
-        height: "320px",
+        height: isInChannel ? "270px" : "320px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
@@ -221,17 +222,21 @@ const VideoCard = ({
       </div>
 
       <div className="video-card-info">
-        <div className="video-card-avatar">
-          <img
-            src={channelProfile}
-            alt={channelName}
-            className="channel-avatar"
-          />
-        </div>
+        {!isInChannel && (
+          <div className="video-card-avatar">
+            <img
+              src={channelProfile}
+              alt={channelName}
+              className="channel-avatar"
+            />
+          </div>
+        )}
         <div className="video-card-details">
           <h3 className="video-card-title">{title}</h3>
           <div className="meta">
-            <p className="video-card-channel">{channelName}</p>
+            {!isInChannel && (
+              <p className="video-card-channel">{channelName}</p>
+            )}
             <p className="video-card-meta">
               {views} views • {formatUploadTime(uploadTime)}
             </p>

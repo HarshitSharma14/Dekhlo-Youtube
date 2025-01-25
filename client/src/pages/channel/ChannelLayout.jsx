@@ -6,11 +6,17 @@ import {
   AttachMoneyOutlined,
   NotificationAddOutlined,
 } from "@mui/icons-material";
-const ChannelLandingPage = () => {
+import { isCancel } from "axios";
+const ChannelLayout = () => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState(-10);
   const [hoveredTab, setHoveredTab] = useState(activeTab);
+  const [sortNo, setSortNo] = useState(0);
   const navigate = useNavigate();
+
+  const buttonsForSorting = ["Latest", "Popular", "Oldest"];
+  const sortingFields = ["createdAt_desc", "views_desc", "createdAt_acs"];
+
   useEffect(() => {
     if (
       location.pathname.split("/")[location.pathname.split("/").length - 1] ===
@@ -27,6 +33,7 @@ const ChannelLandingPage = () => {
       setHoveredTab(1);
     }
   }, [location.pathname]);
+
   return (
     <Box
       sx={{
@@ -40,7 +47,7 @@ const ChannelLandingPage = () => {
         sx={{
           // bgcolor: "blue",
           width: "90%",
-          margin: "auto",
+          margin: "0 auto",
         }}
       >
         {/* Cover image box only  */}
@@ -116,26 +123,56 @@ const ChannelLandingPage = () => {
               }}
             />
           </Box>
-          <Box>
+          <Box
+            sx={{
+              "@media (max-width: 880px)": {
+                flex: "0 0 60%",
+              },
+              // bgcolor: "yellow",
+            }}
+          >
             <div>
-              <div
-                style={{
+              <Box
+                sx={{
                   fontSize: "40px",
                   fontWeight: "bold",
+                  wordBreak: "break-word",
+                  "@media (max-width: 680px)": {
+                    fontSize: "32px",
+                  },
+                  "@media (max-width: 600px)": {
+                    fontSize: "28px",
+                  },
+                  "@media (max-width: 480px)": {
+                    fontSize: "18px",
+                  },
                 }}
               >
-                Channel name
-              </div>
-              <p>
-                useid{" "}
+                Channe Name
+              </Box>
+              <Box
+                sx={{
+                  "@media (max-width: 680px)": {
+                    fontSize: "14px",
+                  },
+                  "@media (max-width: 600px)": {
+                    fontSize: "12px",
+                  },
+                  "@media (max-width: 450px)": {
+                    fontSize: "10px",
+                  },
+                }}
+              >
+                <span>useid </span>
                 <span
                   style={{
+                    marginLeft: "4px",
                     color: "#767676",
                   }}
                 >
                   2.2M subs 5.3k vids
                 </span>
-              </p>
+              </Box>
             </div>
 
             <Box
@@ -143,7 +180,7 @@ const ChannelLandingPage = () => {
                 fontSize: "14px",
                 marginTop: "8px",
                 color: "#767676",
-                "@media (max-width: 760px)": {
+                "@media (max-width: 875px)": {
                   display: "none",
                 },
               }}
@@ -171,7 +208,7 @@ const ChannelLandingPage = () => {
                   ":hover": {
                     bgcolor: "#767676",
                   },
-                  "@media (max-width: 760px)": {
+                  "@media (max-width: 875px)": {
                     display: "none",
                   },
                 }}
@@ -193,7 +230,7 @@ const ChannelLandingPage = () => {
                   ":hover": {
                     bgcolor: "#b10202",
                   },
-                  "@media (max-width: 760px)": {
+                  "@media (max-width: 875px)": {
                     display: "none",
                   },
                 }}
@@ -208,7 +245,7 @@ const ChannelLandingPage = () => {
         {/* Discription for small screen  */}
         <Box
           sx={{
-            "@media (min-width: 760px)": {
+            "@media (min-width: 875px)": {
               display: "none",
             },
           }}
@@ -302,7 +339,7 @@ const ChannelLandingPage = () => {
             color: hoveredTab == 0 ? "white" : "#b3b3b3",
             transition: "color 0.3s",
           }}
-          onClick={() => navigate("/channel/1/videos")}
+          onClick={() => navigate("/channel/67859dd754c800dc4239e30f/videos")}
         >
           Videos
         </Box>
@@ -321,7 +358,7 @@ const ChannelLandingPage = () => {
             position: "relative",
             color: hoveredTab == 1 ? "white" : "#b3b3b3",
           }}
-          onClick={() => navigate("/channel/1/playlist")}
+          onClick={() => navigate("/channel/67859dd754c800dc4239e30f/playlist")}
         >
           Playlist
         </Box>
@@ -340,16 +377,61 @@ const ChannelLandingPage = () => {
 
       {/* last content  */}
       <Box
+        sx={{
+          padding: "0 8%",
+          mt: "12px",
+          display: "flex",
+          gap: "15px",
+        }}
+      >
+        {buttonsForSorting.map((title, index) => (
+          <ButtonForSorting
+            isActive={index === sortNo}
+            sortNo={index}
+            title={title}
+            setSortNo={setSortNo}
+          />
+        ))}
+      </Box>
+      <Box
         sx={
           {
+            // width: "100%",
+            // padding: "0 10%",
             // bgcolor: "red",
           }
         }
       >
-        <Outlet />
+        <Outlet context={{ sort: sortingFields[sortNo] }} />
       </Box>
     </Box>
   );
 };
 
-export default ChannelLandingPage;
+export default ChannelLayout;
+
+const ButtonForSorting = ({ isActive = false, setSortNo, title, sortNo }) => {
+  return (
+    <Button
+      onClick={() => setSortNo(sortNo)}
+      sx={{
+        bgcolor: isActive ? "white" : "#272727",
+        color: isActive ? "black" : "white",
+        fontSize: "12px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "7px 12px",
+        mb: "4px",
+        fontWeight: "bold",
+
+        borderRadius: "10px",
+        ":hover": {
+          bgcolor: !isActive && "#767676",
+        },
+      }}
+    >
+      {title}
+    </Button>
+  );
+};

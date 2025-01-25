@@ -6,7 +6,7 @@ import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
 
 export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
-  console.log("in");
+  console.log("in ");
   const token = req.cookies.jwt;
   let channelId;
   try {
@@ -20,9 +20,14 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
   // console.log(seenIds);
   // console.log(req.body);
   const { seenIds = [] } = req.body;
+  console.log("seen video ids ", seenIds);
   const limit = 20;
   let totalVideoCount = 0;
-  totalVideoCount = await Video.countDocuments({});
+  totalVideoCount = await Video.countDocuments({
+    isPrivate: {
+      $in: false,
+    },
+  });
   const seenVideoIds = seenIds;
 
   let videosToRecomend = [];
@@ -30,6 +35,9 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
     totalVideoCount = await Video.countDocuments({
       channel: {
         $nin: channelId,
+      },
+      isPrivate: {
+        $in: false,
       },
     });
     // console.log(totalVideoCount);
@@ -130,7 +138,7 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
     videosToRecomend = [...videosToRecomend, ...trendingVideos];
   }
   const totalPages = Math.ceil(totalVideoCount / limit) || 0;
-  console.log("video to send", videosToRecomend);
+  console.log("video to send", videosToRecomend.length);
   res.status(200).json({
     videos: videosToRecomend,
     totalPages,

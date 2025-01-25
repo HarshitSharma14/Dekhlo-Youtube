@@ -1,10 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { memo, useEffect, useState } from "react";
 import VideoCard from "../../component/VideoCard";
 import { Box, CircularProgress } from "@mui/material";
 import axios from "axios";
 import { GET_HOME_VIDEOS_ROUTE } from "../../utils/constants";
 import { useNavigate } from "react-router-dom";
-import VideoCardLoading from "../../component/Loading/VideoCardLoading";
+import VideoCardLoading from "../../component/LoadingLayouts/VideoCardLoading";
 
 const HomeContent = () => {
   //constants *******************************
@@ -12,7 +12,7 @@ const HomeContent = () => {
 
   // usestate ************************************************************************
   const [videos, setVideos] = useState([]);
-  const [seenIds, setSeenIds] = useState([]);
+  // const [seenIds, setSeenIds] = useState([]);
   const [isLoading, setisLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -21,6 +21,8 @@ const HomeContent = () => {
   const getVideos = async () => {
     const pageNumber = Math.ceil(videos.length / 20) || 0;
     const seenIds = videos?.map((vid) => vid._id) || null;
+
+    console.log("total pages", totalPages);
     console.log("pg no ", pageNumber);
     if (pageNumber >= totalPages) {
       console.log("all videos fetched");
@@ -39,13 +41,13 @@ const HomeContent = () => {
           },
         }
       );
-      // console.log(res.data);
       setTotalPages(res.data?.totalPages);
-      const newVideoIds = res.data?.videos?.map((vid) => vid._id);
-      setSeenIds((e) => {
-        const updatedIds = [...e, ...newVideoIds];
-        return updatedIds;
-      });
+      // console.log(res.data);
+      // const newVideoIds = res.data?.videos?.map((vid) => vid._id);
+      // setSeenIds((e) => {
+      //   const updatedIds = [...e, ...newVideoIds];
+      //   return updatedIds;
+      // });
       // console.log(...res.data?.videos?.map((vid) => vid._id));
       setVideos((e) => [...e, ...res.data?.videos]);
     } catch (error) {
@@ -54,10 +56,9 @@ const HomeContent = () => {
       setisLoading(false);
     }
   };
-  // console.log(seenIds);
+
   //                   <<--- Handels the scroll behaviour for the infinete scrolling *****************************
   let scrollingTimeout;
-
   const handleScroll = () => {
     const bottom =
       window.innerHeight + window.scrollY >=
@@ -135,10 +136,32 @@ const HomeContent = () => {
               />
             </div>
           )}
+          {!isLoading && !videos.length && (
+            <div
+              style={{
+                width: "100%",
+                position: "relative",
+                padding: "10px",
+                // backgroundColor: "yellow",
+                height: "40px",
+                justifyContent: "center",
+                justifyItems: "center",
+              }}
+            >
+              <Box
+                sx={{
+                  position: "relative",
+                  left: "50%",
+                }}
+              >
+                No videos to show
+              </Box>
+            </div>
+          )}
         </Box>
       )}
     </>
   );
 };
 
-export default HomeContent;
+export default memo(HomeContent);

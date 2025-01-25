@@ -8,10 +8,10 @@ import {
 } from "@mui/icons-material";
 import { CircularProgress, Box, Typography } from "@mui/material";
 import { Button } from "@mui/material";
-import "./LoadingPage.css";
-import Header from "./Header";
+import "./HomeLayoutLoadingPage.css";
+import Header from "../Header";
 
-const LoadingPage = () => {
+const HomeLayoutLoadingPage = () => {
   console.log("home");
 
   // constants *************************************************************************
@@ -33,7 +33,7 @@ const LoadingPage = () => {
 
         <main
           className="main-content"
-        //   style={{ borderLeft: "1px solid #b3b3b3" }}
+          //   style={{ borderLeft: "1px solid #b3b3b3" }}
         >
           <Box
             sx={{
@@ -66,7 +66,7 @@ const LoadingPage = () => {
   );
 };
 
-export default LoadingPage;
+export default HomeLayoutLoadingPage;
 
 // component for side bar buttons *************************
 const PermanentSideBar = () => {

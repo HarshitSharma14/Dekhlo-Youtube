@@ -37,6 +37,7 @@ const ProfileSetup = () => {
   const [formErrors, setFormErrors] = useState({
     password: "",
     confirmPassword: "",
+    channelName: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setConfirmShowPassword] = useState(false);
@@ -55,6 +56,16 @@ const ProfileSetup = () => {
     setFormData({ ...formData, [name]: value });
 
     setFormErrors({ ...formErrors, [e.target.name]: "" });
+
+    // check for teh length of the channel name *****************
+    if (name === "name" && value.length > 25) {
+      setFormErrors((pre) => ({
+        ...pre,
+        channelName: "Channel name can not exceed 25 characters",
+      }));
+    } else if (name === "name")
+      setFormErrors((pre) => ({ ...pre, channelName: "" }));
+
     // Check for password length and match confirm password ***************
     if (name === "password" && value.length < 6) {
       setFormErrors((prev) => ({
@@ -298,6 +309,8 @@ const ProfileSetup = () => {
                 </Box>
                 <TextField
                   label="Channel Name"
+                  error={!!formErrors.channelName}
+                  helperText={formErrors.channelName}
                   name="name"
                   fullWidth
                   value={formData.name}

@@ -11,15 +11,14 @@ import {
   SubscriptionsRounded as SubscriptionsIcon,
   SubscriptionsOutlined,
 } from "@mui/icons-material";
-import { Box, Button, Drawer } from "@mui/material";
+import { Box, Button } from "@mui/material";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import Header from "../../component/Header";
 import Siderbar from "../../component/Siderbar";
-import "./Home.css";
 import { useAppStore } from "../../store";
-import { VIDEO_ROUTE } from "../../utils/constants";
+import "./HomeLayout.css";
 
-const Home = () => {
+const HomeLayout = () => {
   // console.log("home");
   // useStates ************************************************************************
   const [isVideoPlayer, setIsVideoPlayer] = useState(false);
@@ -203,7 +202,7 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default HomeLayout;
 
 // component for side bar buttons *************************
 const PermanentSideBar = () => {
@@ -238,7 +237,7 @@ const PermanentSideBar = () => {
         isFilled={sidebarActivity.isSubscriptionVideos}
         filledIcon={<SubscriptionsIcon />}
         outlineIcon={<SubscriptionsOutlined />}
-        navigateLink={"/channel/1"}
+        navigateLink={"/channel/67859dd754c800dc4239e30f"}
         name={"Subs"}
         activeOn={activeOn.isSubscriptionVideos}
       />

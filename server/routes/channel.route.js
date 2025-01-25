@@ -3,6 +3,7 @@ import multer from "multer";
 import {
   createNewPlaylist,
   getChannelInfo,
+  getChannelVideos,
   getSubscribedChannelVideos,
   getWatchHistory,
   subscribeChannel,
@@ -23,11 +24,11 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Routes **********************************************
 app.get("/get-info", getChannelInfo);
+app.get("/videos/:channelId", getChannelVideos);
 
 // login required routes ****************************************
 app.use(isUserLoggedIn);
 app.post("/update-profile", upload.single("profilePhotoFile"), updateProfile);
-app.post("/upload-video", () => {});
 app.post("/subscribe", subscribeChannel);
 app.delete("/unsubscribe/:creatorId", unSubscribeChannel);
 app.get("/subscription/videos", getSubscribedChannelVideos);

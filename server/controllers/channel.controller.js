@@ -6,7 +6,7 @@ import {
   UploadSinglePhotoToCloudinary,
   UploadVideoAndThumbnail,
 } from "../utils/features.js";
-import { ErrorHandler } from "../utils/utility.js";
+import { ErrorHandler, sortByKey } from "../utils/utility.js";
 import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
 import Playlist from "../models/playlist.model.js";
@@ -189,7 +189,15 @@ export const createNewPlaylist = AsyncTryCatch(async (req, res, next) => {
 
 export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   // console.log("inside")
-  const { title, description, channelId, isPrivate, canComment, category, duration } = req.body;
+  const {
+    title,
+    description,
+    channelId,
+    isPrivate,
+    canComment,
+    category,
+    duration,
+  } = req.body;
   // console.log(channelId)
   // console.log(req.files.video)
   // console.log(req.files.thumbnail)
@@ -200,7 +208,6 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   }
 
   // console.log("inside2")
-
 
   const { videoUrlNew, thumbnailUrlNew } = await UploadVideoAndThumbnail(req);
   // console.log("inside3")
@@ -223,4 +230,52 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   return res
     .status(201)
     .json({ message: "Video uploaded successfully", videonew });
+});
+
+// get Channel Videoss *********************************************************************************
+export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
+  const channelIdForVideos = req.params.channelId;
+  const { page = 1, limit = 20, sort = "createdAt_desc" } = req.query;
+  let canSendPrivateVideos = false;
+
+  const channelToFetchVideosFrom = await Channel.findById(
+    channelIdForVideos
+  ).populate("videos");
+  if (!channelToFetchVideosFrom) {
+    return next(new ErrorHandler(404, "Channel not found"));
+  }
+
+  // checking wheather the user asking for the videos can access the private videos
+
+  try {
+    const token = req.cookies.jwt;
+    const decodedData = jwt.verify(token, JWT_SECRET);
+    const channelIdVisiting = decodedData.channelId;
+    if (channelIdVisiting.toString() == channelIdForVideos.toString()) {
+      canSendPrivateVideos = true;
+    }
+  } catch (error) {
+    console.log("cant send private videos");
+  }
+  let videosCanBeSent = channelToFetchVideosFrom.videos.filter(
+    (vid) => !vid.isPrivate || canSendPrivateVideos
+  );
+
+  const [sortField, sortDirection] = sort.split("_"); // splits the sort string in the query parameter and takes the first two subarray from it and assign it to the corresponding variable
+
+  const sortedVideos = sortByKey(videosCanBeSent, sortField, sortDirection); // function created in utitlity.js file can take name_acs, name_desc , views_acs, ...,createdAt_asc
+
+  const startingIndex = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+
+  let videosToSend = sortedVideos.slice(
+    startingIndex,
+    startingIndex + parseInt(limit, 10)
+  );
+
+  const totalPages = Math.ceil(sortedVideos.length / limit) || 0;
+  res.status(200).json({
+    message: "videos fetched successfully",
+    totalPages,
+    videos: videosToSend,
+  });
 });

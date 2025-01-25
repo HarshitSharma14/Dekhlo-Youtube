@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./VideoCard.css";
 import { formatUploadTime } from "../utils/helper.js";
 import { useNavigate } from "react-router-dom";
+import { useAppStore } from "../store/index.js";
 
 const VideoCard = ({
   id,
@@ -20,6 +21,8 @@ const VideoCard = ({
   const cardRef = useRef(null);
   const videoRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
+
+  const { setVideoInfo, videoInfo } = useAppStore()
 
   const navigate = useNavigate();
 
@@ -49,9 +52,19 @@ const VideoCard = ({
     };
   }, []);
 
-  const handleClick = () => {
-
-  }
+  // const handleClick = () => {
+  //   setVideoInfo({
+  //     id,
+  //     thumbnail,
+  //     title,
+  //     channelName,
+  //     views,
+  //     uploadTime,
+  //     channelProfile,
+  //     videoUrl,
+  //   })
+  //   navigate(`/video-player`)
+  // }
 
   const handleHover = () => {
     if (videoRef.current) {
@@ -89,7 +102,7 @@ const VideoCard = ({
   return (
     <div
       ref={cardRef}
-      // onClick={() => navigate("/vid")}
+      onClick={() => navigate(`/video-player/${id}`)}
       className="video-card"
       style={{
         height: "320px",

@@ -111,7 +111,7 @@ const Header = ({ isDisabled }) => {
           <button
             onClick={() => navigate("/update-video")}
             disabled={isDisabled}
-            className="text-white flex flex-row  bg-[#222222] hover:bg-gray-700 p-2 mr-2 w-[90px] h-[40px] border border-s-2  rounded-3xl border-[#303030]"
+            className="text-white flex flex-row w-auto  bg-[#222222] hover:bg-gray-700 p-2 mr-2 xxs:w-[90px] h-[40px] border border-s-2  rounded-3xl border-[#303030]"
           >
             {/* Replace CreateIcon with SVG */}
             <span className="pr-1 mt-[1px]">
@@ -130,7 +130,7 @@ const Header = ({ isDisabled }) => {
                 />
               </svg>
             </span>
-            <span className="pr-1 ">Create</span>
+            <span className="pr-1 xxs:inline hidden">Create</span>
           </button>
           <button
             disabled={isDisabled}

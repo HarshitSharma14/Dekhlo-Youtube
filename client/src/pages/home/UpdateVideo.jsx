@@ -15,6 +15,7 @@ import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
 import {
   CATEGORY_ENUM,
   GET_CHANNEL_DETAILS,
+  GET_VIDEO_DETAILS,
   UPDATE_VIDEO_INFO,
 } from "../../utils/constants";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
@@ -26,20 +27,14 @@ import { useAppStore } from "../../store";
 import { useNavigate } from "react-router-dom";
 
 const UpdateVideo = () => {
-  useEffect(() => {
-    try {
-      axios.get(GET_CHANNEL_DETAILS, { withCredentials: true }).then((res) => {
-        // console.log(res.data);
-        setChannelInfo(res.data);
-        // console.log(channelInfo)
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  }, []);
+
+  const videoId = "678d1cb176da7e5b3255c951"
+
+  const [justEditVideo, setJustEditVideo] = useState(false)
 
   const navigate = useNavigate();
   const { channelInfo, setChannelInfo } = useAppStore();
+
 
   // use states******************************************
   const [isActive, setIsActive] = useState([false, false]);
@@ -57,6 +52,67 @@ const UpdateVideo = () => {
   });
   const [uploading, setUploading] = useState(false);
 
+  // ************************************************useeffect to get channel details 
+
+  useEffect(() => {
+    const getChannelData = async () => {
+      try {
+        const res = await axios.get(GET_CHANNEL_DETAILS, { withCredentials: true });
+        if (!res.data) {
+          console.log("not logged in");
+          navigate("/");
+        } else {
+          console.log(res);
+          setChannelInfo(res.data);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    getChannelData();
+  }, []); // Runs only on mount
+
+
+  // ************************************************useeffect to getvideo details after we have channel info
+  useEffect(() => {
+    const getVideoDetails = async () => {
+      if (!channelInfo || !videoId) return;
+
+      try {
+        const response = await axios.get(`${GET_VIDEO_DETAILS}/${videoId}`, {
+          withCredentials: true,
+        });
+        console.log("Video Details Received:", response);
+
+        if (response.data.videoDetails.channel !== channelInfo._id) {
+          navigate("/");
+        }
+        setJustEditVideo(true)
+
+        setVideoDetails({
+          title: response.data.videoDetails.title,
+          description: response.data.videoDetails.description,
+          category: response.data.videoDetails.category,
+          thumbnailFile: null,
+          duration: response.data.videoDetails.duration,
+          videoFile: null,
+          canComment: response.data.videoDetails.canComment ? "true" : "false",
+          isPrivate: response.data.videoDetails.isPrivate,
+        })
+
+        setImageSrc(response.data.videoDetails.thumbnailUrl)
+
+        setVideoUploaded(true)
+
+      } catch (error) {
+        console.log(error);
+      }
+    };
+
+    getVideoDetails();
+  }, [channelInfo, videoId]); // Runs whenever channelInfo or videoId changes
+
   //refs**********************************************
   const videoUploadRef = useRef();
   const photoUploadRef = useRef();
@@ -70,7 +126,7 @@ const UpdateVideo = () => {
   const handleSubmit = async () => {
     setUploading(true);
 
-    if (!videoDetails.thumbnailFile || !videoDetails.videoFile) {
+    if ((!videoDetails.thumbnailFile && !justEditVideo) || (!videoDetails.videoFile && !justEditVideo)) {
       toast.error("Upload the video");
       setUploading(false);
       return;
@@ -81,19 +137,21 @@ const UpdateVideo = () => {
       return;
     }
 
-    // console.log(videoDetails.thumbnailFile)
-    // console.log(videoDetails.videoFile)
-    // console.log(channelInfo)
+    console.log(videoDetails.thumbnailFile)
+    console.log(videoDetails.videoFile)
+    console.log(videoDetails)
     const formData = new FormData();
     formData.append("title", videoDetails.title);
     formData.append("description", videoDetails.description);
     formData.append("category", videoDetails.category);
     formData.append("thumbnail", videoDetails.thumbnailFile);
-    formData.append("video", videoDetails.videoFile);
     formData.append("isPrivate", videoDetails.isPrivate);
     formData.append("canComment", videoDetails.canComment);
     formData.append("channelId", channelInfo._id);
     formData.append("duration", videoDetails.duration);
+    formData.append("videoId", videoId);
+    formData.append("video", videoDetails.videoFile);
+
 
     const toastId = toast.loading("Uploading video...");
     console.log("firs");
@@ -106,6 +164,8 @@ const UpdateVideo = () => {
         withCredentials: true,
       });
       console.log("in try");
+      console.log(response.data);
+
       toast.success("Video uploaded successfully.", { id: toastId });
       navigate("/");
     } catch (e) {
@@ -302,7 +362,7 @@ const UpdateVideo = () => {
                     Upload video here
                     <input
                       className="hidden"
-                      disabled={uploading}
+                      disabled={uploading || justEditVideo}
                       type="file"
                       accept="video/*"
                       ref={videoUploadRef}
@@ -392,9 +452,8 @@ const UpdateVideo = () => {
 
             <Box
               ref={titleBoxRef}
-              className={`flex flex-col border-2 rounded-lg p-2 gap-1 w-full ${
-                isActive[0] ? "border-white" : "border-[#757a7c]"
-              }`}
+              className={`flex flex-col border-2 rounded-lg p-2 gap-1 w-full ${isActive[0] ? "border-white" : "border-[#757a7c]"
+                }`}
               onClick={() => handleFocus(0)}
             >
               <h3 className="text-[#dadfe1]">Title</h3>
@@ -416,9 +475,8 @@ const UpdateVideo = () => {
 
             <Box
               ref={descBoxRef}
-              className={`flex flex-col border-2 rounded-lg p-2 gap-1 w-full ${
-                isActive[1] ? "border-white" : "border-[#757a7c]"
-              }`}
+              className={`flex flex-col border-2 rounded-lg p-2 gap-1 w-full ${isActive[1] ? "border-white" : "border-[#757a7c]"
+                }`}
               onClick={() => handleFocus(1)}
             >
               <h3 className="text-[#dadfe1]">Description</h3>
@@ -478,13 +536,14 @@ const UpdateVideo = () => {
                   control={
                     <Checkbox
                       id="canComment"
+                      checked={videoDetails.canComment === "true"}
                       onChange={(event) =>
                         setVideoDetails((prev) => ({
                           ...prev,
                           canComment: event.target.checked ? "true" : "false",
                         }))
                       }
-                      defaultChecked
+
                       color="default"
                     />
                   }

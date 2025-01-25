@@ -31,6 +31,46 @@ export const UploadSinglePhotoToCloudinary = async (req) => {
     throw error; // Propagate the error to the calling function
   }
 };
+
+export const UpdateThumbnail = async (req) => {
+  console.log("in uploading space");
+  try {
+    // Helper function to upload a single file
+    const uploadFile = (file, options) =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          options,
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        streamifier.createReadStream(file.buffer).pipe(stream);
+      });
+
+    console.log("created Stream");
+    // Upload the photo
+    const photoResult = req.files?.thumbnail
+      ? await uploadFile(req.files.thumbnail[0], {
+        resource_type: "image",
+        folder: "Thumbnails", // Store photos in 'Photos' folder
+      })
+      : null;
+    console.log("photo uploaded");
+    return {
+      message: "thumbnail uploaded successfully",
+      thumbnailUrlNew: photoResult?.secure_url || null,
+    };
+  } catch (error) {
+    console.error("Error uploading files to Cloudinary:", error);
+    throw error;
+  }
+
+
+};
+
+
+
 export const UploadVideoAndThumbnail = async (req) => {
   console.log("in uploading space");
   try {

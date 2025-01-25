@@ -9,7 +9,7 @@ import LoadingPage from "./component/LoadingPage.jsx";
 import { LocalDiningSharp } from "@mui/icons-material";
 import UpdateVideo from "./pages/home/UpdateVideo.jsx";
 import { useAppStore } from "./store/index.js";
-import VideoPlayer from "./pages/home/VideoPlayer.jsx";
+import VideoPlayer from "./pages/videoPlayer/VideoPlayer.jsx";
 import ChannelLandingPage from "./pages/channel/ChannelLandingPage.jsx";
 import ChannelVideos from "./pages/channel/ChannelVideos.jsx";
 

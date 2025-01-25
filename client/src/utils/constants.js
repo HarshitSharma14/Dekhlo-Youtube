@@ -24,3 +24,5 @@ export const GET_CHANNEL_DETAILS = `${CHANNEL_ROUTE}/get-info`;
 export const UPDATE_VIDEO_INFO = `${CHANNEL_ROUTE}/update-videoinfo`;
 
 export const VIDEO_ROUTE = `${server}/video`;
+export const GET_VIDEO_DETAILS = `${VIDEO_ROUTE}/video-details`;
+export const GET_VIDEO = `${VIDEO_ROUTE}/get-video`;

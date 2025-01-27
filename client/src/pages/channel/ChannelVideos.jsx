@@ -12,10 +12,9 @@ const ChannelVideos = () => {
   const [isLoading, setisLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
 
+  // constants ****************************************************
   const params = useParams();
   const { channelId } = params;
-
-  // constants ****************************************************
   const videosRef = useRef(videos);
   const { sort } = useOutletContext();
   useEffect(() => {
@@ -23,8 +22,8 @@ const ChannelVideos = () => {
   }, [videos.length]);
 
   // fucntion *******************************************************
-
-  const getVideos = async () => {
+  const getVideos = async (sorts) => {
+    if (isLoading) return;
     setisLoading(true);
     const pageNumber = Math.ceil(videosRef.current.length / 20) || 0;
 
@@ -34,9 +33,9 @@ const ChannelVideos = () => {
       return;
     }
     try {
-      console.log("in try", sort);
+      console.log("in try", sorts);
       const { data } = await axios.get(
-        `${GET_CHANNEL_VIDEOS}/${channelId}?sort=${sort}`,
+        `${GET_CHANNEL_VIDEOS}/${channelId}?page=${pageNumber}&sort=${sorts}`,
         {
           withCredentials: true,
         }
@@ -51,7 +50,7 @@ const ChannelVideos = () => {
     }
   };
   // useEffect *******************************************************
-  let scrollingTimeout;
+  const scrollingTimeoutRef = useRef(null);
   useEffect(() => {
     const handleScroll = () => {
       const pageNumber = Math.ceil(videosRef.current.length / 20) || 0;
@@ -63,101 +62,101 @@ const ChannelVideos = () => {
         window.innerHeight + window.scrollY >=
         document.documentElement.scrollHeight - 20;
 
-      if (bottom && !isLoading) {
+      if (bottom) {
         // Throttle execution
-        if (scrollingTimeout) {
-          clearTimeout(scrollingTimeout); // Clear any previous timeout
+        if (scrollingTimeoutRef.current) {
+          clearTimeout(scrollingTimeoutRef.current); // Clear any previous timeout
         }
 
-        scrollingTimeout = setTimeout(() => {
+        scrollingTimeoutRef.current = setTimeout(() => {
           console.log("at bottom");
           getVideos(sort);
         }, 300); // Execute after 300ms (adjust as needed)
       }
     };
     window.addEventListener("scroll", handleScroll);
-  }, [isLoading]);
 
-  // useEffect(() => {
-  //   console.log("in contente", sort);
-  //   getVideos();
-  // }, []);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isLoading, sort]);
 
   useEffect(() => {
-    if (sort) {
-      setVideos([]);
-      videosRef.current = [];
-    }
+    setVideos([]);
+    videosRef.current = [];
+
     getVideos(sort);
   }, [sort]);
 
   return (
     <>
-      {!videos.length && isLoading ? (
-        <VideoCardLoading />
-      ) : (
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            "@media(max-width: 680px)": { justifyContent: "center" },
-          }}
-        >
-          {videos.map((video) => (
-            <VideoCard
-              key={video?._id}
-              id={video?._id}
-              thumbnail={video?.thumbnailUrl}
-              title={video?.title}
-              views={video?.views}
-              uploadTime={video?.createdAt}
-              videoUrl={video?.videoUrl}
-              isInChannel={true}
-            />
-          ))}
-          {isLoading && videos.length && (
-            <div
-              style={{
-                width: "100%",
-                position: "relative",
-                padding: "10px",
-                // backgroundColor: "yellow",
-                height: "40px",
-                justifyContent: "center",
-                justifyItems: "center",
-              }}
-            >
-              <CircularProgress
-                sx={{
-                  position: "relative",
-                  left: "50%",
-                }}
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          "@media(max-width: 680px)": { justifyContent: "center" },
+        }}
+      >
+        {!videos.length && isLoading ? (
+          <VideoCardLoading />
+        ) : (
+          <>
+            {" "}
+            {videos.map((video) => (
+              <VideoCard
+                key={video?._id}
+                id={video?._id}
+                thumbnail={video?.thumbnailUrl}
+                title={video?.title}
+                views={video?.views}
+                uploadTime={video?.createdAt}
+                videoUrl={video?.videoUrl}
+                isInChannel={true}
               />
-            </div>
-          )}
-          {!isLoading && !videos.length && (
-            <div
-              style={{
-                width: "100%",
-                position: "relative",
-                padding: "10px",
-                // backgroundColor: "yellow",
-                height: "40px",
-                justifyContent: "center",
-                justifyItems: "center",
-              }}
-            >
-              <Box
-                sx={{
+            ))}
+            {isLoading && videos.length && (
+              <div
+                style={{
+                  width: "100%",
+                  position: "relative",
+                  padding: "10px",
+                  // backgroundColor: "yellow",
+                  height: "40px",
                   justifyContent: "center",
+                  justifyItems: "center",
                 }}
               >
-                No videos to show
-              </Box>
-            </div>
-          )}
-        </Box>
-      )}
+                <CircularProgress
+                  sx={{
+                    position: "relative",
+                    left: "50%",
+                  }}
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        {!isLoading && !videos.length && (
+          <div
+            style={{
+              width: "100%",
+              position: "relative",
+              padding: "10px",
+              // backgroundColor: "yellow",
+              height: "40px",
+              justifyContent: "center",
+              justifyItems: "center",
+            }}
+          >
+            <Box
+              sx={{
+                justifyContent: "center",
+              }}
+            >
+              No videos to show
+            </Box>
+          </div>
+        )}
+      </Box>
     </>
   );
 };

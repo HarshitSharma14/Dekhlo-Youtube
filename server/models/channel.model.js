@@ -26,7 +26,7 @@ const channelSchema = new Schema(
     bio: {
       type: String,
     },
-    playlist: [
+    playlists: [
       {
         type: Schema.Types.ObjectId,
         ref: "Playlist",

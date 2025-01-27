@@ -7,6 +7,8 @@ import jwt from "jsonwebtoken";
 // view video *************************************************************
 export const getVideo = AsyncTryCatch(async (req, res, next) => {
 
+  console.log("in")
+
   const { videoId } = req.params;
   console.log(videoId)
   const video = await Video.findByIdAndUpdate(
@@ -61,3 +63,22 @@ export const likeUnlikeVideo = AsyncTryCatch(async (req, res, next) => {
   });
   res.status(200).json({ message: "Video liked" });
 });
+
+
+export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
+
+  console.log("inside func")
+
+  const { videoId } = req.params;
+
+  // console.log(videoId)
+
+  const videoDetails = await Video.findById(videoId)
+
+  if (!videoDetails) {
+    next(new ErrorHandler(404, "Video not found"));
+  }
+  console.log(videoDetails)
+
+  return res.status(200).json({ videoDetails });
+})

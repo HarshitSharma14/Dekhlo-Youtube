@@ -21,8 +21,11 @@ export const LOGIN_ROUTE = `${AUTH_ROUTE}/login`;
 export const CHANNEL_ROUTE = `${server}/channel`;
 export const UPDATE_CHANNEL_INFO_ROUTE = `${CHANNEL_ROUTE}/update-profile`;
 export const GET_CHANNEL_DETAILS = `${CHANNEL_ROUTE}/get-info`;
+export const GET_CHANNEL_VIDEOS = `${CHANNEL_ROUTE}/videos`; // add channel id at the end of it
+export const GET_CHANNEL_PLAYLIST = `${CHANNEL_ROUTE}/playlists`;
 export const UPDATE_VIDEO_INFO = `${CHANNEL_ROUTE}/update-videoinfo`;
 
 export const VIDEO_ROUTE = `${server}/video`;
 
-export const GET_CHANNEL_VIDEOS = `${server}/channel/videos`; // add channel id at the end of it
+export const GET_VIDEO_DETAILS = `${VIDEO_ROUTE}/video-details`;
+export const GET_VIDEO = `${VIDEO_ROUTE}/get-video`;

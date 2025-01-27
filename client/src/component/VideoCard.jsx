@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import "./VideoCard.css";
 import { formatUploadTime } from "../utils/helper.js";
 import { useNavigate } from "react-router-dom";
+import { useAppStore } from "../store/index.js";
 
 const VideoCard = ({
   id,
@@ -24,32 +25,6 @@ const VideoCard = ({
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const videoElement = cardRef.current;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true); // Start loading video only when in view
-        } else {
-          setIsInView(false); // Stop loading video if not in view
-        }
-      },
-      {
-        threshold: 0.25,
-      }
-    );
-
-    if (videoElement) {
-      observer.observe(videoElement);
-    }
-
-    return () => {
-      if (videoElement) {
-        observer.unobserve(videoElement);
-      }
-    };
-  }, []);
-
   const handleHover = () => {
     if (videoRef.current) {
       videoRef.current.play();
@@ -70,23 +45,10 @@ const VideoCard = ({
     }
   };
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
-  const skip10Seconds = () => {
-    if (videoRef.current) {
-      videoRef.current.currentTime += 10;
-    }
-  };
-
   return (
     <div
       ref={cardRef}
-      // onClick={() => navigate("/vid")}
+      onClick={() => navigate(`/video-player/${id}`)}
       className="video-card"
       style={{
         height: isInChannel ? "270px" : "320px",
@@ -96,16 +58,12 @@ const VideoCard = ({
       }}
       onMouseEnter={() => {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-
-        hoverTimeoutRef.current = setTimeout(() => {
-          setIsHovered(true);
-          handleHover();
-        }, 300);
+        setIsInView(true);
       }}
       onMouseLeave={() => {
         // Clear the timeout on mouse leave
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-
+        setIsInView(false);
         setIsHovered(false);
         handleMouseLeave();
       }}
@@ -128,8 +86,14 @@ const VideoCard = ({
           >
             <video
               ref={videoRef}
+              onCanPlay={() => {
+                hoverTimeoutRef.current = setTimeout(() => {
+                  setIsHovered(true);
+                  handleHover();
+                }, 300);
+              }}
               src={videoUrl} // Start loading the video when in view
-              muted={isMuted}
+              muted={true}
               onTimeUpdate={handleTimeUpdate}
               controls={false}
               loop
@@ -176,35 +140,6 @@ const VideoCard = ({
                     }}
                   ></div>
                 </div>
-
-                {/* Mute/Unmute Button */}
-                {/* <div
-                  className="buttones"
-                  style={{
-                    position: "absolute",
-                    top: "0",
-                  }}
-                >
-                  <button
-                    className="mute-button"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent click propagation
-                      toggleMute();
-                    }}
-                  >
-                    {isMuted ? "Unmute" : "Mute"}
-                  </button>
-
-                  <button
-                    className="skip-button"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent click propagation
-                      skip10Seconds();
-                    }}
-                  >
-                    +10s
-                  </button>
-                </div> */}
               </div>
             )}
           </div>

@@ -5,8 +5,10 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 // import ChannelLayout from "./pages/channel/ChannelLayout.jsx";
 // import ChannelVideos from "./pages/channel/ChannelVideos.jsx";
 import UpdateVideo from "./pages/home/UpdateVideo.jsx";
-import VideoPlayer from "./pages/home/VideoPlayer.jsx";
+import VideoPlayer from "./pages/videoPlayer/VideoPlayer.jsx";
 import HomeLayoutLoadingPage from "./component/LoadingLayouts/HomeLayoutLoadingPage.jsx";
+import PlaylistCard from "./component/PlaylistCard.jsx";
+import ChannelPlaylist from "./pages/channel/ChannelPlaylist.jsx";
 
 // Routes imports ****************************************
 const HomeLayout = lazy(() => import("./pages/home/HomeLayout.jsx"));
@@ -66,7 +68,7 @@ const router = createBrowserRouter([
             path: "playlist",
             element: (
               <Suspense fallback={<div>Loading...</div>}>
-                <ChannelVideos />
+                <ChannelPlaylist />
               </Suspense>
             ),
           },

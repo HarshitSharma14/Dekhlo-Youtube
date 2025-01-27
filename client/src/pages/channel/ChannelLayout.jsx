@@ -1,22 +1,57 @@
-import { Box, Button } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { useAppStore } from "../../store";
 import {
   AttachMoneyOutlined,
+  Close as CloseIcon,
   NotificationAddOutlined,
+  People,
+  VideoLibrary,
+  Visibility,
 } from "@mui/icons-material";
-import { isCancel } from "axios";
+import {
+  Box,
+  Button,
+  Divider,
+  IconButton,
+  Modal,
+  Typography,
+} from "@mui/material";
+import axios from "axios";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { GET_CHANNEL_DETAILS } from "../../utils/constants";
+
 const ChannelLayout = () => {
-  const location = useLocation();
+  // useState **********************************************************************************
   const [activeTab, setActiveTab] = useState(-10);
   const [hoveredTab, setHoveredTab] = useState(activeTab);
+  const [isLoading, setIsLoading] = useState(false);
+  const [channel, setChannel] = useState(null);
   const [sortNo, setSortNo] = useState(0);
-  const navigate = useNavigate();
 
+  // constant **********************************************************************************
+  const navigate = useNavigate();
   const buttonsForSorting = ["Latest", "Popular", "Oldest"];
   const sortingFields = ["createdAt_desc", "views_desc", "createdAt_acs"];
+  const location = useLocation();
+  const params = useParams();
+  const { channelId } = params;
 
+  // functions **********************************************************************************
+  const getChannelInfo = async () => {
+    setIsLoading(true);
+    try {
+      const { data } = await axios.get(`${GET_CHANNEL_DETAILS}/${channelId}`, {
+        withCredentials: true,
+      });
+      console.log(data.channel);
+      setChannel(data.channel);
+    } catch (err) {
+      console.log("err", err.response);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // useEffect **********************************************************************************
   useEffect(() => {
     if (
       location.pathname.split("/")[location.pathname.split("/").length - 1] ===
@@ -34,377 +69,382 @@ const ChannelLayout = () => {
     }
   }, [location.pathname]);
 
+  useEffect(() => {
+    getChannelInfo();
+  }, []);
+
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: "column",
-        width: "100%",
-      }}
-    >
-      {/* total top area  */}
-      <Box
-        sx={{
-          // bgcolor: "blue",
-          width: "90%",
-          margin: "0 auto",
-        }}
-      >
-        {/* Cover image box only  */}
+    <>
+      {!isLoading && channel && (
         <Box
           sx={{
-            height: "20vw",
+            display: "flex",
+            flexDirection: "column",
             width: "100%",
-            margin: "auto",
-            borderRadius: "20px",
-            overflow: "hidden",
-            display: "flex",
-            // border: "2px solid red",
-            "@media(min-width: 900px)": {
-              height: "14vw",
-            },
           }}
         >
-          <img
-            src="https://plus.unsplash.com/premium_photo-1669829646756-083a328c0abb?fm=jpg&q=60&w=3000&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8bGFuZHNjYXBlc3xlbnwwfHwwfHx8MA%3D%3D"
-            alt="cover image"
-            style={{
-              width: "100%",
-              objectFit: "cover",
-            }}
-          />
-        </Box>
-
-        {/* with all the info of the top when screen is big  */}
-        <Box
-          sx={{
-            height: "28vw",
-            // bgcolor: "blue",
-            maxHeight: "240px",
-            display: "flex",
-            alignItems: "center",
-            gap: "20px",
-            "@media (min-width:950px)": {
-              minHeight: "210px",
-              height: "19vw",
-            },
-          }}
-        >
+          {/* total top area  */}
           <Box
             sx={{
-              // bgcolor: "yellow",
-              height: "200px",
-              width: "200px",
-              borderRadius: "100%",
-              display: "flex",
-              flexWrap: "wrap",
-              color: "black",
-              overflow: "hidden",
-              justifyContent: "center",
-              alignItems: "center",
-              "@media (max-width: 760px)": {
-                height: "150px",
-                width: "150px",
-              },
-              "@media (max-width: 600px)": {
-                height: "100px",
-                width: "100px",
-              },
-              // bgcolor: "yellow",
+              // bgcolor: "blue",
+              width: "90%",
+              margin: "0 auto",
             }}
           >
-            <img
-              src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTcyI9Cvp53aaP9XeRn-ZKbJDH2QaWC72O26A&s"
-              alt="ProfilePhoto"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "fill",
-              }}
-            />
-          </Box>
-          <Box
-            sx={{
-              "@media (max-width: 880px)": {
-                flex: "0 0 60%",
-              },
-              // bgcolor: "yellow",
-            }}
-          >
-            <div>
+            {/* Cover image box only  */}
+            {channel?.coverImage && (
               <Box
                 sx={{
-                  fontSize: "40px",
-                  fontWeight: "bold",
-                  wordBreak: "break-word",
-                  "@media (max-width: 680px)": {
-                    fontSize: "32px",
-                  },
-                  "@media (max-width: 600px)": {
-                    fontSize: "28px",
-                  },
-                  "@media (max-width: 480px)": {
-                    fontSize: "18px",
+                  height: "20vw",
+                  width: "100%",
+                  margin: "auto",
+                  borderRadius: "20px",
+                  overflow: "hidden",
+                  display: "flex",
+                  // border: "2px solid red",
+                  "@media(min-width: 900px)": {
+                    height: "14vw",
                   },
                 }}
               >
-                Channe Name
-              </Box>
-              <Box
-                sx={{
-                  "@media (max-width: 680px)": {
-                    fontSize: "14px",
-                  },
-                  "@media (max-width: 600px)": {
-                    fontSize: "12px",
-                  },
-                  "@media (max-width: 450px)": {
-                    fontSize: "10px",
-                  },
-                }}
-              >
-                <span>useid </span>
-                <span
+                <img
+                  src={channel.coverImage}
+                  alt="cover image"
                   style={{
-                    marginLeft: "4px",
-                    color: "#767676",
+                    width: "100%",
+                    objectFit: "cover",
                   }}
-                >
-                  2.2M subs 5.3k vids
-                </span>
+                />
               </Box>
-            </div>
+            )}
 
+            {/* with all the info of the top when screen is big  */}
             <Box
               sx={{
-                fontSize: "14px",
-                marginTop: "8px",
-                color: "#767676",
-                "@media (max-width: 875px)": {
+                height: "28vw",
+                // bgcolor: "blue",
+                maxHeight: "240px",
+                display: "flex",
+                alignItems: "center",
+                gap: "20px",
+                "@media (min-width:950px)": {
+                  minHeight: "210px",
+                  height: "19vw",
+                },
+              }}
+            >
+              <Box
+                sx={{
+                  // bgcolor: "yellow",
+                  height: "200px",
+                  width: "200px",
+                  borderRadius: "100%",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  color: "black",
+                  overflow: "hidden",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  "@media (max-width: 760px)": {
+                    height: "150px",
+                    width: "150px",
+                  },
+                  "@media (max-width: 600px)": {
+                    height: "100px",
+                    width: "100px",
+                  },
+                  // bgcolor: "yellow",
+                }}
+              >
+                <img
+                  src={channel?.profilePhoto}
+                  alt="ProfilePhoto"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              </Box>
+              <Box
+                sx={{
+                  "@media (max-width: 880px)": {
+                    flex: "0 0 60%",
+                  },
+                  // bgcolor: "yellow",
+                }}
+              >
+                <div>
+                  <Box
+                    sx={{
+                      fontSize: "40px",
+                      fontWeight: "bold",
+                      wordBreak: "break-word",
+                      "@media (max-width: 680px)": {
+                        fontSize: "32px",
+                      },
+                      "@media (max-width: 600px)": {
+                        fontSize: "28px",
+                      },
+                      "@media (max-width: 480px)": {
+                        fontSize: "18px",
+                      },
+                    }}
+                  >
+                    {channel?.channelName}
+                  </Box>
+                  <Box
+                    sx={{
+                      "@media (max-width: 760px)": {
+                        fontSize: "14px",
+                      },
+                      "@media (max-width: 600px)": {
+                        fontSize: "12px",
+                      },
+                      "@media (max-width: 450px)": {
+                        fontSize: "10px",
+                      },
+                    }}
+                  >
+                    <span style={{}}>@{channel?.email} </span>
+                    <span
+                      style={{
+                        marginLeft: "4px",
+                        color: "#767676",
+                      }}
+                    >
+                      • {channel?.followers} subscribers • {channel?.videos}{" "}
+                      videos
+                    </span>
+                  </Box>
+                </div>
+                <DiscriptionDialogBox isBig={true} channel={channel} />
+                <div
+                  style={{
+                    display: "flex",
+                    gap: "10px",
+                  }}
+                >
+                  <Button
+                    sx={{
+                      mt: "28px",
+                      bgcolor: "#272727",
+                      color: "white",
+                      display: "flex",
+                      justifyContent: "space-around",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "8px 18px",
+                      borderRadius: "40px",
+                      ":hover": {
+                        bgcolor: "#767676",
+                      },
+                      "@media (max-width: 875px)": {
+                        display: "none",
+                      },
+                    }}
+                  >
+                    <AttachMoneyOutlined />
+                    Support Creator
+                  </Button>
+                  <Button
+                    sx={{
+                      mt: "28px",
+                      bgcolor: "red",
+                      color: "white",
+                      display: "flex",
+                      justifyContent: "space-around",
+                      alignItems: "center",
+                      gap: "10px",
+                      padding: "8px 18px",
+                      borderRadius: "40px",
+                      ":hover": {
+                        bgcolor: "#b10202",
+                      },
+                      "@media (max-width: 875px)": {
+                        display: "none",
+                      },
+                    }}
+                  >
+                    <NotificationAddOutlined />
+                    Susbscribe
+                  </Button>
+                </div>
+              </Box>
+            </Box>
+
+            {/* Discription and button for subs and creator support  for small screen  */}
+            <Box
+              sx={{
+                "@media (min-width: 875px)": {
                   display: "none",
                 },
               }}
             >
-              Discription
+              <DiscriptionDialogBox channel={channel} />
+
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-around",
+                }}
+              >
+                <Button
+                  sx={{
+                    mt: "28px",
+                    bgcolor: "#272727",
+                    fontSize: "14px",
+                    color: "white",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: "10px",
+                    width: "45%",
+                    // padding: "8px 0",
+                    "@media (max-width: 500px)": {
+                      fontSize: "12px",
+                      mt: "7px",
+                    },
+                    "@media (max-width: 410px)": {
+                      width: "auto",
+                    },
+
+                    borderRadius: "40px",
+                    ":hover": {
+                      bgcolor: "#767676",
+                    },
+                  }}
+                >
+                  <AttachMoneyOutlined />
+                  Support Creator
+                </Button>
+                <Button
+                  sx={{
+                    mt: "28px",
+                    bgcolor: "red",
+                    fontSize: "14px",
+                    color: "white",
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    gap: "10px",
+                    width: "45%",
+                    // padding: "8px 18px",
+                    "@media (max-width: 500px)": {
+                      fontSize: "12px",
+                      mt: "7px",
+                    },
+                    "@media (max-width: 410px)": {
+                      width: "auto",
+                    },
+                    borderRadius: "40px",
+                    ":hover": {
+                      bgcolor: "#b10202",
+                    },
+                  }}
+                >
+                  <NotificationAddOutlined />
+                  Susbscribe
+                </Button>
+              </div>
             </Box>
-            <div
-              style={{
-                display: "flex",
-                gap: "10px",
-              }}
-            >
-              <Button
-                sx={{
-                  mt: "28px",
-                  bgcolor: "#272727",
-
-                  color: "white",
-                  display: "flex",
-                  justifyContent: "space-around",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px 18px",
-                  borderRadius: "40px",
-                  ":hover": {
-                    bgcolor: "#767676",
-                  },
-                  "@media (max-width: 875px)": {
-                    display: "none",
-                  },
-                }}
-              >
-                <AttachMoneyOutlined />
-                Support Creator
-              </Button>
-              <Button
-                sx={{
-                  mt: "28px",
-                  bgcolor: "red",
-                  color: "white",
-                  display: "flex",
-                  justifyContent: "space-around",
-                  alignItems: "center",
-                  gap: "10px",
-                  padding: "8px 18px",
-                  borderRadius: "40px",
-                  ":hover": {
-                    bgcolor: "#b10202",
-                  },
-                  "@media (max-width: 875px)": {
-                    display: "none",
-                  },
-                }}
-              >
-                <NotificationAddOutlined />
-                Susbscribe
-              </Button>
-            </div>
           </Box>
-        </Box>
 
-        {/* Discription for small screen  */}
-        <Box
-          sx={{
-            "@media (min-width: 875px)": {
-              display: "none",
-            },
-          }}
-        >
-          <Box>Discription</Box>
-
-          {/* subscription butons for small screen  */}
-          <div
-            style={{
+          {/* mid bar with video and playlist button  */}
+          <Box
+            sx={{
+              bgcolor: "#121212",
+              width: "100%",
               display: "flex",
-              justifyContent: "space-around",
+              gap: "25px",
+              position: "sticky",
+              top: "70px",
+              fontSize: "18px",
+              padding: "0 10%",
+              borderBottom: "1px solid #767676",
+              zIndex: "10",
             }}
           >
-            <Button
+            <Box
+              onMouseEnter={() => {
+                setHoveredTab(0);
+              }}
+              onMouseLeave={() => {
+                setHoveredTab(activeTab);
+              }}
               sx={{
-                mt: "28px",
-                bgcolor: "#272727",
-                fontSize: "14px",
-                color: "white",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: "10px",
-                width: "45%",
-                // padding: "8px 0",
+                cursor: "pointer",
+                padding: "12px 0",
+                boxSizing: "border-box",
+                height: "50px",
+                position: "relative",
 
-                borderRadius: "40px",
-                ":hover": {
-                  bgcolor: "#767676",
-                },
+                color: activeTab == 0 ? "white" : "#b3b3b3",
+                transition: "color 0.3s",
+              }}
+              onClick={() => navigate(`/channel/${channelId}/videos`)}
+            >
+              Videos
+            </Box>
+            <Box
+              onMouseEnter={() => {
+                setHoveredTab(1);
+              }}
+              onMouseLeave={() => {
+                setHoveredTab(activeTab);
+              }}
+              sx={{
+                cursor: "pointer",
+                padding: "12px 0",
+                boxSizing: "border-box",
+                height: "50px",
+                position: "relative",
+                color: activeTab == 1 ? "white" : "#b3b3b3",
+              }}
+              onClick={() => navigate(`/channel/${channelId}/playlist`)}
+            >
+              Playlist
+            </Box>
+            <Box
+              sx={{
+                bgcolor: "white",
+                width: "57px",
+                height: "2px",
+                position: "absolute",
+                bottom: "0px",
+                transition: "all 0.5s ",
+                left: `calc(10% + ${hoveredTab * (57 + 25)}px)`,
+              }}
+            />
+          </Box>
+
+          {/* last content  */}
+          {activeTab === 0 && (
+            <Box
+              sx={{
+                padding: "0 8%",
+                mt: "12px",
+                display: "flex",
+                gap: "15px",
               }}
             >
-              <AttachMoneyOutlined />
-              Support Creator
-            </Button>
-            <Button
-              sx={{
-                mt: "28px",
-                bgcolor: "red",
-                fontSize: "14px",
-                color: "white",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: "10px",
-                width: "45%",
-                // padding: "8px 18px",
-
-                borderRadius: "40px",
-                ":hover": {
-                  bgcolor: "#b10202",
-                },
-              }}
-            >
-              <NotificationAddOutlined />
-              Susbscribe
-            </Button>
-          </div>
+              {buttonsForSorting.map((title, index) => (
+                <ButtonForSorting
+                  isActive={index === sortNo}
+                  sortNo={index}
+                  title={title}
+                  setSortNo={setSortNo}
+                />
+              ))}
+            </Box>
+          )}
+          <Box>
+            <Outlet context={{ sort: sortingFields[sortNo] }} />
+          </Box>
         </Box>
-      </Box>
-
-      {/* mid bar with video and playlist button  */}
-      <Box
-        sx={{
-          bgcolor: "#121212",
-          width: "100%",
-          display: "flex",
-          gap: "25px",
-          position: "sticky",
-          top: "70px",
-          fontSize: "18px",
-          padding: "0 10%",
-          borderBottom: "1px solid #767676",
-          zIndex: "10",
-        }}
-      >
-        <Box
-          onMouseEnter={() => {
-            setHoveredTab(0);
-          }}
-          onMouseLeave={() => {
-            setHoveredTab(activeTab);
-          }}
-          sx={{
-            cursor: "pointer",
-            padding: "12px 0",
-            boxSizing: "border-box",
-            height: "50px",
-            position: "relative",
-
-            color: hoveredTab == 0 ? "white" : "#b3b3b3",
-            transition: "color 0.3s",
-          }}
-          onClick={() => navigate("/channel/67859dd754c800dc4239e30f/videos")}
-        >
-          Videos
-        </Box>
-        <Box
-          onMouseEnter={() => {
-            setHoveredTab(1);
-          }}
-          onMouseLeave={() => {
-            setHoveredTab(activeTab);
-          }}
-          sx={{
-            cursor: "pointer",
-            padding: "12px 0",
-            boxSizing: "border-box",
-            height: "50px",
-            position: "relative",
-            color: hoveredTab == 1 ? "white" : "#b3b3b3",
-          }}
-          onClick={() => navigate("/channel/67859dd754c800dc4239e30f/playlist")}
-        >
-          Playlist
-        </Box>
-        <Box
-          sx={{
-            bgcolor: "white",
-            width: "57px",
-            height: "2px",
-            position: "absolute",
-            bottom: "0px",
-            transition: "all 0.5s ",
-            left: `calc(10% + ${hoveredTab * (57 + 25)}px)`,
-          }}
-        />
-      </Box>
-
-      {/* last content  */}
-      <Box
-        sx={{
-          padding: "0 8%",
-          mt: "12px",
-          display: "flex",
-          gap: "15px",
-        }}
-      >
-        {buttonsForSorting.map((title, index) => (
-          <ButtonForSorting
-            isActive={index === sortNo}
-            sortNo={index}
-            title={title}
-            setSortNo={setSortNo}
-          />
-        ))}
-      </Box>
-      <Box
-        sx={
-          {
-            // width: "100%",
-            // padding: "0 10%",
-            // bgcolor: "red",
-          }
-        }
-      >
-        <Outlet context={{ sort: sortingFields[sortNo] }} />
-      </Box>
-    </Box>
+      )}
+      {!isLoading && !channel && <div>Channel does not exist</div>}
+    </>
   );
 };
 
@@ -433,5 +473,131 @@ const ButtonForSorting = ({ isActive = false, setSortNo, title, sortNo }) => {
     >
       {title}
     </Button>
+  );
+};
+
+const DiscriptionDialogBox = ({ isBig = false, channel }) => {
+  const [isDiscription, setIsDiscription] = useState(false);
+
+  return (
+    <Box
+      sx={{
+        padding: isBig ? "0" : "0 20px",
+        marginTop: isBig && "8px",
+        maxHeight: "24px",
+        alignItems: "center",
+        width: "auto",
+        color: "#767676",
+        // bgcolor: "yellow",
+        wordBreak: "break-word",
+        overflow: "hidden",
+        display: "inline-block",
+        position: "relative",
+        "@media (max-width: 875px)": {
+          display: isBig && "none",
+        },
+      }}
+    >
+      {channel?.bio}
+
+      <p
+        onClick={() => setIsDiscription(true)}
+        style={{
+          position: "absolute",
+          right: "0px",
+          top: "0",
+          // borderRadius: "40px",
+          backgroundColor: "#121212",
+          zIndex: "2",
+          boxShadow: "-8px 0 20px 10px #121212",
+          color: "white",
+          cursor: "pointer",
+        }}
+      >
+        ...more
+      </p>
+      <Modal
+        open={isDiscription}
+        onClose={() => setIsDiscription(false)}
+        aria-labelledby="modal-title"
+        aria-describedby="modal-description"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: { xs: "90%", sm: "400px" },
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            p: 4,
+            borderRadius: 3,
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+          }}
+        >
+          {/* Close Button */}
+          <IconButton
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              color: "grey.600",
+            }}
+            onClick={() => setIsDiscription(false)}
+          >
+            <CloseIcon />
+          </IconButton>
+
+          {/* Modal Header */}
+          <Typography id="modal-title" variant="h5" fontWeight="bold">
+            Channel Details
+          </Typography>
+
+          <Divider />
+
+          {/* Bio Section */}
+          <Typography
+            id="modal-description"
+            variant="body1"
+            color="text.secondary"
+          >
+            {channel?.bio || "No bio available."}
+          </Typography>
+
+          {/* About Section */}
+          <Typography id="modal-title" variant="h6" fontWeight="bold" mt={2}>
+            About Channel
+          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              mt: 1,
+            }}
+          >
+            <People fontSize="small" />
+            <Typography variant="body2" color="text.secondary">
+              {channel?.followers || "0"} subscribers
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <VideoLibrary fontSize="small" />
+            <Typography variant="body2" color="text.secondary">
+              {channel?.videos || "0"} videos
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Visibility fontSize="small" />
+            <Typography variant="body2" color="text.secondary">
+              {channel?.views || "0"} total views
+            </Typography>
+          </Box>
+        </Box>
+      </Modal>
+    </Box>
   );
 };

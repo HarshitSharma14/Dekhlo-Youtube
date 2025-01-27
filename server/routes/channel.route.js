@@ -3,6 +3,7 @@ import multer from "multer";
 import {
   createNewPlaylist,
   getChannelInfo,
+  getChannelPlaylists,
   getChannelVideos,
   getSubscribedChannelVideos,
   getWatchHistory,
@@ -23,7 +24,9 @@ const upload = multer({ storage: multer.memoryStorage() });
 // });
 
 // Routes **********************************************
-app.get("/get-info", getChannelInfo);
+app.get("/get-info", isUserLoggedIn, getChannelInfo);
+app.get("/get-info/:channelId", getChannelInfo);
+app.get("/playlists/:channelId", getChannelPlaylists);
 app.get("/videos/:channelId", getChannelVideos);
 
 // login required routes ****************************************

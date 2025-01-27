@@ -76,7 +76,7 @@ export const logout = (req, res) => {
 export const login = AsyncTryCatch(async (req, res, next) => {
   const { email, password } = req.body;
 
-  console.log(req.body);
+  //console.log(req.body);
 
   if (!email || !password) {
     return next(new ErrorHandler(400, "Please enter both email and password"));
@@ -84,7 +84,7 @@ export const login = AsyncTryCatch(async (req, res, next) => {
 
   const channel = await Channel.findOne({ email });
 
-  console.log(channel);
+  //console.log(channel);
 
   if (!channel) {
     return next(new ErrorHandler(404, "User does not exist"));

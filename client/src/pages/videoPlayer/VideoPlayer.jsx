@@ -1,10 +1,9 @@
 import React, { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
-import Header from '../../component/Header'
 import Plyr from "plyr-react";
 import "plyr-react/plyr.css";
-import { VIDEO_ROUTE } from '../../utils/constants';
 import axios from 'axios';
+import { GET_VIDEO } from '../../utils/constants';
 
 const VideoPlayer = () => {
 
@@ -12,7 +11,7 @@ const VideoPlayer = () => {
 
     useEffect(() => {
         const getVideoData = async () => {
-            const response = await axios(VIDEO_ROUTE, {
+            const response = await axios.get(GET_VIDEO, {
                 params: { videoId: videoId }
             })
             console.log(response.data)
@@ -21,8 +20,10 @@ const VideoPlayer = () => {
     }, [])
 
     return (
-        <div className='w-screen h-screen bg-red'>
 
+
+        <div className='w-screen h-screen bg-red'>
+            {videoId}
         </div>
     )
 }

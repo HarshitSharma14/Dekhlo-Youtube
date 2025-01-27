@@ -17,7 +17,7 @@ export const AsyncTryCatch = (func) => async (req, res, next) => {
   try {
     await func(req, res, next);
   } catch (err) {
-    console.log("erro in try cath", err);
+    console.log("erro in try cath");
     next(err);
   }
 };

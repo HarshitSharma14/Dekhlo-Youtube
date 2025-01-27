@@ -41,7 +41,7 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
       },
     });
     // console.log(totalVideoCount);
-    console.log("user loggdd in");
+    //console.log("user loggdd in");
     const user = await Channel.findById(channelId)
       .populate("following", "creator")
       .populate("likedVideos")

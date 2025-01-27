@@ -57,7 +57,7 @@ const router = createBrowserRouter([
         ),
         children: [
           {
-            path: "videos",
+            path: "",
             element: (
               <Suspense fallback={<div>Loading...</div>}>
                 <ChannelVideos />

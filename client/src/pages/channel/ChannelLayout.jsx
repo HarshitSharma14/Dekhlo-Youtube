@@ -3,7 +3,10 @@ import {
   AttachMoneyOutlined,
   Close as CloseIcon,
   NotificationAddOutlined,
+  Notifications,
+  NotificationsOff,
   People,
+  PersonRemove,
   VideoLibrary,
   Visibility,
 } from "@mui/icons-material";
@@ -13,19 +16,31 @@ import {
   Divider,
   IconButton,
   Modal,
+  Popover,
+  Switch,
   Typography,
 } from "@mui/material";
 import axios from "axios";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
-import { GET_CHANNEL_DETAILS } from "../../utils/constants";
+import {
+  GET_CHANNEL_DETAILS,
+  SUBSCRIBE_CHANNEL,
+  TOGGLE_BELL,
+  UNSUBSCRIBE_CHANNEL,
+} from "../../utils/constants";
+import toast from "react-hot-toast";
 
 const ChannelLayout = () => {
   // useState **********************************************************************************
   const [activeTab, setActiveTab] = useState(-10);
   const [hoveredTab, setHoveredTab] = useState(activeTab);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isDisabled, setIsDisabled] = useState(false);
   const [channel, setChannel] = useState(null);
   const [sortNo, setSortNo] = useState(0);
+  const [isBellEnabled, setIsBellEnabled] = useState(true);
+  const [anchorEl, setAnchorEl] = useState(null);
 
   // constant **********************************************************************************
   const navigate = useNavigate();
@@ -34,6 +49,24 @@ const ChannelLayout = () => {
   const location = useLocation();
   const params = useParams();
   const { channelId } = params;
+  const smallScreenConfig = {
+    justifyContent: "center",
+    width: "45%",
+    "@media (max-width: 500px)": {
+      fontSize: "12px",
+      mt: "7px",
+    },
+    "@media (max-width: 410px)": {
+      width: "auto",
+    },
+  };
+  const bigScreenConfig = {
+    justifyContent: "space-around",
+
+    "@media (max-width: 875px)": {
+      display: "none",
+    },
+  };
 
   // functions **********************************************************************************
   const getChannelInfo = async () => {
@@ -44,6 +77,7 @@ const ChannelLayout = () => {
       });
       console.log(data.channel);
       setChannel(data.channel);
+      setIsSubscribed(data.channel.isSubscribed);
     } catch (err) {
       console.log("err", err.response);
     } finally {
@@ -51,11 +85,44 @@ const ChannelLayout = () => {
     }
   };
 
+  const handleSubscribe = async (e) => {
+    if (isSubscribed) {
+      setAnchorEl(e.currentTarget);
+      return;
+    }
+    setIsDisabled(true);
+    try {
+      await axios.post(
+        SUBSCRIBE_CHANNEL,
+        { creatorId: channelId },
+        {
+          withCredentials: true,
+        }
+      );
+      setIsSubscribed(true);
+    } catch (err) {
+      setIsSubscribed(false);
+      console.log("not subs ", err);
+      toast.error(err?.response?.data?.message || "Something went wrong ");
+    } finally {
+      setIsDisabled(false);
+    }
+  };
+
+  const handleUnsubscribe = () => {
+    setIsSubscribed(false);
+    setAnchorEl(null); // Close the dropdown
+  };
+
+  const toggleBell = () => {
+    setIsBellEnabled(!isBellEnabled);
+  };
+
   // useEffect **********************************************************************************
   useEffect(() => {
     if (
       location.pathname.split("/")[location.pathname.split("/").length - 1] ===
-      "videos"
+      `${channelId}`
     ) {
       console.log("videos");
       setActiveTab(0);
@@ -219,63 +286,32 @@ const ChannelLayout = () => {
                   </Box>
                 </div>
                 <DiscriptionDialogBox isBig={true} channel={channel} />
-                <div
-                  style={{
-                    display: "flex",
+                <Box
+                  sx={{
+                    display: channel.isOwner ? "none" : "flex",
                     gap: "10px",
                   }}
                 >
-                  <Button
-                    sx={{
-                      mt: "28px",
-                      bgcolor: "#272727",
-                      color: "white",
-                      display: "flex",
-                      justifyContent: "space-around",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "8px 18px",
-                      borderRadius: "40px",
-                      ":hover": {
-                        bgcolor: "#767676",
-                      },
-                      "@media (max-width: 875px)": {
-                        display: "none",
-                      },
-                    }}
-                  >
-                    <AttachMoneyOutlined />
-                    Support Creator
-                  </Button>
-                  <Button
-                    sx={{
-                      mt: "28px",
-                      bgcolor: "red",
-                      color: "white",
-                      display: "flex",
-                      justifyContent: "space-around",
-                      alignItems: "center",
-                      gap: "10px",
-                      padding: "8px 18px",
-                      borderRadius: "40px",
-                      ":hover": {
-                        bgcolor: "#b10202",
-                      },
-                      "@media (max-width: 875px)": {
-                        display: "none",
-                      },
-                    }}
-                  >
-                    <NotificationAddOutlined />
-                    Susbscribe
-                  </Button>
-                </div>
+                  <ButtonForCreatorSupport
+                    button={2}
+                    config={bigScreenConfig}
+                    channelId={channelId}
+                  />
+                  <ButtonForCreatorSupport
+                    button={1}
+                    isSubscribedInitially={isSubscribed}
+                    isBellInitially={channel.isBell}
+                    config={bigScreenConfig}
+                    channelId={channelId}
+                  />
+                </Box>
               </Box>
             </Box>
 
             {/* Discription and button for subs and creator support  for small screen  */}
             <Box
               sx={{
+                display: channel.isOwner && "none",
                 "@media (min-width: 875px)": {
                   display: "none",
                 },
@@ -289,67 +325,23 @@ const ChannelLayout = () => {
                   justifyContent: "space-around",
                 }}
               >
-                <Button
-                  sx={{
-                    mt: "28px",
-                    bgcolor: "#272727",
-                    fontSize: "14px",
-                    color: "white",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: "10px",
-                    width: "45%",
-                    // padding: "8px 0",
-                    "@media (max-width: 500px)": {
-                      fontSize: "12px",
-                      mt: "7px",
-                    },
-                    "@media (max-width: 410px)": {
-                      width: "auto",
-                    },
-
-                    borderRadius: "40px",
-                    ":hover": {
-                      bgcolor: "#767676",
-                    },
-                  }}
-                >
-                  <AttachMoneyOutlined />
-                  Support Creator
-                </Button>
-                <Button
-                  sx={{
-                    mt: "28px",
-                    bgcolor: "red",
-                    fontSize: "14px",
-                    color: "white",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: "10px",
-                    width: "45%",
-                    // padding: "8px 18px",
-                    "@media (max-width: 500px)": {
-                      fontSize: "12px",
-                      mt: "7px",
-                    },
-                    "@media (max-width: 410px)": {
-                      width: "auto",
-                    },
-                    borderRadius: "40px",
-                    ":hover": {
-                      bgcolor: "#b10202",
-                    },
-                  }}
-                >
-                  <NotificationAddOutlined />
-                  Susbscribe
-                </Button>
+                <ButtonForCreatorSupport
+                  button={2}
+                  config={smallScreenConfig}
+                  channelId={channelId}
+                />
+                <ButtonForCreatorSupport
+                  button={1}
+                  isSubscribedInitially={isSubscribed}
+                  isBellInitially={channel.isBell}
+                  config={smallScreenConfig}
+                  channelId={channelId}
+                />
               </div>
             </Box>
           </Box>
 
+          {/* ****************************************************************************************************************************************************** */}
           {/* mid bar with video and playlist button  */}
           <Box
             sx={{
@@ -382,7 +374,7 @@ const ChannelLayout = () => {
                 color: activeTab == 0 ? "white" : "#b3b3b3",
                 transition: "color 0.3s",
               }}
-              onClick={() => navigate(`/channel/${channelId}/videos`)}
+              onClick={() => navigate(`/channel/${channelId}`)}
             >
               Videos
             </Box>
@@ -599,5 +591,208 @@ const DiscriptionDialogBox = ({ isBig = false, channel }) => {
         </Box>
       </Modal>
     </Box>
+  );
+};
+
+const ButtonForCreatorSupport = ({
+  button,
+  isSubscribedInitially = false,
+  isBellInitially = false,
+  config,
+  channelId,
+}) => {
+  const [isSubscribed, setIsSubscribed] = useState(isSubscribedInitially);
+  const [isBell, setIsBell] = useState(isBellInitially);
+  const [disabled, setDisabled] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  // functions ***************************************************************************
+  const handleSubscribe = async () => {
+    setDisabled(true);
+    try {
+      await axios.post(
+        SUBSCRIBE_CHANNEL,
+        { creatorId: channelId },
+        {
+          withCredentials: true,
+        }
+      );
+      setIsSubscribed(true);
+    } catch (err) {
+      setIsSubscribed(false);
+      console.log("not subs ", err);
+      toast.error(err?.response?.data?.message || "Something went wrong ");
+    } finally {
+      setDisabled(false);
+    }
+  };
+  const handleUnsubscribe = async () => {
+    setDisabled(true);
+    try {
+      await axios.delete(UNSUBSCRIBE_CHANNEL, {
+        data: { creatorId: channelId },
+
+        withCredentials: true,
+      });
+      setIsSubscribed(false);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Something went wrong");
+    } finally {
+      setAnchorEl(null); // Close popover after action
+      setDisabled(false);
+    }
+  };
+
+  const handleToggleBell = async () => {
+    setDisabled(true);
+    try {
+      await axios.patch(
+        TOGGLE_BELL,
+        { creatorId: channelId },
+        {
+          withCredentials: true,
+        }
+      );
+      setIsBell(!isBell);
+    } catch (err) {
+      console.log("bell icon ", err);
+      toast.error(err?.response?.data?.message || "Something went wrong");
+    } finally {
+      setAnchorEl(null); // Close popover after action
+      setDisabled(false);
+    }
+  };
+
+  const handleClick = (e) => {
+    if (button === 2) {
+      console.log("clicked on support creato");
+      return;
+    } else if (!isSubscribed) {
+      handleSubscribe();
+    } else {
+      setAnchorEl(e.currentTarget);
+      return;
+    }
+  };
+
+  return (
+    <>
+      <Button
+        sx={{
+          ...config,
+          mt: "28px",
+          bgcolor: isSubscribed || button == 2 ? "#272727" : "red",
+          color: "white",
+          display: "flex",
+          alignItems: "center",
+          gap: "10px",
+          padding: "8px 18px",
+          borderRadius: "40px",
+          ":hover": {
+            bgcolor: isSubscribed || button == 2 ? "#767676" : "#b10202",
+          },
+        }}
+        onClick={handleClick}
+        disabled={disabled}
+      >
+        {button === 1 && (
+          <>
+            {isSubscribed &&
+              (isBell ? <Notifications /> : <NotificationsOff />)}
+            {isSubscribed ? "Subscribed" : "Susbscribe"}
+          </>
+        )}
+        {button === 2 && (
+          <>
+            <AttachMoneyOutlined /> Support Creator
+          </>
+        )}
+      </Button>
+
+      {button === 1 && (
+        <Popover
+          open={Boolean(anchorEl)}
+          sx={{
+            width: "100%",
+          }}
+          anchorEl={anchorEl}
+          onClose={() => setAnchorEl(null)}
+          anchorOrigin={{
+            vertical: "bottom",
+            horizontal: "center",
+          }}
+          transformOrigin={{
+            vertical: "top",
+            horizontal: "center",
+          }}
+        >
+          <Box
+            sx={{
+              bgcolor: "#1e1e1e",
+              color: "white",
+              width: 200,
+              borderRadius: "8px",
+            }}
+          >
+            {/* Unsubscribe Button */}
+            <Button
+              fullWidth
+              sx={{
+                padding: "10px",
+                bgcolor: "#272727",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: "10px",
+                textTransform: "none",
+                ":hover": {
+                  bgcolor: "#3a3a3a",
+                },
+              }}
+              onClick={handleUnsubscribe}
+              disabled={disabled}
+            >
+              <PersonRemove />
+              Unsubscribe
+            </Button>
+
+            {/* Turn Off Bell Notifications Button */}
+            <Button
+              fullWidth
+              sx={{
+                padding: "10px",
+
+                bgcolor: "#272727",
+                color: "white",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: "10px",
+                textTransform: "none",
+                ":hover": {
+                  bgcolor: "#3a3a3a",
+                },
+              }}
+              onClick={handleToggleBell}
+              disabled={disabled}
+            >
+              {/* <Notifications /> */}
+              {isBell ? (
+                <>
+                  <NotificationsOff />
+                  Turn Off Bell{" "}
+                </>
+              ) : (
+                <>
+                  <Notifications />
+                  Turn on Bell
+                </>
+              )}
+            </Button>
+          </Box>
+        </Popover>
+      )}
+    </>
   );
 };

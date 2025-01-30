@@ -13,6 +13,7 @@ const VideoCard = ({
   uploadTime,
   channelProfile,
   videoUrl,
+  isInChannel = false,
 }) => {
   const [isHovered, setIsHovered] = useState(false);
   const [isInView, setIsInView] = useState(false);
@@ -22,49 +23,7 @@ const VideoCard = ({
   const videoRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
 
-  const { setVideoInfo, videoInfo } = useAppStore()
-
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const videoElement = cardRef.current;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsInView(true); // Start loading video only when in view
-        } else {
-          setIsInView(false); // Stop loading video if not in view
-        }
-      },
-      {
-        threshold: 0.25,
-      }
-    );
-
-    if (videoElement) {
-      observer.observe(videoElement);
-    }
-
-    return () => {
-      if (videoElement) {
-        observer.unobserve(videoElement);
-      }
-    };
-  }, []);
-
-  // const handleClick = () => {
-  //   setVideoInfo({
-  //     id,
-  //     thumbnail,
-  //     title,
-  //     channelName,
-  //     views,
-  //     uploadTime,
-  //     channelProfile,
-  //     videoUrl,
-  //   })
-  //   navigate(`/video-player`)
-  // }
 
   const handleHover = () => {
     if (videoRef.current) {
@@ -86,42 +45,25 @@ const VideoCard = ({
     }
   };
 
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
-    }
-  };
-
-  const skip10Seconds = () => {
-    if (videoRef.current) {
-      videoRef.current.currentTime += 10;
-    }
-  };
-
   return (
     <div
       ref={cardRef}
       onClick={() => navigate(`/video-player/${id}`)}
       className="video-card"
       style={{
-        height: "320px",
+        height: isInChannel ? "270px" : "320px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
       }}
       onMouseEnter={() => {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-
-        hoverTimeoutRef.current = setTimeout(() => {
-          setIsHovered(true);
-          handleHover();
-        }, 300);
+        setIsInView(true);
       }}
       onMouseLeave={() => {
         // Clear the timeout on mouse leave
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-
+        setIsInView(false);
         setIsHovered(false);
         handleMouseLeave();
       }}
@@ -130,8 +72,9 @@ const VideoCard = ({
         style={{
           height: "70%",
         }}
-        className={`video-card-thumbnail ${isHovered ? "thumbnail-transition" : ""
-          }`}
+        className={`video-card-thumbnail ${
+          isHovered ? "thumbnail-transition" : ""
+        }`}
       >
         {isInView && (
           <div
@@ -143,8 +86,14 @@ const VideoCard = ({
           >
             <video
               ref={videoRef}
+              onCanPlay={() => {
+                hoverTimeoutRef.current = setTimeout(() => {
+                  setIsHovered(true);
+                  handleHover();
+                }, 300);
+              }}
               src={videoUrl} // Start loading the video when in view
-              muted={isMuted}
+              muted={true}
               onTimeUpdate={handleTimeUpdate}
               controls={false}
               loop
@@ -191,35 +140,6 @@ const VideoCard = ({
                     }}
                   ></div>
                 </div>
-
-                {/* Mute/Unmute Button */}
-                {/* <div
-                  className="buttones"
-                  style={{
-                    position: "absolute",
-                    top: "0",
-                  }}
-                >
-                  <button
-                    className="mute-button"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent click propagation
-                      toggleMute();
-                    }}
-                  >
-                    {isMuted ? "Unmute" : "Mute"}
-                  </button>
-
-                  <button
-                    className="skip-button"
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent click propagation
-                      skip10Seconds();
-                    }}
-                  >
-                    +10s
-                  </button>
-                </div> */}
               </div>
             )}
           </div>
@@ -237,17 +157,21 @@ const VideoCard = ({
       </div>
 
       <div className="video-card-info">
-        <div className="video-card-avatar">
-          <img
-            src={channelProfile}
-            alt={channelName}
-            className="channel-avatar"
-          />
-        </div>
+        {!isInChannel && (
+          <div className="video-card-avatar">
+            <img
+              src={channelProfile}
+              alt={channelName}
+              className="channel-avatar"
+            />
+          </div>
+        )}
         <div className="video-card-details">
           <h3 className="video-card-title">{title}</h3>
           <div className="meta">
-            <p className="video-card-channel">{channelName}</p>
+            {!isInChannel && (
+              <p className="video-card-channel">{channelName}</p>
+            )}
             <p className="video-card-meta">
               {views} views • {formatUploadTime(uploadTime)}
             </p>

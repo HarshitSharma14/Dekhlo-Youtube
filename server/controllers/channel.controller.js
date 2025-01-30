@@ -7,27 +7,62 @@ import {
   UploadSinglePhotoToCloudinary,
   UploadVideoAndThumbnail,
 } from "../utils/features.js";
-import { ErrorHandler } from "../utils/utility.js";
+import { ErrorHandler, sortByKey } from "../utils/utility.js";
 import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
 import Playlist from "../models/playlist.model.js";
 import { v2 as cloudinary } from "cloudinary";
-
 
 // const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 // console.log(JWT_SECRET);
 
 export const getChannelInfo = AsyncTryCatch(async (req, res, next) => {
   // is is neccessory to logged in to access this come later on this (TO BE CHANGED ) ****************************** <<--
-  const token = req.cookies.jwt;
-  // console.log(token);
-  if (!token) {
-    return next(new ErrorHandler(401, "Unnauthorize"));
+  const { channelId } = req.params;
+  let isOwner = false;
+  let isSubscribed = false;
+  let channelIdVisiting = null;
+
+  try {
+    const token = req.cookies.jwt;
+    const decodedData = jwt.verify(token, JWT_SECRET);
+    channelIdVisiting = decodedData.channelId;
+    if (channelIdVisiting.toString() == channelId.toString()) {
+      isOwner = true;
+    }
+  } catch (error) {
+    console.log("cant send private videos");
   }
-  const decoded = jwt.verify(token, JWT_SECRET);
-  const channel = await Channel.findById(decoded.channelId);
-  // console.log(decoded);
-  res.json(channel);
+  const channel = await Channel.findById(channelId).select(
+    "channelName email profilePhoto bio coverImage followers videos views"
+  );
+
+  if (channelIdVisiting && !isOwner) {
+    isSubscribed = await Subscription.findOne({
+      subscriber: channelIdVisiting,
+      creator: channelId,
+    });
+  }
+  // console.log(channel);
+  if (!channel) next(new ErrorHandler(404, "Channel not found"));
+
+  const dataToSend = {
+    channelName: channel.channelName,
+    email: channel.email,
+    profilePhoto: channel.profilePhoto,
+    bio: channel.bio,
+    coverImage: channel.coverImage,
+    followers: channel.followers.length,
+    videos: channel.videos.length,
+    views: channel.views,
+    isOwner,
+    isSubscribed: !!isSubscribed,
+    isBell: isSubscribed?.bell,
+  };
+
+  res
+    .status(200)
+    .json({ message: "Channel Info fetched ", channel: dataToSend });
 });
 
 // update profile ********************************************************************************************
@@ -57,7 +92,7 @@ export const updateProfile = AsyncTryCatch(async (req, res, next) => {
 
 // subscribe ************************************************************************************************
 export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
-  const { creatorId, bell } = req.body;
+  const { creatorId } = req.body;
 
   const channelToBeSubscribed = await Channel.findById(creatorId);
 
@@ -69,12 +104,12 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
   });
 
   if (isSubsriptionAlreadyExist)
-    next(new ErrorHandler(400, "User already subscribed"));
+    return next(new ErrorHandler(400, "User already subscribed"));
 
   const newSubscription = new Subscription({
     subscriber: req.channelId,
     creator: creatorId,
-    bell: bell || true,
+    bell: true,
   });
 
   await newSubscription.save();
@@ -91,7 +126,7 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
 
 // unsubscribe ************************************************************************************************
 export const unSubscribeChannel = AsyncTryCatch(async (req, res, next) => {
-  const { creatorId } = req.params;
+  const { creatorId } = req.body;
 
   const channelToBeUnSubscribed = await Channel.findById(creatorId);
 
@@ -192,26 +227,31 @@ export const createNewPlaylist = AsyncTryCatch(async (req, res, next) => {
 
 export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   // console.log("inside")
-  const { title, description, channelId, isPrivate, canComment, category, duration, videoId } = req.body;
+  const {
+    title,
+    description,
+    channelId,
+    isPrivate,
+    canComment,
+    category,
+    duration,
+    videoId,
+  } = req.body;
   // console.log(channelId)
   // console.log(req.files.video)
   // console.log(req.files.thumbnail)
   let videoIfAvailable = null
-  console.log(videoId)
-  if (videoId.length) {
-    console.log(
-      'inside if'
-    )
+  if (videoId) {
     videoIfAvailable = await Video.findById(videoId)
   }
   if (videoIfAvailable) {
-
     // console.log(channelId)
     // console.log(videoIfAvailable.channel)
 
-
     if (channelId !== videoIfAvailable.channel.toString()) {
-      return next(new ErrorHandler(400, "Video does not belong to this channel"))
+      return next(
+        new ErrorHandler(400, "Video does not belong to this channel")
+      );
     }
 
     const updateFields = {
@@ -222,16 +262,11 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
       category,
     };
 
-
     if (req.files.thumbnail) {
-
-      console.log("yessur init")
-
       //first adding the new thumbnail
       const { thumbnailUrlNew } = await UpdateThumbnail(req);
-      console.log("yessur auta it")
 
-      updateFields.thumbnailUrl = thumbnailUrlNew
+      updateFields.thumbnailUrl = thumbnailUrlNew;
 
       if (thumbnailUrlNew) {
         //if new thumbnail successfully added, deleting the older thumbnail
@@ -248,7 +283,7 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
         }
 
         // Example usage
-        const url = videoIfAvailable.thumbnailUrl
+        const url = videoIfAvailable.thumbnailUrl;
         const publicId = getPublicIdFromUrl(url);
 
         const deleteImageFromCloudinary = async (publicId) => {
@@ -260,9 +295,7 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
           }
         };
 
-
         deleteImageFromCloudinary(publicId);
-
       }
     }
 
@@ -274,10 +307,7 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
     return res
       .status(201)
       .json({ message: "Video updated successfully", updatedVideo });
-
   }
-
-
 
   if (!req.files.thumbnail || !req.files.video || !title || !channelId) {
     return next(
@@ -285,7 +315,7 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
     );
   }
 
-  console.log("inside2")
+  // console.log("inside2")
 
 
   const { videoUrlNew, thumbnailUrlNew } = await UploadVideoAndThumbnail(req);
@@ -310,8 +340,119 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   channel.videos.push(videonew._id);
   await channel.save();
 
-
   return res
     .status(201)
     .json({ message: "Video uploaded successfully", videonew });
+});
+
+// get Channel Videoss *********************************************************************************
+export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
+  const channelIdForVideos = req.params.channelId;
+  const { page = 0, limit = 20, sort = "createdAt_desc" } = req.query;
+  let canSendPrivateVideos = false;
+  console.log("get channel page and sort", page, sort);
+  const channelToFetchVideosFrom = await Channel.findById(
+    channelIdForVideos
+  ).populate("videos");
+  if (!channelToFetchVideosFrom) {
+    return next(new ErrorHandler(404, "Channel not found"));
+  }
+
+  // checking wheather the user asking for the videos can access the private videos
+
+  try {
+    const token = req.cookies.jwt;
+    const decodedData = jwt.verify(token, JWT_SECRET);
+    const channelIdVisiting = decodedData.channelId;
+    if (channelIdVisiting.toString() == channelIdForVideos.toString()) {
+      canSendPrivateVideos = true;
+    }
+  } catch (error) {
+    console.log("cant send private videos");
+  }
+  let videosCanBeSent = channelToFetchVideosFrom.videos.filter(
+    (vid) => !vid.isPrivate || canSendPrivateVideos
+  );
+
+  const [sortField, sortDirection] = sort.split("_"); // splits the sort string in the query parameter and takes the first two subarray from it and assign it to the corresponding variable
+
+  const sortedVideos = sortByKey(videosCanBeSent, sortField, sortDirection); // function created in utitlity.js file can take name_acs, name_desc , views_acs, ...,createdAt_asc
+
+  const startingIndex = parseInt(page, 10) * parseInt(limit, 10);
+
+  let videosToSend = sortedVideos.slice(
+    startingIndex,
+    startingIndex + parseInt(limit, 10)
+  );
+
+  const totalPages = Math.ceil(sortedVideos.length / limit) || 0;
+  res.status(200).json({
+    message: "videos fetched successfully",
+    totalPages,
+    videos: videosToSend,
+  });
+});
+
+// get playlist **********************************************************************************
+export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
+  const { channelId } = req.params;
+
+  let canSendPrivatePlaylist = false;
+  try {
+    const token = req.cookies.jwt;
+    const decodedData = jwt.verify(token, JWT_SECRET);
+    const channelIdVisiting = decodedData.channelId;
+    if (channelIdVisiting.toString() == channelId.toString()) {
+      canSendPrivatePlaylist = true;
+    }
+  } catch (error) {
+    console.log("cant send private playlist");
+  }
+  const x = await Channel.findById(channelId);
+  // console.log("in playlist ", x);
+  const channel = await Channel.findById(channelId)
+    .select("playlists")
+    .populate({
+      path: "playlists",
+      select: "name playlists",
+      populate: {
+        path: "videos",
+        select: "thumbnailUrl",
+      },
+    })
+    .sort({ updatedAt: -1 })
+    .exec();
+
+  if (!channel) return next(new ErrorHandler(404, "Channel not found"));
+
+  let playlists = channel.playlists;
+
+  if (!canSendPrivatePlaylist) {
+    playlists = playlists.filter((plist) => plist.isPrivate != true);
+  }
+
+  const dataToSend = playlists.map((plist) => {
+    const videoCount = plist.videos.length;
+    const vids = plist.videos.slice(0, 3); // only neccessory  the top three videos
+    return { ...plist, videos: vids, videoCount };
+  });
+
+  res.status(200).json({ playlists: dataToSend });
+});
+
+// toggle bell *********************************************************************************
+export const toggleBell = AsyncTryCatch(async (req, res, next) => {
+  const { creatorId } = req.body;
+  const subscription = await Subscription.findOne({
+    subscriber: req.channelId,
+    creator: creatorId,
+  });
+
+  if (!subscription)
+    return next(new ErrorHandler(404, "Subscription not found"));
+
+  subscription.bell = !subscription.bell;
+  await subscription.save();
+
+  res.status(200).json({ success: true });
 });

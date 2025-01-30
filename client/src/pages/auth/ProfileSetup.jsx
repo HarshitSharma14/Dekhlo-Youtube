@@ -37,6 +37,8 @@ const ProfileSetup = () => {
   const [formErrors, setFormErrors] = useState({
     password: "",
     confirmPassword: "",
+    channelName: "",
+    bio: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setConfirmShowPassword] = useState(false);
@@ -55,6 +57,24 @@ const ProfileSetup = () => {
     setFormData({ ...formData, [name]: value });
 
     setFormErrors({ ...formErrors, [e.target.name]: "" });
+
+    // check for teh length of the channel name *****************
+    if (name === "name" && value.length > 25) {
+      setFormErrors((pre) => ({
+        ...pre,
+        channelName: "Channel name can not exceed 25 characters",
+      }));
+    } else if (name === "name")
+      setFormErrors((pre) => ({ ...pre, channelName: "" }));
+
+    // check for bio
+    if (name === "bio" && value.length < 20) {
+      setFormErrors((pre) => ({
+        ...pre,
+        bio: "Bio should contain atleast 20 characters",
+      }));
+    } else if (name === "bio") setFormErrors((pre) => ({ ...pre, bio: "" }));
+
     // Check for password length and match confirm password ***************
     if (name === "password" && value.length < 6) {
       setFormErrors((prev) => ({
@@ -136,17 +156,18 @@ const ProfileSetup = () => {
   const getChannelInfo = async () => {
     const toatId = toast.loading("Fetching channel info...");
     try {
-      const channel = await axios.get(GET_CHANNEL_DETAILS, {
+      const { data } = await axios.get(GET_CHANNEL_DETAILS, {
         withCredentials: true,
       });
       setFormData({
         ...formData,
-        name: channel.data.channelName,
-        profilePhotoUrl: channel.data.profilePhoto.toString(),
-        bio: channel.data.bio,
+        name: data.channel.channelName,
+        profilePhotoUrl: data.channel.profilePhoto.toString(),
+        bio: data.channel.bio,
       });
       toast.success("Channel info retreived successfully", { id: toatId });
     } catch (error) {
+      console.log(error);
       console.log(
         "Error fetching channel info",
         error?.response?.data?.message,
@@ -298,6 +319,8 @@ const ProfileSetup = () => {
                 </Box>
                 <TextField
                   label="Channel Name"
+                  error={!!formErrors.channelName}
+                  helperText={formErrors.channelName}
                   name="name"
                   fullWidth
                   value={formData.name}
@@ -327,6 +350,9 @@ const ProfileSetup = () => {
                 rows={4}
                 fullWidth
                 value={formData.bio}
+                required
+                error={!!formErrors.bio}
+                helperText={formErrors.bio}
                 onChange={handleChange}
               />
             </Box>
@@ -442,7 +468,11 @@ const ProfileSetup = () => {
                   setCurrentStep(currentStep + 1);
                   return;
                 }}
-                disabled={!formData.name || !formData.profilePhotoUrl}
+                disabled={
+                  currentStep == 0
+                    ? !formData.name || !formData.profilePhotoUrl
+                    : formData.bio.length < 20
+                }
               >
                 Next
               </Button>

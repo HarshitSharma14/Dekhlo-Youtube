@@ -1,31 +1,31 @@
-import React, { lazy, Suspense, useEffect } from "react";
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "react-hot-toast";
-import {
-  createBrowserRouter,
-  RouterProvider,
-  useLocation,
-} from "react-router-dom";
-import LoadingPage from "./component/LoadingPage.jsx";
-import { LocalDiningSharp } from "@mui/icons-material";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+// import LoadingPage from "./component/LoadingLayouts/HomeLayoutLoadingPage.jsx";
+// import ChannelLayout from "./pages/channel/ChannelLayout.jsx";
+// import ChannelVideos from "./pages/channel/ChannelVideos.jsx";
 import UpdateVideo from "./pages/home/UpdateVideo.jsx";
-import { useAppStore } from "./store/index.js";
 import VideoPlayer from "./pages/videoPlayer/VideoPlayer.jsx";
-import ChannelLandingPage from "./pages/channel/ChannelLandingPage.jsx";
-import ChannelVideos from "./pages/channel/ChannelVideos.jsx";
+import HomeLayoutLoadingPage from "./component/LoadingLayouts/HomeLayoutLoadingPage.jsx";
+import PlaylistCard from "./component/PlaylistCard.jsx";
+import ChannelPlaylist from "./pages/channel/ChannelPlaylist.jsx";
 
 // Routes imports ****************************************
-const Home = lazy(() => import("./pages/home/Home.jsx"));
+const HomeLayout = lazy(() => import("./pages/home/HomeLayout.jsx"));
 const Signup = lazy(() => import("./pages/auth/Signup.jsx"));
 const ProfileSetup = lazy(() => import("./pages/auth/ProfileSetup.jsx"));
 const HomeContent = lazy(() => import("./pages/home/HomeContent.jsx"));
+const ChannelLayout = lazy(() => import("./pages/channel/ChannelLayout.jsx"));
+const ChannelVideos = lazy(() => import("./pages/channel/ChannelVideos.jsx"));
+// const VideoPlayer = lazy(() => import("./pages/home/VideoPlayer.jsx"));
 // const UpdateVideo = lazy(() => import("./pages/home/UpdateVideo.jsx"));
 
 const router = createBrowserRouter([
   {
     path: "/",
     element: (
-      <Suspense fallback={<LoadingPage />}>
-        <Home />
+      <Suspense fallback={<HomeLayoutLoadingPage />}>
+        <HomeLayout />
       </Suspense>
     ),
 
@@ -52,15 +52,15 @@ const router = createBrowserRouter([
         path: "/channel/:channelId/",
         element: (
           <Suspense fallback={<div>Loading...</div>}>
-            <ChannelLandingPage />
+            <ChannelLayout />
           </Suspense>
         ),
         children: [
           {
-            path: "videos",
+            path: "",
             element: (
               <Suspense fallback={<div>Loading...</div>}>
-                <HomeContent />
+                <ChannelVideos />
               </Suspense>
             ),
           },
@@ -68,7 +68,7 @@ const router = createBrowserRouter([
             path: "playlist",
             element: (
               <Suspense fallback={<div>Loading...</div>}>
-                <ChannelVideos />
+                <ChannelPlaylist />
               </Suspense>
             ),
           },
@@ -78,7 +78,7 @@ const router = createBrowserRouter([
   },
   {
     path: "/loading",
-    element: <LoadingPage />,
+    element: <HomeLayoutLoadingPage />,
   },
   {
     path: "/signup",

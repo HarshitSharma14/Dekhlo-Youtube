@@ -26,7 +26,7 @@ const channelSchema = new Schema(
     bio: {
       type: String,
     },
-    playlist: [
+    playlists: [
       {
         type: Schema.Types.ObjectId,
         ref: "Playlist",
@@ -47,10 +47,6 @@ const channelSchema = new Schema(
     settings: {
       type: Schema.Types.ObjectId,
       ref: "Settings",
-    },
-    videoCount: {
-      type: Number,
-      default: 0,
     },
     coverImage: {
       type: String,

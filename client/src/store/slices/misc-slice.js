@@ -1,6 +1,7 @@
 export const createMiscSlice = (set) => ({
   isSidebarOpen: JSON.parse(sessionStorage.getItem("isSidebarOpen")) ?? false,
   activeTabInChannel: -10,
+
   sidebarActivity: {
     isHome: false,
     isSubscriptionVideos: false,
@@ -23,10 +24,10 @@ export const createMiscSlice = (set) => ({
       );
 
       // Save the updated state to sessionStorage
-      sessionStorage.setItem(
-        "sidebarActivity",
-        JSON.stringify(newSidebarActivity)
-      );
+      // sessionStorage.setItem(
+      //   "sidebarActivity",
+      //   JSON.stringify(newSidebarActivity)
+      // );
 
       return { sidebarActivity: newSidebarActivity };
     }),

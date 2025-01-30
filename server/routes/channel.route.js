@@ -3,9 +3,12 @@ import multer from "multer";
 import {
   createNewPlaylist,
   getChannelInfo,
+  getChannelPlaylists,
+  getChannelVideos,
   getSubscribedChannelVideos,
   getWatchHistory,
   subscribeChannel,
+  toggleBell,
   unSubscribeChannel,
   updateProfile,
   updateVideo,
@@ -22,14 +25,16 @@ const upload = multer({ storage: multer.memoryStorage() });
 // });
 
 // Routes **********************************************
-app.get("/get-info", getChannelInfo);
+app.get("/get-info/:channelId", getChannelInfo);
+app.get("/playlists/:channelId", getChannelPlaylists);
+app.get("/videos/:channelId", getChannelVideos);
 
 // login required routes ****************************************
 app.use(isUserLoggedIn);
 app.post("/update-profile", upload.single("profilePhotoFile"), updateProfile);
-app.post("/upload-video", () => {});
 app.post("/subscribe", subscribeChannel);
-app.delete("/unsubscribe/:creatorId", unSubscribeChannel);
+app.delete("/unsubscribe", unSubscribeChannel);
+app.patch("/toggle-bell", toggleBell);
 app.get("/subscription/videos", getSubscribedChannelVideos);
 app.get("/watch-history", getWatchHistory);
 app.post("/create-playlist", createNewPlaylist);

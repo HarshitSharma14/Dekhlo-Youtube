@@ -25,7 +25,7 @@ const databaseURL = process.env.DATABASE_URL;
 const app = express();
 const corsOptions = {
   origin: "http://localhost:5173", // Frontend URL
-  methods: ["GET", "POST", "PUT", "DELETE"], // Methods you want to allow
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Methods you want to allow
   credentials: true,
 };
 const clientID = process.env.GOOGLE_CLIENT_ID;

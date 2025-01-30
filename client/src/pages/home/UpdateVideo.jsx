@@ -27,14 +27,12 @@ import { useAppStore } from "../../store";
 import { useNavigate } from "react-router-dom";
 
 const UpdateVideo = () => {
-
-  let videoId = ""
-
-  const [justEditVideo, setJustEditVideo] = useState(false)
+  // const videoId = "678d1c9efd4f5b3f71a9f989";
+  const videoId = "";
+  const [justEditVideo, setJustEditVideo] = useState(false);
 
   const navigate = useNavigate();
   const { channelInfo, setChannelInfo } = useAppStore();
-
 
   // use states******************************************
   const [isActive, setIsActive] = useState([false, false]);
@@ -52,16 +50,21 @@ const UpdateVideo = () => {
   });
   const [uploading, setUploading] = useState(false);
 
-  // ************************************************useeffect to get channel details 
+  // ************************************************useeffect to get channel details
 
   useEffect(() => {
     const getChannelData = async () => {
       try {
-        const res = await axios.get(GET_CHANNEL_DETAILS, { withCredentials: true });
-
-        console.log(res);
-        setChannelInfo(res.data);
-
+        const res = await axios.get(GET_CHANNEL_DETAILS, {
+          withCredentials: true,
+        });
+        if (!res.data) {
+          console.log("not logged in");
+          navigate("/");
+        } else {
+          console.log(res);
+          setChannelInfo(res.data);
+        }
       } catch (error) {
         console.log(error);
         navigate("/");
@@ -70,7 +73,6 @@ const UpdateVideo = () => {
 
     getChannelData();
   }, []); // Runs only on mount
-
 
   // ************************************************useeffect to getvideo details after we have channel info
   useEffect(() => {
@@ -86,7 +88,7 @@ const UpdateVideo = () => {
         if (response.data.videoDetails.channel !== channelInfo._id) {
           navigate("/");
         }
-        setJustEditVideo(true)
+        setJustEditVideo(true);
 
         setVideoDetails({
           title: response.data.videoDetails.title,
@@ -97,12 +99,11 @@ const UpdateVideo = () => {
           videoFile: null,
           canComment: response.data.videoDetails.canComment ? "true" : "false",
           isPrivate: response.data.videoDetails.isPrivate,
-        })
+        });
 
-        setImageSrc(response.data.videoDetails.thumbnailUrl)
+        setImageSrc(response.data.videoDetails.thumbnailUrl);
 
-        setVideoUploaded(true)
-
+        setVideoUploaded(true);
       } catch (error) {
         console.log(error);
       }
@@ -124,7 +125,10 @@ const UpdateVideo = () => {
   const handleSubmit = async () => {
     setUploading(true);
 
-    if ((!videoDetails.thumbnailFile && !justEditVideo) || (!videoDetails.videoFile && !justEditVideo)) {
+    if (
+      (!videoDetails.thumbnailFile && !justEditVideo) ||
+      (!videoDetails.videoFile && !justEditVideo)
+    ) {
       toast.error("Upload the video");
       setUploading(false);
       return;
@@ -135,9 +139,9 @@ const UpdateVideo = () => {
       return;
     }
 
-    console.log(videoDetails.thumbnailFile)
-    console.log(videoDetails.videoFile)
-    console.log(videoDetails)
+    console.log(videoDetails.thumbnailFile);
+    console.log(videoDetails.videoFile);
+    console.log(videoDetails);
     const formData = new FormData();
     formData.append("title", videoDetails.title);
     formData.append("description", videoDetails.description);
@@ -149,7 +153,6 @@ const UpdateVideo = () => {
     formData.append("duration", videoDetails.duration);
     formData.append("videoId", videoId);
     formData.append("video", videoDetails.videoFile);
-
 
     const toastId = toast.loading("Uploading video...");
     console.log("firs");
@@ -563,7 +566,6 @@ const UpdateVideo = () => {
                           canComment: event.target.checked ? "true" : "false",
                         }))
                       }
-
                       color="default"
                     />
                   }

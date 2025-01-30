@@ -33,3 +33,4 @@ export const VIDEO_ROUTE = `${server}/video`;
 
 export const GET_VIDEO_DETAILS = `${VIDEO_ROUTE}/video-details`;
 export const GET_VIDEO = `${VIDEO_ROUTE}/get-video`;
+export const GET_PLAY_NEXT = `${VIDEO_ROUTE}/get-play-next`;

@@ -22,7 +22,7 @@ import { LoaderIcon } from "react-hot-toast";
 const HomeLayout = () => {
   // console.log("home");
   // useStates ************************************************************************
-  const [isVideoPlayer, setIsVideoPlayer] = useState(false);
+  const [isVideoPlayer, setIsVideoPlayer] = useState(true);
   const [bigWindow, setBigWindow] = useState(false);
 
   // constants *************************************************************************
@@ -64,9 +64,9 @@ const HomeLayout = () => {
     if (location.pathname == `/video-player/${videoId}`) setIsVideoPlayer(true);
     else setIsVideoPlayer(false);
 
-    return () => {
-      setIsVideoPlayer(false);
-    };
+    // return () => {
+    //   setIsVideoPlayer(false);
+    // };
   }, [location.pathname]);
 
   //                 <<-- using the window size to predite whether the permanent sidebar should be disappearing or not

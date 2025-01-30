@@ -1,7 +1,7 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Box, CircularProgress } from "@mui/material";
-import VideoCardLoading from "../../component/LoadingLayouts/VideoCardLoading";
-import VideoCard from "../../component/VideoCard";
+import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
+import VideoCard from "../../component/cards/VideoCard";
 import { useOutletContext, useParams } from "react-router-dom";
 import axios from "axios";
 import { GET_CHANNEL_VIDEOS } from "../../utils/constants";
@@ -16,7 +16,7 @@ const ChannelVideos = () => {
   const params = useParams();
   const { channelId } = params;
   const videosRef = useRef(videos);
-  const { sort } = useOutletContext();
+  const { sort, isOwner } = useOutletContext();
   useEffect(() => {
     videosRef.current = videos;
   }, [videos.length]);
@@ -110,6 +110,7 @@ const ChannelVideos = () => {
                 uploadTime={video?.createdAt}
                 videoUrl={video?.videoUrl}
                 isInChannel={true}
+                isOwner={isOwner}
               />
             ))}
             {isLoading && videos.length && (

@@ -12,6 +12,10 @@ const playlistSchema = new Schema(
         ref: "Video",
       },
     ],
+    videosCount: {
+      type: Number,
+      default: 0,
+    },
     private: {
       type: Boolean,
       default: true,

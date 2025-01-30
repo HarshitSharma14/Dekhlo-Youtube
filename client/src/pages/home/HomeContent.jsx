@@ -1,10 +1,10 @@
 import React, { memo, useEffect, useState } from "react";
-import VideoCard from "../../component/VideoCard";
+import VideoCard from "../../component/cards/VideoCard";
 import { Box, CircularProgress } from "@mui/material";
 import axios from "axios";
 import { GET_HOME_VIDEOS_ROUTE } from "../../utils/constants";
 import { useNavigate } from "react-router-dom";
-import VideoCardLoading from "../../component/LoadingLayouts/VideoCardLoading";
+import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
 
 const HomeContent = () => {
   //constants *******************************
@@ -109,6 +109,7 @@ const HomeContent = () => {
               id={video?._id}
               thumbnail={video?.thumbnailUrl}
               title={video?.title}
+              channelId={video?.channel._id}
               channelName={video?.channel.channelName}
               views={video?.views}
               uploadTime={video?.createdAt}
@@ -148,14 +149,7 @@ const HomeContent = () => {
                 justifyItems: "center",
               }}
             >
-              <Box
-                sx={{
-                  position: "relative",
-                  left: "50%",
-                }}
-              >
-                No videos to show
-              </Box>
+              <Box>No videos to show</Box>
             </div>
           )}
         </Box>

@@ -1,10 +1,12 @@
 import { Router } from "express";
 import multer from "multer";
 import {
-  createNewPlaylist,
+  addVideosToPlaylist,
   getChannelInfo,
   getChannelPlaylists,
   getChannelVideos,
+  getSelfChannelInfo,
+  getSubscribedChannel,
   getSubscribedChannelVideos,
   getWatchHistory,
   subscribeChannel,
@@ -25,19 +27,21 @@ const upload = multer({ storage: multer.memoryStorage() });
 // });
 
 // Routes **********************************************
+app.get("/get-info", isUserLoggedIn, getSelfChannelInfo);
 app.get("/get-info/:channelId", getChannelInfo);
 app.get("/playlists/:channelId", getChannelPlaylists);
 app.get("/videos/:channelId", getChannelVideos);
 
 // login required routes ****************************************
 app.use(isUserLoggedIn);
+app.get("/get-subscribedchannels", getSubscribedChannel);
+app.post("/add-to-playlist", addVideosToPlaylist);
 app.post("/update-profile", upload.single("profilePhotoFile"), updateProfile);
 app.post("/subscribe", subscribeChannel);
 app.delete("/unsubscribe", unSubscribeChannel);
 app.patch("/toggle-bell", toggleBell);
 app.get("/subscription/videos", getSubscribedChannelVideos);
 app.get("/watch-history", getWatchHistory);
-app.post("/create-playlist", createNewPlaylist);
 app.post(
   "/update-videoinfo",
   upload.fields([{ name: "video" }, { name: "thumbnail" }]),

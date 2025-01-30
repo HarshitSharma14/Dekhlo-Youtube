@@ -1,8 +1,8 @@
 import { Box, CircularProgress } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import VideoCardLoading from "../../component/LoadingLayouts/VideoCardLoading";
+import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
 import { useParams } from "react-router-dom";
-import PlaylistCard from "../../component/PlaylistCard";
+import PlaylistCard from "../../component/cards/PlaylistCard";
 import axios from "axios";
 import { GET_CHANNEL_PLAYLIST } from "../../utils/constants";
 

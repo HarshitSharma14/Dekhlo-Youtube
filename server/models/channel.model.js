@@ -55,6 +55,14 @@ const channelSchema = new Schema(
       type: Number,
       default: 0,
     },
+    subscribersCount: {
+      type: Number,
+      default: 0,
+    },
+    videosCount: {
+      type: Number,
+      default: 0,
+    },
     following: [
       {
         type: Schema.Types.ObjectId,

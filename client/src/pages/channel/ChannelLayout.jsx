@@ -142,6 +142,7 @@ const ChannelLayout = () => {
 
   return (
     <>
+      {isLoading && <Box>Channel details fetching</Box>}
       {!isLoading && channel && (
         <Box
           sx={{
@@ -431,7 +432,12 @@ const ChannelLayout = () => {
             </Box>
           )}
           <Box>
-            <Outlet context={{ sort: sortingFields[sortNo] }} />
+            <Outlet
+              context={{
+                sort: sortingFields[sortNo],
+                isOwner: channel.isOwner,
+              }}
+            />
           </Box>
         </Box>
       )}
@@ -598,7 +604,14 @@ const ButtonForCreatorSupport = ({
   button,
   isSubscribedInitially = false,
   isBellInitially = false,
-  config,
+  config = {
+    justifyContent: "space-around",
+
+    "@media (max-width: 714px)": {
+      display: "none",
+    },
+  },
+
   channelId,
 }) => {
   const [isSubscribed, setIsSubscribed] = useState(isSubscribedInitially);
@@ -653,7 +666,8 @@ const ButtonForCreatorSupport = ({
           withCredentials: true,
         }
       );
-      setIsBell(!isBell);
+      const bellTemp = isBell;
+      setIsBell(!bellTemp);
     } catch (err) {
       console.log("bell icon ", err);
       toast.error(err?.response?.data?.message || "Something went wrong");
@@ -796,3 +810,5 @@ const ButtonForCreatorSupport = ({
     </>
   );
 };
+
+export { ButtonForCreatorSupport };

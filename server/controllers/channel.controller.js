@@ -16,9 +16,34 @@ import { v2 as cloudinary } from "cloudinary";
 // const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 // console.log(JWT_SECRET);
 
+/// get self channel if logged in ************************************************************************************
+export const getSelfChannelInfo = AsyncTryCatch(async (req, res, next) => {
+  const channel = await Channel.findById(req.channelId)
+    .select(
+      "channelName email profilePhoto bio subscribersCount videosCount views playlists"
+    )
+    .populate("playlists", "name");
+  const dataToSend = {
+    _id: channel._id,
+    channelName: channel.channelName,
+    email: channel.email,
+    profilePhoto: channel.profilePhoto,
+    bio: channel.bio,
+    followers: channel.subscribersCount,
+    videos: channel.videosCount,
+    views: channel.views,
+    playlists: channel.playlists,
+  };
+
+  res
+    .status(200)
+    .json({ message: "Channel Info fetched ", channel: dataToSend });
+});
+
+// get channel in general *******************************************************************************************
 export const getChannelInfo = AsyncTryCatch(async (req, res, next) => {
-  // is is neccessory to logged in to access this come later on this (TO BE CHANGED ) ****************************** <<--
   const { channelId } = req.params;
+  console.log(channelId);
   let isOwner = false;
   let isSubscribed = false;
   let channelIdVisiting = null;
@@ -34,7 +59,7 @@ export const getChannelInfo = AsyncTryCatch(async (req, res, next) => {
     console.log("cant send private videos");
   }
   const channel = await Channel.findById(channelId).select(
-    "channelName email profilePhoto bio coverImage followers videos views"
+    "channelName email profilePhoto bio coverImage subscribersCount videosCount views"
   );
 
   if (channelIdVisiting && !isOwner) {
@@ -45,15 +70,15 @@ export const getChannelInfo = AsyncTryCatch(async (req, res, next) => {
   }
   // console.log(channel);
   if (!channel) next(new ErrorHandler(404, "Channel not found"));
-
+  console.log("channel to be visiteed", channel);
   const dataToSend = {
     channelName: channel.channelName,
     email: channel.email,
     profilePhoto: channel.profilePhoto,
     bio: channel.bio,
     coverImage: channel.coverImage,
-    followers: channel.followers.length,
-    videos: channel.videos.length,
+    followers: channel.subscribersCount,
+    videos: channel.videosCount,
     views: channel.views,
     isOwner,
     isSubscribed: !!isSubscribed,
@@ -115,6 +140,8 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
   await newSubscription.save();
 
   channelToBeSubscribed.followers.push(newSubscription._id);
+  channelToBeSubscribed.subscribersCount =
+    channelToBeSubscribed.subscribersCount + 1;
   await channelToBeSubscribed.save();
 
   await Channel.findByIdAndUpdate(req.channelId, {
@@ -144,6 +171,7 @@ export const unSubscribeChannel = AsyncTryCatch(async (req, res, next) => {
   channelToBeUnSubscribed.followers = channelToBeUnSubscribed.followers.filter(
     (id) => !id.equals(subscription._id)
   );
+  channelToBeUnSubscribed.subscribersCount -= 1;
   await channelToBeUnSubscribed.save();
 
   await Channel.findByIdAndUpdate(req.channelId, {
@@ -201,28 +229,6 @@ export const getWatchHistory = AsyncTryCatch(async (req, res, next) => {
     videosToSend.push(channel.watchHistory[i]);
   }
   res.status(200).json({ videos: videosToSend, totalPages });
-});
-
-// creating new playlist ************************************************************************************8
-export const createNewPlaylist = AsyncTryCatch(async (req, res, next) => {
-  const { name, videos = [], isPrivate = true } = req.body;
-  if (videos.length < 1)
-    return next(new ErrorHandler(400, "Playlist cannot be empty"));
-
-  const numberOfVideos = videos.length;
-  const newPlaylist = new Playlist({
-    name,
-    videos,
-    numberOfVideos,
-    private: isPrivate,
-  });
-
-  await newPlaylist.save();
-
-  await Channel.findOneAndUpdate(req.channelId, {
-    $push: { playlist: newPlaylist },
-  });
-  res.status(200).json({ message: "Playlist created successfully" });
 });
 
 export const updateVideo = AsyncTryCatch(async (req, res, next) => {
@@ -392,7 +398,45 @@ export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
   });
 });
 
-// get playlist **********************************************************************************
+// toggle bell *********************************************************************************
+export const toggleBell = AsyncTryCatch(async (req, res, next) => {
+  const { creatorId } = req.body;
+  const subscription = await Subscription.findOne({
+    subscriber: req.channelId,
+    creator: creatorId,
+  });
+
+  if (!subscription)
+    return next(new ErrorHandler(404, "Subscription not found"));
+
+  subscription.bell = !subscription.bell;
+  await subscription.save();
+
+  res.status(200).json({ success: true });
+});
+
+// get getSubscribedChannel *****************************************************************
+export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
+  const data = await Channel.findById(req.channelId)
+    .select("following")
+    .populate({
+      path: "following",
+      select: "creator bell",
+      populate: {
+        path: "creator",
+        select: "channelName bio profilePhoto subscribersCount email",
+      },
+    });
+
+  if (!data)
+    return next(
+      new ErrorHandler(404, "Data not found or something went wrong in server")
+    );
+
+  res.status(200).json({ following: data.following });
+});
+
+// get any channels playlist **********************************************************************************
 export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
   const { channelId } = req.params;
 
@@ -439,19 +483,44 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
   res.status(200).json({ playlists: dataToSend });
 });
 
-// toggle bell *********************************************************************************
-export const toggleBell = AsyncTryCatch(async (req, res, next) => {
-  const { creatorId } = req.body;
-  const subscription = await Subscription.findOne({
-    subscriber: req.channelId,
-    creator: creatorId,
-  });
+// Add to Playlist *************************************************************************
+export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
+  const {
+    playlistIds = [],
+    name = "Untitled",
+    isPrivate = true,
+    videoId,
+  } = req.body;
+  if (!videoId) return next(new ErrorHandler(400, "Video not found"));
 
-  if (!subscription)
-    return next(new ErrorHandler(404, "Subscription not found"));
+  // creating new playlist *****************************
+  if (playlistIds.length === 0) {
+    const newPlaylist = new Playlist({
+      name,
+      videos: [videoId],
+      videoCount: 1,
+      private: isPrivate,
+    });
 
-  subscription.bell = !subscription.bell;
-  await subscription.save();
+    await newPlaylist.save();
 
+    await Channel.findByIdAndUpdate(req.channelId, {
+      $push: { playlists: newPlaylist },
+    });
+
+    return res.status(200).json({ success: true });
+  }
+
+  for (let i = 0; i < playlistIds.length; i++) {
+    const playlist = await Playlist.findById(playlistIds[i]);
+
+    if (!playlist) continue;
+
+    if (!playlist.videos.includes(videoId)) {
+      playlist.videos.push(videoId);
+      playlist.videosCount += 1; // Increment video count
+      await playlist.save(); // Save only once per playlist
+    }
+  }
   res.status(200).json({ success: true });
 });

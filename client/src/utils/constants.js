@@ -21,6 +21,7 @@ export const LOGIN_ROUTE = `${AUTH_ROUTE}/login`;
 export const CHANNEL_ROUTE = `${server}/channel`;
 export const UPDATE_CHANNEL_INFO_ROUTE = `${CHANNEL_ROUTE}/update-profile`;
 export const GET_CHANNEL_DETAILS = `${CHANNEL_ROUTE}/get-info`;
+export const GET_SUBSCRIBED_CHANNEL = `${CHANNEL_ROUTE}/get-subscribedchannels`;
 export const GET_CHANNEL_VIDEOS = `${CHANNEL_ROUTE}/videos`; // add channel id at the end of it
 export const GET_CHANNEL_PLAYLIST = `${CHANNEL_ROUTE}/playlists`;
 export const SUBSCRIBE_CHANNEL = `${CHANNEL_ROUTE}/subscribe`;

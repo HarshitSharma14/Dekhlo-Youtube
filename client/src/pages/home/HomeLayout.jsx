@@ -12,11 +12,12 @@ import {
   SubscriptionsOutlined,
 } from "@mui/icons-material";
 import { Box, Button } from "@mui/material";
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import Header from "../../component/Header";
 import Siderbar from "../../component/Siderbar";
 import { useAppStore } from "../../store";
 import "./HomeLayout.css";
+import { LoaderIcon } from "react-hot-toast";
 
 const HomeLayout = () => {
   // console.log("home");
@@ -27,7 +28,9 @@ const HomeLayout = () => {
   // constants *************************************************************************
   const location = useLocation();
   const sidebarRef = useRef(null);
-  const { isSidebarOpen, toggelSidebar } = useAppStore();
+  const { isSidebarOpen, toggelSidebar, channelInfo } = useAppStore();
+  const params = useParams();
+  const { videoId } = params;
   // const location = useLocation();
   const { setSidebarActivity } = useAppStore();
   const activeOn = {
@@ -51,12 +54,14 @@ const HomeLayout = () => {
       setSidebarActivity(activeOn.isSubscriptionVideos);
     else if (location.pathname == "/history")
       setSidebarActivity(activeOn.isWatchHistory);
+    else if (location.pathname == `/channel/${channelInfo?._id}`)
+      setSidebarActivity(activeOn.isProfile);
     else setSidebarActivity(null);
   }, [location.pathname]);
 
   //              <<-- checking for the home route to drill prop in sidebar
   useEffect(() => {
-    if (location.pathname == "/video") setIsVideoPlayer(true);
+    if (location.pathname == `/video-player/${videoId}`) setIsVideoPlayer(true);
     else setIsVideoPlayer(false);
 
     return () => {
@@ -213,7 +218,8 @@ const PermanentSideBar = () => {
   const [isWatchHistory, setIsWatchHistory] = useState(false);
 
   // constants **************************************************************************
-  const { isSidebarOpen, toggelSidebar, sidebarActivity } = useAppStore();
+  const { isSidebarOpen, toggelSidebar, sidebarActivity, channelInfo } =
+    useAppStore();
   const activeOn = {
     isHome: "isHome",
     isSubscriptionVideos: "isSubscriptionVideos",
@@ -237,7 +243,7 @@ const PermanentSideBar = () => {
         isFilled={sidebarActivity.isSubscriptionVideos}
         filledIcon={<SubscriptionsIcon />}
         outlineIcon={<SubscriptionsOutlined />}
-        navigateLink={"/channel/67859dd754c800dc4239e30f"}
+        navigateLink={"/subs"}
         name={"Subs"}
         activeOn={activeOn.isSubscriptionVideos}
       />
@@ -253,7 +259,7 @@ const PermanentSideBar = () => {
         isFilled={sidebarActivity.isProfile}
         filledIcon={<AccountCircleIcon />}
         outlineIcon={<AccountCircleOutlined />}
-        navigateLink={"/profile"}
+        navigateLink={channelInfo ? `/channel/${channelInfo?._id}` : "/signup"}
         name={"You"}
         activeOn={activeOn.isProfile}
       />

@@ -20,13 +20,13 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #555; /* Dark thumb color */
+  background: #ababab; /* Dark thumb color */
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #777; /* Lighter color on hover */
+  background: white; /* Lighter color on hover */
 }
 
 ::-webkit-scrollbar-track {
-  background: #2c2c2c; /* Matches the sidebar background */
+  background: transparent; /* Matches the sidebar background */
 }

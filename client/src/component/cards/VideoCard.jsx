@@ -1,8 +1,18 @@
-import React, { useState, useEffect, useRef } from "react";
-import "./VideoCard.css";
-import { formatUploadTime } from "../utils/helper.js";
+import { IconButton, Menu, MenuItem, Tooltip, Typography } from "@mui/material";
+import React, { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAppStore } from "../store/index.js";
+import { formatUploadTime } from "../../utils/helper.js";
+import "./VideoCard.css";
+import {
+  BookmarkAddOutlined,
+  EditOutlined,
+  MoreVert,
+  PlaylistAddOutlined,
+  SaveAltOutlined,
+  WatchLater,
+  WatchLaterOutlined,
+} from "@mui/icons-material";
+import { useAppStore } from "../../store/index.js";
 
 const VideoCard = ({
   id,
@@ -13,17 +23,34 @@ const VideoCard = ({
   uploadTime,
   channelProfile,
   videoUrl,
+  channelId,
+  isOwner = false,
   isInChannel = false,
 }) => {
+  // useState *********************************************************************************************
   const [isHovered, setIsHovered] = useState(false);
   const [isInView, setIsInView] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [progress, setProgress] = useState(0);
+  const [anchorEl, setAnchorEl] = React.useState(null);
+
+  // constant ********************************************************************************************
+  const open = Boolean(anchorEl);
   const cardRef = useRef(null);
   const videoRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
-
   const navigate = useNavigate();
+  const { channelInfo } = useAppStore();
+
+  // function *********************************************************************************************
+  const handleMenuOpen = (e) => {
+    e.stopPropagation();
+    setAnchorEl(e.currentTarget);
+  };
+  const handleMenuClose = (e) => {
+    e.stopPropagation();
+    setAnchorEl(null);
+  };
 
   const handleHover = () => {
     if (videoRef.current) {
@@ -156,9 +183,20 @@ const VideoCard = ({
         />
       </div>
 
-      <div className="video-card-info">
+      <div
+        className="video-card-info"
+        style={{
+          position: "relative",
+        }}
+      >
         {!isInChannel && (
-          <div className="video-card-avatar">
+          <div
+            className="video-card-avatar"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevents the card click event
+              navigate(`/channel/${channelId}`);
+            }}
+          >
             <img
               src={channelProfile}
               alt={channelName}
@@ -170,13 +208,102 @@ const VideoCard = ({
           <h3 className="video-card-title">{title}</h3>
           <div className="meta">
             {!isInChannel && (
-              <p className="video-card-channel">{channelName}</p>
+              <Typography
+                className="video-card-channel"
+                sx={{
+                  ":hover": {
+                    color: "white",
+                  },
+                }}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevents the card click event
+                  navigate(`/channel/${channelId}`);
+                }}
+              >
+                {channelName}
+              </Typography>
             )}
             <p className="video-card-meta">
               {views} views • {formatUploadTime(uploadTime)}
             </p>
           </div>
         </div>
+
+        <Tooltip title="more">
+          <IconButton
+            aria-label="more"
+            aria-controls="video-card-menu"
+            aria-haspopup="true"
+            sx={{
+              display: !!!channelInfo && "none",
+              position: "absolute",
+              right: "0",
+              opacity: isInView ? 1 : 0,
+              transition: "all 0.2s ",
+            }}
+            onClick={handleMenuOpen}
+          >
+            <MoreVert
+              sx={{
+                fontSize: "22px",
+              }}
+            />
+          </IconButton>
+        </Tooltip>
+        <Menu
+          id="video-card-menu"
+          anchorEl={anchorEl}
+          open={open}
+          onClose={handleMenuClose}
+          MenuListProps={{
+            "aria-labelledby": "more-button",
+          }}
+        >
+          <MenuItem
+            onClick={(e) => {
+              handleMenuClose(e);
+
+              console.log("Option 2 clicked");
+            }}
+            sx={{
+              display: "flex",
+              gap: "10px",
+            }}
+          >
+            <BookmarkAddOutlined />
+            Add to Playlist
+          </MenuItem>
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+
+              console.log("Option 1 clicked");
+            }}
+            sx={{
+              display: "flex",
+              gap: "10px",
+            }}
+          >
+            <WatchLaterOutlined />
+            Save to Watch Later
+          </MenuItem>
+          {isOwner && (
+            <MenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/update-video?videoId=${id}`);
+                console.log("Option 3 clicked");
+              }}
+              sx={{
+                display: "flex",
+                gap: "10px",
+              }}
+            >
+              <EditOutlined />
+              Edit Video Details
+            </MenuItem>
+          )}
+        </Menu>
       </div>
     </div>
   );

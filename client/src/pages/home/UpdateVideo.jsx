@@ -24,15 +24,18 @@ import SaveIcon from "@mui/icons-material/Save";
 import { convertLength } from "@mui/material/styles/cssUtils";
 import axios from "axios";
 import { useAppStore } from "../../store";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
 const UpdateVideo = () => {
   // const videoId = "678d1c9efd4f5b3f71a9f989";
-  const videoId = "";
+  // const videoId = "";
   const [justEditVideo, setJustEditVideo] = useState(false);
 
   const navigate = useNavigate();
-  const { channelInfo, setChannelInfo } = useAppStore();
+  const [query] = useSearchParams();
+  const videoId = query.get("videoId");
+
+  const { channelInfo } = useAppStore();
 
   // use states******************************************
   const [isActive, setIsActive] = useState([false, false]);
@@ -50,32 +53,12 @@ const UpdateVideo = () => {
   });
   const [uploading, setUploading] = useState(false);
 
-  // ************************************************useeffect to get channel details
-
-  useEffect(() => {
-    const getChannelData = async () => {
-      try {
-        const res = await axios.get(GET_CHANNEL_DETAILS, {
-          withCredentials: true,
-        });
-        if (!res.data) {
-          console.log("not logged in");
-          navigate("/");
-        } else {
-          console.log(res);
-          setChannelInfo(res.data);
-        }
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    getChannelData();
-  }, []); // Runs only on mount
-
+  // Runs only on mount
+  console.log("channel ifno", channelInfo);
   // ************************************************useeffect to getvideo details after we have channel info
   useEffect(() => {
     const getVideoDetails = async () => {
+      console.log(`${GET_VIDEO_DETAILS}/${videoId}`);
       if (!channelInfo || !videoId) return;
 
       try {
@@ -83,7 +66,7 @@ const UpdateVideo = () => {
           withCredentials: true,
         });
         console.log("Video Details Received:", response);
-
+        console.log("vid detais", response.data);
         if (response.data.videoDetails.channel !== channelInfo._id) {
           navigate("/");
         }
@@ -155,7 +138,9 @@ const UpdateVideo = () => {
 
     const toastId = toast.loading("Uploading video...");
     console.log("firs");
-
+    formData.forEach((value, key) => {
+      console.log(`${key}:`, value);
+    });
     try {
       const response = await axios.post(UPDATE_VIDEO_INFO, formData, {
         headers: {

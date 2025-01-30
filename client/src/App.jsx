@@ -1,14 +1,15 @@
-import React, { lazy, Suspense } from "react";
+import React, { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
-import { createBrowserRouter, RouterProvider } from "react-router-dom";
-// import LoadingPage from "./component/LoadingLayouts/HomeLayoutLoadingPage.jsx";
-// import ChannelLayout from "./pages/channel/ChannelLayout.jsx";
-// import ChannelVideos from "./pages/channel/ChannelVideos.jsx";
-import UpdateVideo from "./pages/home/UpdateVideo.jsx";
-import VideoPlayer from "./pages/videoPlayer/VideoPlayer.jsx";
-import HomeLayoutLoadingPage from "./component/LoadingLayouts/HomeLayoutLoadingPage.jsx";
-import PlaylistCard from "./component/PlaylistCard.jsx";
-import ChannelPlaylist from "./pages/channel/ChannelPlaylist.jsx";
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from "react-router-dom";
+import axios from "axios";
+import HomeLayoutLoadingPage from "./component/loadingLayouts/HomeLayoutLoadingPage.jsx";
+import ProtectedRoute from "./pages/auth/ProtectedRoute.jsx";
+import { useAppStore } from "./store/index.js";
+import { GET_CHANNEL_DETAILS } from "./utils/constants.js";
 
 // Routes imports ****************************************
 const HomeLayout = lazy(() => import("./pages/home/HomeLayout.jsx"));
@@ -17,8 +18,14 @@ const ProfileSetup = lazy(() => import("./pages/auth/ProfileSetup.jsx"));
 const HomeContent = lazy(() => import("./pages/home/HomeContent.jsx"));
 const ChannelLayout = lazy(() => import("./pages/channel/ChannelLayout.jsx"));
 const ChannelVideos = lazy(() => import("./pages/channel/ChannelVideos.jsx"));
-// const VideoPlayer = lazy(() => import("./pages/home/VideoPlayer.jsx"));
-// const UpdateVideo = lazy(() => import("./pages/home/UpdateVideo.jsx"));
+const ChannelsSubscribed = lazy(() =>
+  import("./pages/subscribtion/ChannelsSubscribed.jsx")
+);
+const VideoPlayer = lazy(() => import("./pages/videoPlayer/VideoPlayer.jsx"));
+const UpdateVideo = lazy(() => import("./pages/home/UpdateVideo.jsx"));
+const ChannelPlaylist = lazy(() =>
+  import("./pages/channel/ChannelPlaylist.jsx")
+);
 
 const router = createBrowserRouter([
   {
@@ -37,7 +44,11 @@ const router = createBrowserRouter([
 
       {
         path: "/subs",
-        element: <ProfileSetup />,
+        element: (
+          <ProtectedRoute>
+            <ChannelsSubscribed />
+          </ProtectedRoute>
+        ),
       },
 
       {
@@ -77,10 +88,6 @@ const router = createBrowserRouter([
     ],
   },
   {
-    path: "/loading",
-    element: <HomeLayoutLoadingPage />,
-  },
-  {
     path: "/signup",
     element: (
       <Suspense fallback={<div>Loading...</div>}>
@@ -91,17 +98,21 @@ const router = createBrowserRouter([
   {
     path: "/profile-setup",
     element: (
-      <Suspense fallback={<div>Loading...</div>}>
-        <ProfileSetup />
-      </Suspense>
+      <ProtectedRoute>
+        <Suspense fallback={<div>Loading...</div>}>
+          <ProfileSetup />
+        </Suspense>
+      </ProtectedRoute>
     ),
   },
   {
     path: "/update-video",
     element: (
-      <Suspense fallback={<div>Loading...</div>}>
-        <UpdateVideo />{" "}
-      </Suspense>
+      <ProtectedRoute>
+        <Suspense fallback={<div>Loading...</div>}>
+          <UpdateVideo />{" "}
+        </Suspense>
+      </ProtectedRoute>
     ),
   },
   {
@@ -114,10 +125,27 @@ const router = createBrowserRouter([
   },
   {
     path: "/*",
-    element: <div>Kidhar aa gaya chutiye page route hi nhi hai</div>,
+    element: <Navigate to="/" replace />,
   },
 ]);
 const App = () => {
+  const { setChannelInfo } = useAppStore();
+  const getChannelInfo = async () => {
+    try {
+      const { data } = await axios.get(GET_CHANNEL_DETAILS, {
+        withCredentials: true,
+      });
+      console.log("in app data", data.channel);
+      setChannelInfo(data.channel);
+    } catch (err) {
+      setChannelInfo(null);
+      console.log("not logged in", err);
+    }
+  };
+  useEffect(() => {
+    getChannelInfo();
+  }, []);
+
   return (
     <>
       <RouterProvider router={router} />

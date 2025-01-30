@@ -5,6 +5,8 @@ import { useAppStore } from "../store";
 import "./Sidebar.css";
 
 import {
+  AccountCircle,
+  AccountCircleOutlined,
   FormatListBulleted as FormatListBulletedIcon,
   FormatListBulletedOutlined,
   History as HistoryIcon,
@@ -29,8 +31,9 @@ const Sidebar = ({ isVideoPlayer }) => {
 
   // constants *******************************************************************************
   const sidebarRef = useRef(null);
-  const { isSidebarOpen, toggelSidebar, sidebarActivity } = useAppStore();
-
+  const { isSidebarOpen, toggelSidebar, sidebarActivity, channelInfo } =
+    useAppStore();
+  console.log("sidebar channel", channelInfo);
   // useEffects ********************************************************************************
 
   //                  <<-- Always render the Sidebar to avoid the flash effect seeming a component mount time taken not neccessory after use of zustang
@@ -178,13 +181,16 @@ const Sidebar = ({ isVideoPlayer }) => {
         >
           <p>Others</p>
           <SidebarNavigatioButtons
-            isFilled={sidebarActivity.isSubscriptionChannels}
-            filledIcon={<FormatListBulletedIcon />}
-            outlineIcon={<FormatListBulletedOutlined />}
-            navigateLink={"/subscribed-channels"}
-            name={"All Subscriptions"}
+            isFilled={sidebarActivity.isProfile}
+            filledIcon={<AccountCircle />}
+            outlineIcon={<AccountCircleOutlined />}
+            navigateLink={
+              channelInfo ? `/channel/${channelInfo?._id}` : "/signup"
+            }
+            name={"You"}
             drawerVariant={drawerVariant}
           />
+
           <SidebarNavigatioButtons
             isFilled={sidebarActivity.isSettings}
             filledIcon={<Settings />}

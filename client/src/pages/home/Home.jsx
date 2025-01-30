@@ -22,7 +22,7 @@ import { VIDEO_ROUTE } from "../../utils/constants";
 const Home = () => {
   // console.log("home");
   // useStates ************************************************************************
-  const [isVideoPlayer, setIsVideoPlayer] = useState(false);
+  const [isVideoPlayer, setIsVideoPlayer] = useState(true);
   const [bigWindow, setBigWindow] = useState(false);
 
   // constants *************************************************************************
@@ -57,12 +57,12 @@ const Home = () => {
 
   //              <<-- checking for the home route to drill prop in sidebar
   useEffect(() => {
-    if (location.pathname == "/video") setIsVideoPlayer(true);
-    else setIsVideoPlayer(false);
+    // if (location.pathname == "/video") setIsVideoPlayer(true);
+    // else setIsVideoPlayer(false);
 
-    return () => {
-      setIsVideoPlayer(false);
-    };
+    // return () => {
+    //   setIsVideoPlayer(false);
+    // };
   }, [location.pathname]);
 
   //                 <<-- using the window size to predite whether the permanent sidebar should be disappearing or not
@@ -299,8 +299,8 @@ const SidebarNavigatioButtons = ({
     >
       {isFilled
         ? React.cloneElement(filledIcon, {
-            sx: { ...iconStyle, color: "white" },
-          })
+          sx: { ...iconStyle, color: "white" },
+        })
         : React.cloneElement(outlineIcon, { sx: iconStyle })}
       <p
         style={{

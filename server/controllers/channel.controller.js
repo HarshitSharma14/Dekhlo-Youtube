@@ -197,7 +197,11 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   // console.log(req.files.video)
   // console.log(req.files.thumbnail)
   let videoIfAvailable = null
-  if (videoId) {
+  console.log(videoId)
+  if (videoId.length) {
+    console.log(
+      'inside if'
+    )
     videoIfAvailable = await Video.findById(videoId)
   }
   if (videoIfAvailable) {
@@ -281,11 +285,11 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
     );
   }
 
-  // console.log("inside2")
+  console.log("inside2")
 
 
   const { videoUrlNew, thumbnailUrlNew } = await UploadVideoAndThumbnail(req);
-  // console.log("inside3")
+  console.log("inside3")
 
   const videonew = new Video({
     title,
@@ -299,7 +303,7 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
     duration,
   });
 
-  //console.log("done");
+  console.log("done");
   await videonew.save();
 
   const channel = await Channel.findById(channelId);

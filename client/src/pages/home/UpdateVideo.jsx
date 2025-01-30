@@ -28,7 +28,7 @@ import { useNavigate } from "react-router-dom";
 
 const UpdateVideo = () => {
 
-  const videoId = "678d1cb176da7e5b3255c951"
+  let videoId = ""
 
   const [justEditVideo, setJustEditVideo] = useState(false)
 
@@ -58,15 +58,13 @@ const UpdateVideo = () => {
     const getChannelData = async () => {
       try {
         const res = await axios.get(GET_CHANNEL_DETAILS, { withCredentials: true });
-        if (!res.data) {
-          console.log("not logged in");
-          navigate("/");
-        } else {
-          console.log(res);
-          setChannelInfo(res.data);
-        }
+
+        console.log(res);
+        setChannelInfo(res.data);
+
       } catch (error) {
         console.log(error);
+        navigate("/");
       }
     };
 
@@ -209,6 +207,17 @@ const UpdateVideo = () => {
   };
 
   const handleVideoUpload = (e) => {
+    if (!e.target.files[0]) {
+      toast.error("No file selected.");
+      return
+    }
+
+    // Check if the file is a video
+    if (!e.target.files[0].type.startsWith("video/")) {
+      toast.error("Please upload a valid video file.");
+      videoUploadRef.current.value = "";
+      return;
+    }
     const videoFile = e.target.files[0];
     // console.log(file)
     setVideoDetails((prev) => ({ ...prev, videoFile: videoFile }));
@@ -254,6 +263,17 @@ const UpdateVideo = () => {
   };
 
   const handlePhotoUpload = (e) => {
+    if (!e.target.files[0]) {
+      toast.error("No file selected.");
+      return
+    }
+
+    // Check if the file is a video
+    if (!e.target.files[0].type.startsWith("image/")) {
+      toast.error("Please upload a valid image file.");
+      photoUploadRef.current.value = "";
+      return;
+    }
     const thumbnailFile = e.target.files[0];
     setImageSrc(URL.createObjectURL(thumbnailFile));
     setVideoDetails((prevDetails) => ({
@@ -384,7 +404,7 @@ const UpdateVideo = () => {
                 alignItems: "center",
               }}
             >
-              <Box onClick={handleAttachmentClick} className="pt-5 pb-5">
+              <Box onClick={handleAttachmentClick} className={`pt-5 pb-5 ${videoUploaded ? "" : "hidden"}`}>
                 <AddAPhotoIcon sx={{ marginRight: "10px" }} />
                 Change thumbnail
               </Box>

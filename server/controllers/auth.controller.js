@@ -82,7 +82,7 @@ export const login = AsyncTryCatch(async (req, res, next) => {
     return next(new ErrorHandler(400, "Please enter both email and password"));
   }
 
-  const channel = await Channel.findOne({ email });
+  const channel = await Channel.findOne({ email }).select('+password');
 
   console.log(channel.password);
 

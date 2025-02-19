@@ -84,7 +84,7 @@ export const login = AsyncTryCatch(async (req, res, next) => {
 
   const channel = await Channel.findOne({ email });
 
-  console.log(channel);
+  console.log(channel.password);
 
   if (!channel) {
     return next(new ErrorHandler(404, "User does not exist"));

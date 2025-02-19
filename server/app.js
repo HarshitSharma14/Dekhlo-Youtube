@@ -24,13 +24,13 @@ import { getVideosForHomePage } from "./controllers/home.controller.js";
 const databaseURL = process.env.DATABASE_URL;
 const app = express();
 const corsOptions = {
-  origin: "http://localhost:5173", // Frontend URL
+  origin: "https://youtube-5nzd.vercel.app", // Frontend URL
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Methods you want to allow
   credentials: true,
 };
 const clientID = process.env.GOOGLE_CLIENT_ID;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-const callbackURL = "http://localhost:3000/api/v1/auth/oauth2/redirect/google";
+const callbackURL = "https://youtube-25hj.onrender.com/api/v1/auth/oauth2/redirect/google";
 
 // config ********************************************
 cloudinary.config({

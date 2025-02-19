@@ -3,7 +3,7 @@ import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
 const Description = ({ videoDetails }) => {
-  const [isDescOpen, setIsDescOpen] = useState(true)
+  const [isDescOpen, setIsDescOpen] = useState(false)
 
   const formatViews = (views) => {
     if (!views || typeof views !== "number") return "0";

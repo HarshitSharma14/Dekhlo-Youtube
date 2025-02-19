@@ -94,9 +94,12 @@ export const login = AsyncTryCatch(async (req, res, next) => {
 
 
   const auth = await compare(password, channel.password);
+
+  console.log('thoda aur andr hu uske')
   if (!auth) {
     return next(new ErrorHandler(401, "Invalid Email or Password"));
   }
+  console.log('thoda sa aur andr hu uske')
   const userObj = channel.toObject();
 
 

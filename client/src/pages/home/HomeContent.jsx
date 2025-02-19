@@ -4,7 +4,7 @@ import { Box, CircularProgress } from "@mui/material";
 import axios from "axios";
 import { GET_HOME_VIDEOS_ROUTE } from "../../utils/constants";
 import { useNavigate } from "react-router-dom";
-import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
+import VideoCardLoading from "../../component/LoadingLayouts/VideoCardLoading";
 
 const HomeContent = () => {
   //constants *******************************

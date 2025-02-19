@@ -13,7 +13,7 @@ import Header from "../Header";
 
 const HomeLayoutLoadingPage = () => {
   console.log("home");
-
+  // nothing
   // constants *************************************************************************
 
   //useEffect **********************************************************************
@@ -34,7 +34,7 @@ const HomeLayoutLoadingPage = () => {
         <main
           className="main-content"
 
-          //   style={{ borderLeft: "1px solid #b3b3b3" }}
+        //   style={{ borderLeft: "1px solid #b3b3b3" }}
         >
           <Box
             sx={{

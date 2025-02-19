@@ -44,12 +44,10 @@ const videoSchema = new Schema(
       type: Boolean,
       default: false,
     },
-    comments: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Comment",
-      },
-    ],
+    commentCount: {
+      type: Number,
+      default: 0,
+    },
     canComment: {
       type: Boolean,
       default: true,

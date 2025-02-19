@@ -53,7 +53,7 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
 
 export const oauth2_redirect = (req, res) => {
   if (!req.user || !req.user.token) {
-    return res.redirect("https://youtube-5nzd.vercel.app/");
+    return res.redirect("https://youtube-5nzd.vercel.app");
   }
   const token = req.user.token;
   const profileAlreadyExist = req.user.profileAlreadyExist;
@@ -76,7 +76,7 @@ export const logout = (req, res) => {
 export const login = AsyncTryCatch(async (req, res, next) => {
   const { email, password } = req.body;
 
-  //console.log(req.body);
+  console.log(req.body);
 
   if (!email || !password) {
     return next(new ErrorHandler(400, "Please enter both email and password"));
@@ -84,11 +84,14 @@ export const login = AsyncTryCatch(async (req, res, next) => {
 
   const channel = await Channel.findOne({ email });
 
-  //console.log(channel);
+  console.log(channel);
 
   if (!channel) {
     return next(new ErrorHandler(404, "User does not exist"));
   }
+
+  console.log('andr hu uske')
+
 
   const auth = await compare(password, channel.password);
   if (!auth) {
@@ -96,11 +99,15 @@ export const login = AsyncTryCatch(async (req, res, next) => {
   }
   const userObj = channel.toObject();
 
+
+  console.log('bohot andr hu uske')
+
   delete userObj.password;
 
   const token = jwt.sign({ channelId: channel._id }, JWT_SECRET, {
     expiresIn: maxAge,
   });
+  console.log('bohot zyada hi andr hu uske')
 
   res.cookie("jwt", token, {
     httpOnly: true,
@@ -108,5 +115,6 @@ export const login = AsyncTryCatch(async (req, res, next) => {
     maxAge, // 1 day
   });
 
+  console.log('bohot zyada hi hi andr hu uske')
   return res.status(200).send(userObj);
 });

@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 
 const commentSchema = new Schema(
   {
@@ -6,18 +6,20 @@ const commentSchema = new Schema(
       type: String,
       required: [true, "Comment data is Required."],
     },
-    channelId: {
+    channel: {
       type: Schema.Types.ObjectId,
       ref: "Channel",
       required: [true, "channel Id is Required."],
     },
-    likeCount: {
-      type: Number,
-      default: 0,
-    },
+    videoId: {
+      type: Schema.Types.ObjectId,
+      index: true,
+      ref: "Video",
+      required: [true, "Video Id is Required."],
+    }
   },
   { timestamps: true }
 );
 
-const Comment = models.Comment || model("Comment", commentSchema);
+const Comment = model("Comment", commentSchema);
 export default Comment;

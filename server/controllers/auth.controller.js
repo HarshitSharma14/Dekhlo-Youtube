@@ -53,7 +53,7 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
 
 export const oauth2_redirect = (req, res) => {
   if (!req.user || !req.user.token) {
-    return res.redirect("http://localhost:5173");
+    return res.redirect("https://youtube-5nzd.vercel.app/");
   }
   const token = req.user.token;
   const profileAlreadyExist = req.user.profileAlreadyExist;
@@ -64,8 +64,8 @@ export const oauth2_redirect = (req, res) => {
     secure: false, // Use true in production with HTTPS
     maxAge, // 1 day
   });
-  if (!profileAlreadyExist) res.redirect("http://localhost:5173/profile-setup");
-  else res.redirect("http://localhost:5173/");
+  if (!profileAlreadyExist) res.redirect("https://youtube-5nzd.vercel.app/profile-setup");
+  else res.redirect("https://youtube-5nzd.vercel.app/");
 };
 
 export const logout = (req, res) => {

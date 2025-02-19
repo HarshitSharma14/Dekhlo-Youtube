@@ -13,7 +13,7 @@ dotenv.config();
 import authRoutes from "./routes/auth.route.js";
 import channelRoutes from "./routes/channel.route.js";
 import videoRoutes from "./routes/video.route.js";
-
+console.log("env", process.env.DATABASE_URL);
 // Other Imports *********************************
 import { loginSignup } from "./controllers/auth.controller.js";
 import { JWT_SECRET } from "./utils/constants.js";

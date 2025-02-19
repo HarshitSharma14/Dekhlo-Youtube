@@ -1,6 +1,7 @@
 import { Router } from "express";
 import passport from "passport";
 import { logout, oauth2_redirect } from "../controllers/auth.controller.js";
+console.log("env", process.env.DATABASE_URL);
 
 import { login } from "../controllers/auth.controller.js";
 import { isUserLoggedIn } from "../middlewares/auth.middleware.js";

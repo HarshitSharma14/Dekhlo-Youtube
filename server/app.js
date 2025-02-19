@@ -30,7 +30,7 @@ const corsOptions = {
 };
 const clientID = process.env.GOOGLE_CLIENT_ID;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-const callbackURL = "https://youtube-5nzd.vercel.app/api/v1/auth/oauth2/redirect/google";
+const callbackURL = "https://youtube-25hj.onrender.com/api/v1/auth/oauth2/redirect/google";
 
 // config ********************************************
 cloudinary.config({

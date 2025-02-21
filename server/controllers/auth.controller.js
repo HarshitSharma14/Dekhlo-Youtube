@@ -67,8 +67,8 @@ export const oauth2_redirect = (req, res) => {
   // Set the token as an HTTP-only cookie
   res.cookie("jwt", token, {
     httpOnly: true,
-    secure: false, // Use true in production with HTTPS
-    maxAge, // 1 day
+    samesite: "none",
+    secure: true,
   });
   if (!profileAlreadyExist) res.redirect(`${clientURL}/profile-setup`);
   else res.redirect(`${clientURL}`);
@@ -118,7 +118,8 @@ export const login = AsyncTryCatch(async (req, res, next) => {
 
   res.cookie("jwt", token, {
     httpOnly: true,
-    SameSite: "None",
+    samesite: "none",
+    secure: true,
   });
 
   console.log("bohot zyada hi hi andr hu uske");

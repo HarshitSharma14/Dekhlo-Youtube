@@ -54,7 +54,7 @@ const Header = ({ isDisabled }) => {
             className="w-[123px] h-[56px] cursor-default text-white font-bold text-2xl"
           >
             <span className="yt-icon-shape flex justify-center items-center">
-              <img src="../../assets/logo.png" className="w-[93px] h-[20px]" />
+              <img src="/assets/logo.png" className="w-[93px] h-[20px]" />
             </span>
           </button>
         </div>

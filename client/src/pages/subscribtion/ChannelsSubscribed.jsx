@@ -2,7 +2,7 @@ import { Box, Typography } from "@mui/material";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { GET_SUBSCRIBED_CHANNEL } from "../../utils/constants";
-import ChannelCard from "../../component/Cards/ChannelCard";
+import ChannelCard from "../../component/cards/ChannelCard";
 
 const ChannelsSubscribed = () => {
   const [followings, setFollowings] = useState([]);

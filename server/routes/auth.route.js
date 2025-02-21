@@ -20,7 +20,7 @@ app.get(
 app.get(
   "/oauth2/redirect/google",
   passport.authenticate("google", {
-    failureRedirect: "http://localhost:5173",
+    failureRedirect: `${process.env.CLIENT_URL}`,
     session: false,
   }),
   oauth2_redirect

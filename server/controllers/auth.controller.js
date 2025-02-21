@@ -6,12 +6,8 @@ import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
 import { ErrorHandler } from "../utils/utility.js";
 import Playlist from "../models/playlist.model.js";
 
-/* jwt not working */
-// import dotenv from "dotenv";
-// dotenv.config();
-
-// const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
-// console.log(JWT_SECRET);
+// constants ******************************************************
+const clientURL = process.env.CLIENT_URL;
 const maxAge = 24 * 60 * 60 * 1000;
 
 export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
@@ -63,7 +59,7 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
 
 export const oauth2_redirect = (req, res) => {
   if (!req.user || !req.user.token) {
-    return res.redirect("http://localhost:5173");
+    return res.redirect(`${clientURL}`);
   }
   const token = req.user.token;
   const profileAlreadyExist = req.user.profileAlreadyExist;
@@ -74,8 +70,8 @@ export const oauth2_redirect = (req, res) => {
     secure: false, // Use true in production with HTTPS
     maxAge, // 1 day
   });
-  if (!profileAlreadyExist) res.redirect("http://localhost:5173/profile-setup");
-  else res.redirect("http://localhost:5173/");
+  if (!profileAlreadyExist) res.redirect(`${clientURL}/profile-setup`);
+  else res.redirect(`${clientURL}`);
 };
 
 export const logout = (req, res) => {
@@ -86,31 +82,39 @@ export const logout = (req, res) => {
 export const login = AsyncTryCatch(async (req, res, next) => {
   const { email, password } = req.body;
 
-  //console.log(req.body);
+  console.log(req.body);
 
   if (!email || !password) {
     return next(new ErrorHandler(400, "Please enter both email and password"));
   }
 
-  const channel = await Channel.findOne({ email });
+  const channel = await Channel.findOne({ email }).select("+password");
 
-  //console.log(channel);
+  console.log(channel.password);
 
   if (!channel) {
     return next(new ErrorHandler(404, "User does not exist"));
   }
 
+  console.log("andr hu uske");
+
   const auth = await compare(password, channel.password);
+
+  console.log("thoda aur andr hu uske");
   if (!auth) {
     return next(new ErrorHandler(401, "Invalid Email or Password"));
   }
+  console.log("thoda sa aur andr hu uske");
   const userObj = channel.toObject();
+
+  console.log("bohot andr hu uske");
 
   delete userObj.password;
 
   const token = jwt.sign({ channelId: channel._id }, JWT_SECRET, {
     expiresIn: maxAge,
   });
+  console.log("bohot zyada hi andr hu uske");
 
   res.cookie("jwt", token, {
     httpOnly: true,
@@ -118,5 +122,6 @@ export const login = AsyncTryCatch(async (req, res, next) => {
     maxAge, // 1 day
   });
 
+  console.log("bohot zyada hi hi andr hu uske");
   return res.status(200).send(userObj);
 });

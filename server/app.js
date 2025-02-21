@@ -1,4 +1,4 @@
-import dotenv from "dotenv";
+import "dotenv/config";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
@@ -6,8 +6,6 @@ import mongoose from "mongoose";
 import passport from "passport";
 import cloudinary from "cloudinary";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20";
-console.log("just after");
-dotenv.config();
 
 // importing Routes ******************************
 import authRoutes from "./routes/auth.route.js";
@@ -21,23 +19,25 @@ import { errorHandlerMiddleware } from "./middlewares/error.middlewares.js";
 import { getVideosForHomePage } from "./controllers/home.controller.js";
 
 // localConstansts ************************************
-const databaseURL = process.env.DATABASE_URL;
 const app = express();
+const clientURL = process.env.CLIENT_URL;
+const serverURL = process.env.SERVER_URL;
+const databaseURL = process.env.DATABASE_URL;
 const corsOptions = {
-  origin: "http://localhost:5173", // Frontend URL
+  origin: `${clientURL}`, // Frontend URL
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Methods you want to allow
   credentials: true,
 };
 const clientID = process.env.GOOGLE_CLIENT_ID;
 const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-const callbackURL = "http://localhost:3000/api/v1/auth/oauth2/redirect/google";
+const callbackURL = `${serverURL}/api/v1/auth/oauth2/redirect/google`;
 
 // config ********************************************
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
-  timeout: 60 * 60 * 1000 * 4
+  timeout: 60 * 60 * 1000 * 4,
 });
 
 // Middleware ******************************************

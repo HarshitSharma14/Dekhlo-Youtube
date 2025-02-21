@@ -6,7 +6,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import axios from "axios";
-import HomeLayoutLoadingPage from "./component/LoadingLayouts/HomeLayoutLoadingPage.jsx";
+import HomeLayoutLoadingPage from "./component/loadingLayouts/HomeLayoutLoadingPage.jsx";
 import ProtectedRoute from "./pages/auth/ProtectedRoute.jsx";
 import { useAppStore } from "./store/index.js";
 import { GET_CHANNEL_DETAILS } from "./utils/constants.js";

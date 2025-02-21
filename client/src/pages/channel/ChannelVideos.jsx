@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Box, CircularProgress } from "@mui/material";
-import VideoCardLoading from "../../component/LoadingLayouts/VideoCardLoading";
+import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
 import VideoCard from "../../component/cards/VideoCard";
 import { useOutletContext, useParams } from "react-router-dom";
 import axios from "axios";

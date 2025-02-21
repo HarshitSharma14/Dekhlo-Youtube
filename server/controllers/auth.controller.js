@@ -118,7 +118,6 @@ export const login = AsyncTryCatch(async (req, res, next) => {
 
   res.cookie("jwt", token, {
     httpOnly: true,
-    maxAge, // 1 day
     SameSite: "None",
   });
 

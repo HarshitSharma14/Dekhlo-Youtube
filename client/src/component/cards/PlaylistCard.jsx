@@ -3,6 +3,7 @@ import { Box, Typography, IconButton } from "@mui/material";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useNavigate } from "react-router-dom";
 import { VideoLibrary } from "@mui/icons-material";
+import pic from "../../../assets/emptyPlaylist.jpg";
 
 const PlaylistCard = ({
   playlistId,
@@ -14,7 +15,7 @@ const PlaylistCard = ({
 }) => {
   const [hovered, setHovered] = useState(false);
   const navigate = useNavigate();
-
+  console.log("in pl card", mainThumbnail);
   return (
     <Box
       onMouseEnter={() => setHovered(true)}
@@ -34,9 +35,10 @@ const PlaylistCard = ({
           borderRadius: "0",
         },
       }}
-      onClick={() =>
-        navigate(`/video-player/${videoId}?playlist=${playlistId}`)
-      }
+      onClick={() => {
+        if (videoCount)
+          navigate(`/video-player/${videoId}?playlist=${playlistId}`);
+      }}
     >
       {/* Main Thumbnail */}
       <Box
@@ -48,7 +50,7 @@ const PlaylistCard = ({
       >
         <Box
           component="img"
-          src={mainThumbnail}
+          src={mainThumbnail ? mainThumbnail : pic}
           alt={title}
           sx={{
             width: "100%",
@@ -94,7 +96,7 @@ const PlaylistCard = ({
             width: "100%",
             height: "100%",
             backgroundColor: "rgba(0, 0, 0, 0.6)",
-            opacity: hovered ? 1 : 0,
+            opacity: hovered && videoCount ? 1 : 0,
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
@@ -182,7 +184,7 @@ const PlaylistCard = ({
             WebkitBoxOrient: "vertical",
           }}
         >
-          {title?.length ? { title } : "Untitled"}
+          {title?.length ? title : "Untitled"}
         </Typography>
         <Typography
           variant="body2"
@@ -201,7 +203,7 @@ const PlaylistCard = ({
             navigate(`/playlist/${playlistId}`);
           }}
         >
-          View all playlists
+          View full playlist
         </Typography>
       </Box>
     </Box>

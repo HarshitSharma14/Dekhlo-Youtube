@@ -1,6 +1,6 @@
 import React, { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Box, CircularProgress } from "@mui/material";
-import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
+import VideoCardLoading from "../../component/LoadingLayouts/VideoCardLoading";
 import VideoCard from "../../component/cards/VideoCard";
 import { useOutletContext, useParams } from "react-router-dom";
 import axios from "axios";
@@ -40,7 +40,6 @@ const ChannelVideos = () => {
           withCredentials: true,
         }
       );
-
       setTotalPages(data.totalPages);
       setVideos((pre) => [...pre, ...data.videos]);
     } catch (error) {
@@ -111,6 +110,7 @@ const ChannelVideos = () => {
                 videoUrl={video?.videoUrl}
                 isInChannel={true}
                 isOwner={isOwner}
+                duration={video?.duration}
               />
             ))}
             {isLoading && videos.length && (

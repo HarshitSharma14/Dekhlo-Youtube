@@ -4,6 +4,7 @@ import Channel from "../models/channel.model.js";
 import { JWT_SECRET } from "../utils/constants.js";
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
 import { ErrorHandler } from "../utils/utility.js";
+import Playlist from "../models/playlist.model.js";
 
 /* jwt not working */
 // import dotenv from "dotenv";
@@ -33,6 +34,15 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
         email: email,
         profilePhoto: profile.photos[0]?.value || "", // Google profile picture
       });
+
+      const newPlaylist = await Playlist.create({
+        name: "Watch later",
+        videos: [],
+        videoCount: 0,
+        private: true,
+      });
+
+      channel.playlists.push(newPlaylist._id);
 
       await channel.save();
       profileAlreadyExist = false;

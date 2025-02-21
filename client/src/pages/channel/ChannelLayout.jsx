@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import {
   AttachMoneyOutlined,
   Close as CloseIcon,
+  KeyboardArrowDownOutlined,
   NotificationAddOutlined,
   Notifications,
   NotificationsOff,
@@ -714,6 +715,7 @@ const ButtonForCreatorSupport = ({
             {isSubscribed &&
               (isBell ? <Notifications /> : <NotificationsOff />)}
             {isSubscribed ? "Subscribed" : "Susbscribe"}
+            {isSubscribed && <KeyboardArrowDownOutlined />}
           </>
         )}
         {button === 2 && (

@@ -6,7 +6,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import axios from "axios";
-import HomeLayoutLoadingPage from "./component/loadingLayouts/HomeLayoutLoadingPage.jsx";
+import HomeLayoutLoadingPage from "./component/LoadingLayouts/HomeLayoutLoadingPage.jsx";
 import ProtectedRoute from "./pages/auth/ProtectedRoute.jsx";
 import { useAppStore } from "./store/index.js";
 import { GET_CHANNEL_DETAILS } from "./utils/constants.js";
@@ -15,6 +15,7 @@ import { GET_CHANNEL_DETAILS } from "./utils/constants.js";
 const HomeLayout = lazy(() => import("./pages/home/HomeLayout.jsx"));
 const Signup = lazy(() => import("./pages/auth/Signup.jsx"));
 const ProfileSetup = lazy(() => import("./pages/auth/ProfileSetup.jsx"));
+const WatchHistory = lazy(() => import("./pages/WatchHistory.jsx"));
 const HomeContent = lazy(() => import("./pages/home/HomeContent.jsx"));
 const ChannelLayout = lazy(() => import("./pages/channel/ChannelLayout.jsx"));
 const ChannelVideos = lazy(() => import("./pages/channel/ChannelVideos.jsx"));
@@ -39,14 +40,35 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <HomeContent />,
+
+        element: (
+          <Suspense fallback={<HomeLayoutLoadingPage />}>
+            <HomeContent />
+          </Suspense>
+        ),
       },
 
       {
         path: "/subs",
         element: (
           <ProtectedRoute>
-            <ChannelsSubscribed />
+            <Suspense
+              fallback={<div>Getting the Subscriptions Page ready...</div>}
+            >
+              <ChannelsSubscribed />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/history",
+        element: (
+          <ProtectedRoute>
+            <Suspense
+              fallback={<div>Getting the WatchHistory Page ready...</div>}
+            >
+              <WatchHistory />
+            </Suspense>
           </ProtectedRoute>
         ),
       },
@@ -55,7 +77,11 @@ const router = createBrowserRouter([
         path: "/video-player/:videoId",
         element: (
           <Suspense fallback={<div>Loading...</div>}>
-            <VideoPlayer />
+            <Suspense
+              fallback={<div>Getting the VideoPlayer Page ready...</div>}
+            >
+              <VideoPlayer />
+            </Suspense>
           </Suspense>
         ),
       },
@@ -63,7 +89,9 @@ const router = createBrowserRouter([
         path: "/channel/:channelId/",
         element: (
           <Suspense fallback={<div>Loading...</div>}>
-            <ChannelLayout />
+            <Suspense fallback={<div>Getting the Profile Page ready...</div>}>
+              <ChannelLayout />
+            </Suspense>
           </Suspense>
         ),
         children: [

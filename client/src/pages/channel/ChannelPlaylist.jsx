@@ -1,6 +1,6 @@
 import { Box, CircularProgress } from "@mui/material";
 import React, { useEffect, useState } from "react";
-import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
+import VideoCardLoading from "../../component/LoadingLayouts/VideoCardLoading";
 import { useParams } from "react-router-dom";
 import PlaylistCard from "../../component/cards/PlaylistCard";
 import axios from "axios";
@@ -55,10 +55,10 @@ const ChannelPlaylist = () => {
                   <PlaylistCard
                     key={playlist?._id}
                     playlistId={playlist?._id}
-                    videoId={playlist.videos[0]._id}
+                    videoId={playlist.videos[0]?._id}
                     title={playlist?.name}
                     videoCount={playlist?.videoCount}
-                    mainThumbnail={playlist?.videos[0].thumbnailUrl}
+                    mainThumbnail={playlist?.videos[0]?.thumbnailUrl}
                     secondaryThumbnails={playlist?.videos}
                   />
                 ))}

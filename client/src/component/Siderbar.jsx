@@ -33,7 +33,6 @@ const Sidebar = ({ isVideoPlayer }) => {
   const sidebarRef = useRef(null);
   const { isSidebarOpen, toggelSidebar, sidebarActivity, channelInfo } =
     useAppStore();
-  console.log("sidebar channel", channelInfo);
   // useEffects ********************************************************************************
 
   //                  <<-- Always render the Sidebar to avoid the flash effect seeming a component mount time taken not neccessory after use of zustang
@@ -59,7 +58,7 @@ const Sidebar = ({ isVideoPlayer }) => {
     return () => {
       window.removeEventListener("resize", handleResize);
     };
-  }, []);
+  }, [isSidebarOpen]);
 
   //                      <<--- (using gpt) ignoring the scroll input in the sidebar after its complition (at top and bottom) so that it doesnt interfear with main page's scroll bar
   useEffect(() => {
@@ -90,7 +89,7 @@ const Sidebar = ({ isVideoPlayer }) => {
       }
     };
   }, []);
-
+  console.log("sidebar ", drawerVariant);
   return (
     <Drawer
       variant={drawerVariant}

@@ -12,6 +12,7 @@ import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
 import Playlist from "../models/playlist.model.js";
 import { v2 as cloudinary } from "cloudinary";
+import mongoose from "mongoose";
 
 // const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 // console.log(JWT_SECRET);
@@ -22,7 +23,7 @@ export const getSelfChannelInfo = AsyncTryCatch(async (req, res, next) => {
     .select(
       "channelName email profilePhoto bio subscribersCount videosCount views playlists"
     )
-    .populate("playlists", "name");
+    .populate("playlists", "name private");
   const dataToSend = {
     _id: channel._id,
     channelName: channel.channelName,
@@ -32,6 +33,7 @@ export const getSelfChannelInfo = AsyncTryCatch(async (req, res, next) => {
     followers: channel.subscribersCount,
     videos: channel.videosCount,
     views: channel.views,
+    watchLater: channel.playlists[0],
     playlists: channel.playlists,
   };
 
@@ -212,23 +214,28 @@ export const getSubscribedChannelVideos = AsyncTryCatch(
 // get watch history **********************************************
 export const getWatchHistory = AsyncTryCatch(async (req, res, next) => {
   const { page = 1, limit = 20 } = req.query;
+  console.log("here");
 
-  const channel = await Channel.findById(req.channelId).populate(
-    "watchHistory"
-  );
+  const channel = await Channel.findById(req.channelId)
+    .select("watchHistory")
+    .populate({
+      path: "watchHistory",
+      options: {
+        sort: { createdAt: -1 }, // Sort in descending order (most recent first)
+        skip: (page - 1) * limit,
+        limit: parseInt(limit),
+      },
+    });
+  const totalVideoCount = await Channel.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(String(req.channelId)) } },
+    { $project: { watchHistoryCount: { $size: "$watchHistory" } } },
+  ]);
+  console.log("channel", totalVideoCount[0]);
 
-  const totalVideoCount = channel.watchHistory.length;
-  const totalPages = Math.ceil(totalVideoCount / limit) || 0;
+  const totalPages =
+    Math.ceil(totalVideoCount[0]?.watchHistoryCount / limit) || 0;
 
-  let videosToSend = [];
-  for (
-    let i = (page - 1) * limit;
-    i < page * limit && i < totalVideoCount;
-    i++
-  ) {
-    videosToSend.push(channel.watchHistory[i]);
-  }
-  res.status(200).json({ videos: videosToSend, totalPages });
+  res.status(200).json({ videos: channel.watchHistory, totalPages });
 });
 
 export const updateVideo = AsyncTryCatch(async (req, res, next) => {
@@ -460,13 +467,14 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
     .select("playlists")
     .populate({
       path: "playlists",
-      select: "name playlists",
+      select: "name videos",
       populate: {
         path: "videos",
         select: "thumbnailUrl",
       },
     })
     .sort({ updatedAt: -1 })
+    .lean()
     .exec();
 
   if (!channel) return next(new ErrorHandler(404, "Channel not found"));

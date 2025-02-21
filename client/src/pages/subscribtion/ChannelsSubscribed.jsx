@@ -32,6 +32,7 @@ const ChannelsSubscribed = () => {
         flexDirection: "column",
         alignItems: "center",
         pb: "10px",
+        width: "100%",
       }}
     >
       {isLoading && (
@@ -39,7 +40,17 @@ const ChannelsSubscribed = () => {
       )}
       {!isLoading && followings.length ? (
         <>
-          <Box>
+          <Box
+            sx={{
+              width: "100%",
+              "@media (min-width: 730px)": {
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+              },
+            }}
+          >
             <Typography
               variant="h4"
               sx={{

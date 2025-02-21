@@ -1,16 +1,16 @@
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
 import Channel from "../models/channel.model.js";
 import Video from "../models/video.model.js";
+import { JWT_SECRET } from "../utils/constants.js";
 import { ErrorHandler } from "../utils/utility.js";
 import jwt from "jsonwebtoken";
 
 // view video *************************************************************
 export const getVideo = AsyncTryCatch(async (req, res, next) => {
-
-  console.log("in")
+  console.log("in");
 
   const { videoId } = req.params;
-  console.log(videoId)
+  console.log(videoId);
   const video = await Video.findByIdAndUpdate(
     videoId,
     { $inc: { views: 1 } },
@@ -22,15 +22,17 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
 
   await Channel.findByIdAndUpdate(video.channel, { $inc: { views: 1 } });
 
-  const token = req.cookies.jwt;
-  if (!token) return res.status(200).json({ video });
-
-  const decodedData = jwt.verify(token, JWT_SECRET);
-  await Channel.findByIdAndUpdate(decodedData.channelId, {
-    $push: { watchHistory: videoId },
-  });
-
-  return res.status(200).json({ video });
+  try {
+    const token = req.cookies.jwt;
+    const decodedData = jwt.verify(token, JWT_SECRET);
+    await Channel.findByIdAndUpdate(decodedData.channelId, {
+      $push: { watchHistory: videoId },
+    });
+  } catch (error) {
+    console.log("user not logged in to save to watch history");
+  } finally {
+    return res.status(200).json({ video });
+  }
 });
 
 // like video ***********************************************************
@@ -64,21 +66,19 @@ export const likeUnlikeVideo = AsyncTryCatch(async (req, res, next) => {
   res.status(200).json({ message: "Video liked" });
 });
 
-
 export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
-
-  console.log("inside func")
+  console.log("inside func");
 
   const { videoId } = req.params;
 
   // console.log(videoId)
 
-  const videoDetails = await Video.findById(videoId)
+  const videoDetails = await Video.findById(videoId);
 
   if (!videoDetails) {
     next(new ErrorHandler(404, "Video not found"));
   }
-  console.log(videoDetails)
+  console.log(videoDetails);
 
   return res.status(200).json({ videoDetails });
-})
+});

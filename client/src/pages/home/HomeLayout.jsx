@@ -54,7 +54,10 @@ const HomeLayout = () => {
       setSidebarActivity(activeOn.isSubscriptionVideos);
     else if (location.pathname == "/history")
       setSidebarActivity(activeOn.isWatchHistory);
-    else if (location.pathname == `/channel/${channelInfo?._id}`)
+    else if (
+      location.pathname == `/channel/${channelInfo?._id}` ||
+      location.pathname == `/channel/${channelInfo?._id}/playlist`
+    )
       setSidebarActivity(activeOn.isProfile);
     else setSidebarActivity(null);
   }, [location.pathname]);
@@ -115,7 +118,6 @@ const HomeLayout = () => {
 
   const containerRef = useRef(null);
   useEffect(() => {
-    console.log("elelment", containerRef.current);
     const handleScroll = () => {
       const element = containerRef.current;
       if (element) {
@@ -125,7 +127,6 @@ const HomeLayout = () => {
           console.log("Reached the end of the scroll bar!");
         }
       }
-      console.log("scrolling");
     };
     const element = containerRef.current;
     if (element) {
@@ -199,7 +200,12 @@ const HomeLayout = () => {
         </aside>
 
         {/* Main content of the pages starts here */}
-        <main className="main-content">
+        <main
+          className="main-content"
+          style={{
+            paddingBottom: "10px",
+          }}
+        >
           <Outlet />
         </main>
       </div>

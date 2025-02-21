@@ -4,7 +4,7 @@ import { Box, CircularProgress } from "@mui/material";
 import axios from "axios";
 import { GET_HOME_VIDEOS_ROUTE } from "../../utils/constants";
 import { useNavigate } from "react-router-dom";
-import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
+import VideoCardLoading from "../../component/LoadingLayouts/VideoCardLoading";
 
 const HomeContent = () => {
   //constants *******************************
@@ -22,14 +22,10 @@ const HomeContent = () => {
     const pageNumber = Math.ceil(videos.length / 20) || 0;
     const seenIds = videos?.map((vid) => vid._id) || null;
 
-    console.log("total pages", totalPages);
-    console.log("pg no ", pageNumber);
     if (pageNumber >= totalPages) {
-      console.log("all videos fetched");
       return;
     }
     try {
-      console.log("seend", seenIds);
       setisLoading(true);
       const res = await axios.post(
         GET_HOME_VIDEOS_ROUTE,
@@ -42,13 +38,6 @@ const HomeContent = () => {
         }
       );
       setTotalPages(res.data?.totalPages);
-      // console.log(res.data);
-      // const newVideoIds = res.data?.videos?.map((vid) => vid._id);
-      // setSeenIds((e) => {
-      //   const updatedIds = [...e, ...newVideoIds];
-      //   return updatedIds;
-      // });
-      // console.log(...res.data?.videos?.map((vid) => vid._id));
       setVideos((e) => [...e, ...res.data?.videos]);
     } catch (error) {
       console.log("err", error);
@@ -71,7 +60,6 @@ const HomeContent = () => {
       }
 
       scrollingTimeout = setTimeout(() => {
-        console.log("at bottom");
         getVideos();
       }, 100); // Execute after 300ms (adjust as needed)
     }
@@ -115,6 +103,7 @@ const HomeContent = () => {
               uploadTime={video?.createdAt}
               channelProfile={video?.channel.profilePhoto}
               videoUrl={video?.videoUrl}
+              duration={video?.duration}
             />
           ))}
           {isLoading && videos.length && (

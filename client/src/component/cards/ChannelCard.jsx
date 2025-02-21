@@ -25,8 +25,6 @@ const ChannelCard = ({
           gap: 2,
           p: 2,
           borderRadius: 2,
-          // backgroundColor: "#181818",
-          // bgcolor: "yellow",
           height: "140px",
           color: "white",
           width: "100%",

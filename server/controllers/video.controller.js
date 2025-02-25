@@ -7,10 +7,10 @@ import jwt from "jsonwebtoken";
 import Comment from "../models/comment.model.js";
 // view video *************************************************************
 export const getVideo = AsyncTryCatch(async (req, res, next) => {
-  console.log("in");
+  // console.log("in");
 
   const { videoId } = req.params;
-  console.log(videoId);
+  // console.log(videoId);
   const video = await Video.findByIdAndUpdate(
     videoId,
     { $inc: { views: 1 } },
@@ -44,7 +44,7 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
     ? true
     : false;
 
-  console.log(isLiked);
+  // console.log(isLiked);
 
   return res.status(200).json({ video, isLiked, loggedIn: true });
 });

@@ -67,7 +67,7 @@ export const oauth2_redirect = (req, res) => {
   // Set the token as an HTTP-only cookie
   res.cookie("jwt", token, {
     httpOnly: true,
-    samesite: "none",
+    sameSite: "none",
     secure: true,
   });
   if (!profileAlreadyExist) res.redirect(`${clientURL}/profile-setup`);
@@ -119,7 +119,7 @@ export const login = AsyncTryCatch(async (req, res, next) => {
 
   res.cookie("jwt", token, {
     httpOnly: true,
-    samesite: "none",
+    sameSite: "none",
     secure: true,
   });
 

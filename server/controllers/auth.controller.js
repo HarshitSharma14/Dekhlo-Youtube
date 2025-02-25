@@ -76,7 +76,8 @@ export const oauth2_redirect = (req, res) => {
 
 export const logout = (req, res) => {
   res.clearCookie("jwt");
-  res.json({ message: "Logged out successfully." });
+  console.log('LOGOUT')
+  res.status(200).json({ message: "Logged out successfully." });
 };
 
 export const login = AsyncTryCatch(async (req, res, next) => {

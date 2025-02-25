@@ -12,18 +12,22 @@ import {
 } from "@mui/material";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import MenuIcon from "@mui/icons-material/Menu";
+import axios from "axios";
 import {
   Search as SearchIcon,
   AddCircle as CreateIcon,
 } from "@mui/icons-material";
+import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { UPDATE_VIDEO_INFO } from "../utils/constants";
+import { LOGOUT_ROUTE, UPDATE_VIDEO_INFO } from "../utils/constants";
 import { useAppStore } from "../store";
 
 const Header = ({ isDisabled }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
+
+  const { channelInfo } = useAppStore()
 
   // Toggle the menu (avatar options)
   const handleAvatarClick = (event) => {
@@ -32,6 +36,24 @@ const Header = ({ isDisabled }) => {
   const handleAvatarClose = () => {
     setAnchorEl(null);
   };
+
+  const logout = async () => {
+    try {
+      const toastId = toast.loading("Logging out...");
+      const response = await axios.get(LOGOUT_ROUTE, { withCredentials: true })
+      if (response.status === 200) {
+        toast.success("Logout successful", { id: toastId });
+        console.log('logout success')
+        navigate("/");
+      }
+      else {
+        console.log('error')
+      }
+    }
+    catch (e) {
+      console.log(e)
+    }
+  }
 
   const { toggelSidebar } = useAppStore();
 
@@ -159,7 +181,8 @@ const Header = ({ isDisabled }) => {
               </button>
               <button
                 disabled={isDisabled}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100"
+                className={`px-4 py-2 text-gray-700 hover:bg-gray-100 ${channelInfo === null ? "hidden" : ""}`}
+                onClick={logout}
               >
                 Logout
               </button>

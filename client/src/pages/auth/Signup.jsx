@@ -71,7 +71,7 @@ export const Signup = () => {
         { withCredentials: true }
       );
 
-      console.log(response);
+      console.log(response.cookie);
       toast.success("User logged in successfully", { id: toastId });
       navigate("/");
     } catch (e) {

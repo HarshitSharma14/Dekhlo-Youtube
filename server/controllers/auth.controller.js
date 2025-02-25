@@ -50,6 +50,7 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
       JWT_SECRET,
       { expiresIn: maxAge } // Token expires in 1 hour
     );
+
     // console.log(token);
     return cb(null, { token, profileAlreadyExist });
   } catch (err) {
@@ -70,15 +71,22 @@ export const oauth2_redirect = (req, res) => {
     sameSite: "None",
     secure: true,
   });
+  clg
   if (!profileAlreadyExist) res.redirect(`${clientURL}/profile-setup`);
   else res.redirect(`${clientURL}`);
 };
 
 export const logout = (req, res) => {
-  res.clearCookie("jwt");
-  console.log('LOGOUT')
+  res.cookie("jwt", "", {
+    httpOnly: true,
+    sameSite: "None",
+    secure: true,
+    expires: new Date(0), // Explicitly expire the cookie
+  });
+  console.log("LOGOUT");
   res.status(200).json({ message: "Logged out successfully." });
 };
+
 
 export const login = AsyncTryCatch(async (req, res, next) => {
   const { email, password } = req.body;
@@ -115,6 +123,7 @@ export const login = AsyncTryCatch(async (req, res, next) => {
   const token = jwt.sign({ channelId: channel._id }, JWT_SECRET, {
     expiresIn: maxAge,
   });
+  console.log(token)
   console.log("bohot zyada hi andr hu uske");
 
   res.cookie("jwt", token, {

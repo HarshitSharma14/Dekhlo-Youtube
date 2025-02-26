@@ -157,7 +157,7 @@ const router = createBrowserRouter([
   },
 ]);
 const App = () => {
-  const { setChannelInfo } = useAppStore();
+  const { setChannelInfo, isLoggedIn, setIsLoggedIn } = useAppStore();
   const getChannelInfo = async () => {
     try {
       const { data } = await axios.get(GET_CHANNEL_DETAILS, {
@@ -172,7 +172,7 @@ const App = () => {
   };
   useEffect(() => {
     getChannelInfo();
-  }, []);
+  }, [isLoggedIn]);
 
   return (
     <>

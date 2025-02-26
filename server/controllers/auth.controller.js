@@ -65,13 +65,14 @@ export const oauth2_redirect = (req, res) => {
   const token = req.user.token;
   const profileAlreadyExist = req.user.profileAlreadyExist;
 
+  console.log('in the func')
+
   // Set the token as an HTTP-only cookie
   res.cookie("jwt", token, {
     httpOnly: true,
     sameSite: "None",
     secure: true,
   });
-  clg
   if (!profileAlreadyExist) res.redirect(`${clientURL}/profile-setup`);
   else res.redirect(`${clientURL}`);
 };

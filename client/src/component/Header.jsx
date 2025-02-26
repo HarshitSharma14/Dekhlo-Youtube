@@ -27,7 +27,7 @@ const Header = ({ isDisabled }) => {
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
 
-  const { channelInfo } = useAppStore()
+  const { channelInfo, setChannelInfo, setIsLoggedIn } = useAppStore()
 
   // Toggle the menu (avatar options)
   const handleAvatarClick = (event) => {
@@ -44,6 +44,8 @@ const Header = ({ isDisabled }) => {
       if (response.status === 200) {
         toast.success("Logout successful", { id: toastId });
         console.log('logout success')
+        setIsLoggedIn(false)
+        setChannelInfo(null)
         navigate("/");
       }
       else {

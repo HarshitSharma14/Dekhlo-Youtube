@@ -1,12 +1,14 @@
-import React from 'react'
+import React from 'react';
+import LongVideoCard from './cards/LongVideoCard';
 
-const WatchNext = () => {
-
-
-
+const WatchNext = ({ videos }) => {
     return (
-        <div>WatchNext</div>
-    )
-}
+        <>
+            {videos.map((video, index) => (
+                <LongVideoCard key={index} video={video} />
+            ))}
+        </>
+    );
+};
 
-export default WatchNext
+export default WatchNext;

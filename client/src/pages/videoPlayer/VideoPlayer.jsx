@@ -8,6 +8,7 @@ import {
   GET_COMMENTS,
   GET_PLAY_NEXT,
   GET_VIDEO,
+  GET_WATCH_NEXT,
   LIKE_UNLIKE,
   PUT_COMMENT,
 } from "../../utils/constants";
@@ -28,6 +29,7 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import { debounce } from "lodash";
 import { useAppStore } from "../../store";
+import LongVideoCard from "../../component/cards/LongVideoCard";
 
 const VideoPlayer = () => {
   const { channelInfo } = useAppStore();
@@ -46,16 +48,17 @@ const VideoPlayer = () => {
   const [skip, setSkip] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [commentText, setCommentText] = useState("");
+  const [watchNext, setWatchNext] = useState([])
 
   const putComment = async () => {
-    const toastId = toast.loading("Logging in...");
+    const toastId = toast.loading("Commenting...");
 
     console.log(commentText);
     if (commentText.length === 0) {
       return;
     }
     if (!loggedIn) {
-      toast.error("Login to comment on videos.");
+      toast.error("Login to comment on videos.", { id: toastId });
       return;
     }
     try {
@@ -65,6 +68,10 @@ const VideoPlayer = () => {
         { withCredentials: true }
       );
       toast.success("Comment added successfully", { id: toastId });
+      setVideoDetails((prevDetails) => ({
+        ...prevDetails, commentCount: prevDetails.commentCount + 1,
+      }));
+
       setComments((prevComments) => [response.data.comment, ...prevComments]);
       setSkip(skip + 1);
       console.log(response.data);
@@ -75,6 +82,20 @@ const VideoPlayer = () => {
   };
 
   // use effects
+
+  //getting watch-next videos
+  useEffect(() => {
+    const getWatchNext = async () => {
+      try {
+        const response = await axios.get(`${GET_WATCH_NEXT}/${videoId}`);
+        setWatchNext(response.data.watchNext);
+        console.log(response)
+      } catch (error) {
+        console.error("Error fetching video data:", error);
+      }
+    };
+    getWatchNext();
+  }, [])
 
   // getting video data
   useEffect(() => {
@@ -187,7 +208,7 @@ const VideoPlayer = () => {
 
   // functions
 
-  const openDiscription = () => {};
+  const openDiscription = () => { };
 
   //         return () => {
   //             player.destroy();  // Clean up when the component is unmounted
@@ -331,9 +352,17 @@ const VideoPlayer = () => {
           </div>
 
           {/* play next for small screens */}
-          <div className="lg:hidden flex flex-col  w-full bg-red-500 h-[1000px] box-border">
+          <div className="lg:hidden flex flex-col  w-full pt-3 h-auto box-border">
             {/* Right side content */}
-            <WatchNext />
+            {watchNext?.map((video, index) => {
+              return (
+                <LongVideoCard
+                  key={index}
+                  remove={"Remove from Watch histor"}
+                  video={video}
+                />
+              );
+            })}
           </div>
 
           {/* comments */}
@@ -370,11 +399,10 @@ const VideoPlayer = () => {
                           </div>
                           <div
                             onClick={putComment}
-                            className={`mr-1 rounded-3xl px-3 py-1 bg-blue-500  text-black font-roboto ${
-                              commentText.length === 0
-                                ? "disabled bg-slate-400"
-                                : "hover:bg-blue-300"
-                            } font-semibold cursor-pointer`}
+                            className={`mr-1 rounded-3xl px-3 py-1 bg-blue-500  text-black font-roboto ${commentText.length === 0
+                              ? "disabled bg-slate-400"
+                              : "hover:bg-blue-300"
+                              } font-semibold cursor-pointer`}
                           >
                             Comment
                           </div>
@@ -405,12 +433,11 @@ const VideoPlayer = () => {
                             </div>
                           </div>
                           <div
-                            className={`${
-                              comment?.channel._id === channelInfo?._id ||
+                            className={`${comment?.channel._id === channelInfo?._id ||
                               videoDetails.channel._id === channelInfo?._id
-                                ? "block"
-                                : "hidden"
-                            }`}
+                              ? "block"
+                              : "hidden"
+                              }`}
                           >
                             <BsThreeDotsVertical
                               className="mt-2 ml-2"
@@ -426,11 +453,10 @@ const VideoPlayer = () => {
                               }}
                             >
                               <MenuItem
-                                className={`${
-                                  comment?.channel._id === channelInfo?._id
-                                    ? "block"
-                                    : "hidden"
-                                }`}
+                                className={`${comment?.channel._id === channelInfo?._id
+                                  ? "block"
+                                  : "hidden"
+                                  }`}
                                 onClick={handleCommentMenuClose}
                               >
                                 Edit
@@ -458,82 +484,21 @@ const VideoPlayer = () => {
         </div>
 
         {/* Right Side */}
-        <div className="hidden lg:flex flex-col lg:w-[40%] w-full bg-blue-900 h-[1000px] box-border lg:mx-6">
+        <div className="hidden lg:flex flex-col lg:w-[40%] pt-3 w-full h-auto box-border lg:mx-6">
           {/* Right side content */}
-          <WatchNext />
+          {watchNext?.map((video, index) => {
+            return (
+              <LongVideoCard
+                key={index}
+                remove={"Remove from Watch histor"}
+                video={video}
+              />
+            );
+          })}
         </div>
       </div>
 
-      {/* Description */}
-      <div className="bg-[#121212] mt-3 flex-1 flex-col lg:max-w-[748px] w-full max-w-[100vw] box-border">
-        <div className="w-full h-auto min-h-[100px] flex flex-col box-border">
-          <div className="p-2 h-auto box-border">
-            {/* Title */}
-            <div className="max-h-[60px] min-h-[40px] font-roboto font-bold text-xl text-white line-clamp-2">
-              {videoDetails.title || "Loading..."}
-            </div>
 
-            {/* Channel and buttons */}
-            <div className="min-h-[50px] h-auto font-roboto text-xl text-white flex flex-wrap xs:flex-nowrap xs:justify-between box-border">
-              {videoDetails.channel ? (
-                <div className="flex flex-row items-center w-full xs:w-auto flex-grow box-border">
-                  {/* Channel profile photo */}
-                  <div className="w-[50px] flex-none rounded-full h-[50px] box-border">
-                    <img
-                      className="w-full rounded-full h-full object-cover"
-                      src={videoDetails.channel.profilePhoto}
-                      alt="Channel Profile"
-                    />
-                  </div>
-
-                  {/* Channel name and subscribers */}
-                  <div className="flex flex-col w-auto pl-3 box-border">
-                    <div className="text-white text-sm font-roboto font-bold truncate">
-                      {videoDetails.channel.channelName}
-                    </div>
-                    <div className="text-gray-400 text-sm truncate">
-                      {videoDetails.channel.followers.length} subscribers
-                    </div>
-                  </div>
-
-                  {/* Subscribe button */}
-                  <div className="h-[36px] ml-3 hover:bg-slate-200 w-[94.6px] rounded-3xl bg-white text-black text-sm flex-none flex justify-center items-center box-border">
-                    Subscribe
-                  </div>
-                </div>
-              ) : (
-                <p>Loading channel details...</p>
-              )}
-
-              {/* Buttons */}
-              <div className="w-full xs:w-auto mt-3 xs:mt-0 xs:justify-end flex items-center justify-evenly box-border">
-                <div className="w-[80px] h-[36px] rounded-3xl flex flex-row justify-evenly hover:bg-[#635f5f] px-3 text-sm items-center bg-[#2e302f] box-border">
-                  <ThumbUpOffAltIcon /> {videoDetails.likes}
-                </div>
-
-                <div className="w-[40px] h-[36px] rounded-3xl flex flex-row justify-evenly ml-3 hover:bg-[#635f5f] items-center bg-[#2e302f] box-border">
-                  <PiShareFatLight />
-                </div>
-
-                <div className="w-[40px] h-[36px] rounded-3xl flex flex-row justify-evenly hover:bg-[#635f5f] ml-3 items-center bg-[#2e302f] box-border">
-                  <BsThreeDots />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Description Component */}
-        <div className="w-full max-w-[100vw] overflow-hidden box-border">
-          <Description videoDetails={videoDetails} />
-        </div>
-      </div>
-
-      {/* Right Side */}
-      <div className="hidden lg:flex flex-col w-[40%] bg-white h-auto box-border lg:mx-6">
-        {/* Right side content */}
-        <WatchNext />
-      </div>
     </>
   );
 };

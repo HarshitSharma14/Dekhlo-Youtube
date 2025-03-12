@@ -27,26 +27,31 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
 
   await Channel.findByIdAndUpdate(video.channel, { $inc: { views: 1 } });
 
+  let decodedData = null;
+
+  let isLiked = false
+
   try {
     const token = req.cookies.jwt;
-    const decodedData = jwt.verify(token, JWT_SECRET);
+    decodedData = jwt.verify(token, JWT_SECRET);
     await Channel.findByIdAndUpdate(decodedData.channelId, {
       $push: { watchHistory: videoId },
     });
+    isLiked = (await Channel.exists({
+      _id: decodedData.channelId,
+      likedVideos: videoId,
+    }))
+      ? true
+      : false;
+    return res.status(200).json({ video, isLiked, loggedIn: true });
   } catch (error) {
     console.log("user not logged in to save to watch history");
   }
 
-  const isLiked = (await Channel.exists({
-    _id: decodedData.channelId,
-    likedVideos: videoId,
-  }))
-    ? true
-    : false;
 
   // console.log(isLiked);
 
-  return res.status(200).json({ video, isLiked, loggedIn: true });
+  return res.status(200).json({ video, isLiked, loggedIn: false });
 });
 
 export const getComments = AsyncTryCatch(async (req, res, next) => {
@@ -83,6 +88,25 @@ export const getComments = AsyncTryCatch(async (req, res, next) => {
     hasMore,
   });
 });
+
+export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
+  const { videoId } = req.params;
+  const video = await Video.findById(videoId);
+  if (!video) {
+    return next(new ErrorHandler(404, "Video not found"));
+  }
+
+  const videosChannel = await Video.find({ channel: video.channel }).limit(2);
+  console.log("videosChannel")
+  console.log(videosChannel)
+
+  const videosCategory = await Video.find({ category: video.category }).limit(4);
+  console.log("videosCategory")
+  console.log(videosCategory)
+  const watchNext = videosChannel.concat(videosCategory).filter((vid) => vid._id.toString() !== videoId);
+
+  return res.status(200).json({ watchNext });
+})
 
 export const putComment = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.params;
@@ -175,6 +199,12 @@ export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
   console.log(videoDetails);
 
   return res.status(200).json({ videoDetails });
+});
+
+export const getAllVideos = AsyncTryCatch(async (req, res, next) => {
+  const videos = await Video.find({});
+
+  return res.status(200).json({ videos });
 });
 
 export const getPlayNext = AsyncTryCatch(async (req, res, next) => {

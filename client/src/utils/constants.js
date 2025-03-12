@@ -40,3 +40,4 @@ export const GET_PLAY_NEXT = `${VIDEO_ROUTE}/get-play-next`;
 export const LIKE_UNLIKE = `${VIDEO_ROUTE}/like-unlike`;
 export const GET_COMMENTS = `${VIDEO_ROUTE}/get-comments`;
 export const PUT_COMMENT = `${VIDEO_ROUTE}/put-comment`;
+export const GET_WATCH_NEXT = `${VIDEO_ROUTE}/get-watch-next`;

@@ -202,7 +202,28 @@ export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
 });
 
 export const getAllVideos = AsyncTryCatch(async (req, res, next) => {
-  const videos = await Video.find({});
+  const videos = await Video.aggregate([
+    {
+      $lookup: {
+        from: "channels",
+        localField: "channel",
+        foreignField: "_id",
+        as: "channel",
+      }
+    },
+    {
+      $unwind: "$channel"
+    },
+    {
+      $project: {
+        title: 1,
+        description: 1,
+        duration: 1,
+        category: 1,
+        channel: "$channel.channelName" // Makes channel a string instead of an object
+      }
+    }
+  ]);
 
   return res.status(200).json({ videos });
 });

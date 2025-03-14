@@ -35,7 +35,7 @@ const ChannelCard = ({
         <Avatar
           onClick={() => navigate(`/channel/${channelId}`)}
           src={profilePhoto}
-          alt="Chai aur Code"
+          alt="image"
           sx={{ width: 120, height: 120, cursor: "pointer" }}
         />
 

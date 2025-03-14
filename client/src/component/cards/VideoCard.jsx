@@ -16,6 +16,8 @@ import {
   Modal,
   TextField,
   FormControlLabel,
+  Avatar,
+  CardMedia,
 } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -35,7 +37,10 @@ import {
 import { useAppStore } from "../../store/index.js";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { ADD_VIDEO_TO_PLAYLISTS } from "../../utils/constants.js";
+import {
+  ADD_VIDEO_TO_PLAYLISTS,
+  GET_MY_PLAYLISTS,
+} from "../../utils/constants.js";
 
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return "00:00";
@@ -207,14 +212,17 @@ const VideoCard = ({
             )}
           </div>
         )}
-        <img
-          src={thumbnail}
-          alt={title}
-          className={`thumbnail ${isHovered ? "hidden" : ""}`}
+        <CardMedia
+          component="img"
+          image={thumbnail}
+          alt="Thumbnail"
           loading="lazy"
-          style={{
+          sx={{
+            display: isHovered && "hidden",
+            aspectRatio: "16/9",
             width: "100%",
             height: "100%",
+            objectFit: "cover",
           }}
         />
 
@@ -250,10 +258,17 @@ const VideoCard = ({
               navigate(`/channel/${channelId}`);
             }}
           >
-            <img
+            {/* <img
               src={channelProfile}
               alt={channelName}
               className="channel-avatar"
+            /> */}
+            <Avatar
+              src={channelProfile}
+              sx={{
+                width: "40px",
+                height: "40px",
+              }}
             />
           </div>
         )}
@@ -316,6 +331,19 @@ export const MoreIconButton = ({
   const [createNewPlaylist, setCreateNewPlaylist] = useState(false);
   const [name, setName] = useState("");
   const [isPrivate, setIsPrivate] = useState(true);
+  const [playlistInfo, setPlaylistInfo] = useState(channelInfo);
+
+  const getPlaylists = async () => {
+    try {
+      const { data } = await axios.get(GET_MY_PLAYLISTS, {
+        withCredentials: true,
+      });
+      console.log("my playlists ", data);
+      setPlaylistInfo(data);
+    } catch (error) {
+      console.log("error fetiching playlist ", error);
+    }
+  };
 
   const open = Boolean(anchorEl);
 
@@ -364,7 +392,7 @@ export const MoreIconButton = ({
     closeModal();
     let playlistIds = playlists;
     if (!playlistIds.length) {
-      playlistIds.push(channelInfo?.watchLater);
+      playlistIds.push(playlistInfo?.watchLater);
     }
     const dataToSend = { playlistIds, videoId };
     console.log("add vid", dataToSend);
@@ -394,7 +422,7 @@ export const MoreIconButton = ({
           aria-controls="video-card-menu"
           aria-haspopup="true"
           sx={{
-            display: !!!channelInfo && "none",
+            display: !!!playlistInfo && "none",
             position: "absolute",
             right: "0",
             opacity: isInView ? 1 : 0,
@@ -425,6 +453,7 @@ export const MoreIconButton = ({
           onClick={(e) => {
             e.stopPropagation();
             setAnchorEl(null);
+            getPlaylists();
             setModalOpen(true);
           }}
           sx={{
@@ -587,7 +616,7 @@ export const MoreIconButton = ({
                   overflow: "auto",
                 }}
               >
-                {channelInfo?.playlists.map((playlist, index) => (
+                {playlistInfo?.playlists.map((playlist, index) => (
                   <ListItem
                     key={index}
                     button

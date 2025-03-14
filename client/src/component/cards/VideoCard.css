@@ -119,7 +119,7 @@
   margin: 0;
 }
 
-@media (max-width: 1400px) {
+@media (max-width: 1370px) {
   .video-card {
     width: 30%;
   }

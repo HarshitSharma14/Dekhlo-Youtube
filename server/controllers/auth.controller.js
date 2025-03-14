@@ -83,18 +83,20 @@ export const login = AsyncTryCatch(async (req, res, next) => {
   const { email, password } = req.body;
 
   console.log(req.body);
-
+  if (typeof email !== "string" || typeof password !== "string") {
+    return res.status(400).json({ error: "Invalid input format" });
+  }
   if (!email || !password) {
     return next(new ErrorHandler(400, "Please enter both email and password"));
   }
 
   const channel = await Channel.findOne({ email }).select("+password");
 
-  console.log(channel.password);
-
   if (!channel) {
     return next(new ErrorHandler(404, "User does not exist"));
   }
+  console.log("chnnel found ", channel);
+  console.log(channel.password);
 
   console.log("andr hu uske");
 

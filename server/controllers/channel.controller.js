@@ -214,28 +214,36 @@ export const getSubscribedChannelVideos = AsyncTryCatch(
 // get watch history **********************************************
 export const getWatchHistory = AsyncTryCatch(async (req, res, next) => {
   const { page = 1, limit = 20 } = req.query;
-  console.log("here");
+  let affectiveLimit = limit;
+  const totalVideoCount = await Channel.aggregate([
+    { $match: { _id: new mongoose.Types.ObjectId(String(req.channelId)) } },
+    { $project: { watchHistoryCount: { $size: "$watchHistory" } } },
+  ]);
+  const totalCount = totalVideoCount[0].watchHistoryCount || 0;
+
+  let temp = totalCount - page * limit;
+  const skipValue = Math.max(0, temp);
+  if (temp < 0) {
+    affectiveLimit = parseInt(limit) + parseInt(temp);
+  }
 
   const channel = await Channel.findById(req.channelId)
     .select("watchHistory")
     .populate({
       path: "watchHistory",
       options: {
-        sort: { createdAt: -1 }, // Sort in descending order (most recent first)
-        skip: (page - 1) * limit,
-        limit: parseInt(limit),
+        skip: skipValue,
+        limit: parseInt(affectiveLimit),
       },
     });
-  const totalVideoCount = await Channel.aggregate([
-    { $match: { _id: new mongoose.Types.ObjectId(String(req.channelId)) } },
-    { $project: { watchHistoryCount: { $size: "$watchHistory" } } },
-  ]);
-  console.log("channel", totalVideoCount[0]);
+  if (!channel) {
+    return next(new ErrorHandler(404, "Error: Channel not found"));
+  }
+  const historyInOrder = channel.watchHistory.reverse();
 
-  const totalPages =
-    Math.ceil(totalVideoCount[0]?.watchHistoryCount / limit) || 0;
+  const totalPages = Math.ceil(totalCount / limit) || 0;
 
-  res.status(200).json({ videos: channel.watchHistory, totalPages });
+  res.status(200).json({ videos: historyInOrder, totalPages });
 });
 
 export const updateVideo = AsyncTryCatch(async (req, res, next) => {
@@ -467,7 +475,7 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
     .select("playlists")
     .populate({
       path: "playlists",
-      select: "name videos",
+      select: "name videos private",
       populate: {
         path: "videos",
         select: "thumbnailUrl",
@@ -480,10 +488,13 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
   if (!channel) return next(new ErrorHandler(404, "Channel not found"));
 
   let playlists = channel.playlists;
-
+  // console.log("all play", playlists);
   if (!canSendPrivatePlaylist) {
-    playlists = playlists.filter((plist) => plist.isPrivate != true);
+    // console.log("in ");
+    // console.log(playlists);
+    playlists = playlists.filter((plist) => plist.private !== true);
   }
+  // console.log("sendin ", playlists);
 
   const dataToSend = playlists.map((plist) => {
     const videoCount = plist.videos.length;
@@ -494,6 +505,16 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
   res.status(200).json({ playlists: dataToSend });
 });
 
+// get my channels playlist **********************************************************************************
+export const getMyPlaylists = AsyncTryCatch(async (req, res, next) => {
+  const channelId = req.channelId;
+  const channel = await Channel.findById(channelId)
+    .select("playlists")
+    .populate({ path: "playlists", select: "name private" });
+  const playlists = channel.playlists;
+  // console.log("chennel ", playlists);
+  res.status(200).json({ playlists });
+});
 // Add to Playlist *************************************************************************
 export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
   const {
@@ -534,4 +555,34 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
     }
   }
   res.status(200).json({ success: true });
+});
+
+// get videso of playlist *****************************************************************
+export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
+  const { playlistId, page = 1, limit = 20 } = req.query;
+
+  let affectiveLimit = limit;
+  const playlistForVideoCount = await Playlist.findById(playlistId).select(
+    "videosCount"
+  );
+  if (!playlistForVideoCount)
+    return next(new ErrorHandler(404, "Error: Playlist not found"));
+  const totalCount = playlistForVideoCount.videosCount || 0;
+  let temp = totalCount - page * limit;
+  const skipValue = Math.max(0, temp);
+  if (temp < 0) {
+    affectiveLimit = parseInt(limit) + parseInt(temp);
+  }
+  const playlist = await Playlist.findById(playlistId).populate({
+    path: "videos",
+    options: {
+      skip: skipValue,
+      limit: parseInt(affectiveLimit),
+    },
+  });
+
+  playlist.videos = playlist.videos.reverse();
+
+  const totalPages = Math.ceil(totalCount / limit) || 0;
+  res.status(200).json({ playlist, totalPages });
 });

@@ -11,15 +11,31 @@ import React, { useRef, useState } from "react";
 import { MoreIconButton } from "./VideoCard";
 import { useAppStore } from "../../store";
 import { formatUploadTime } from "../../utils/helper";
+import { Navigate, useNavigate } from "react-router-dom";
 const image =
   "https://images.pexels.com/photos/30426849/pexels-photo-30426849/free-photo-of-urban-black-and-white-bicycle-scene.jpeg?auto=compress&cs=tinysrgb&w=400&lazy=load";
 const videoUrl =
   "https://static.videezy.com/system/resources/previews/000/006/997/original/MR8_8189.mp4";
-const LongVideoCard = ({ video }) => {
+
+// const video = {
+//   _id: "1a2b3c4d",
+//   title: "Exploring the Streets of New York City in 4K",
+//   views: "1.2M",
+//   duration: 1345, // in seconds (approx 22 minutes and 25 seconds)
+//   createdAt: "2023-06-15T14:30:00Z", // ISO format for date
+//   thumbnailUrl:
+//     "https://images.pexels.com/photos/30426849/pexels-photo-30426849/free-photo-of-urban-black-and-white-bicycle-scene.jpeg?auto=compress&cs=tinysrgb&w=400&lazy=load",
+//   videoUrl:
+//     "https://static.videezy.com/system/resources/previews/000/006/997/original/MR8_8189.mp4",
+//   description:
+//     "Take a breathtaking virtual tour through the streets of New York City, exploring famous landmarks and hidden gems in stunning 4K quality.",
+// };
+const LongVideoCard = ({ video, playlist = null, remove }) => {
   const boxRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
   const videoRef = useRef(null);
   const { channelInfo } = useAppStore();
+  const navigate = useNavigate();
 
   const formatTime = (seconds) => {
     if (!seconds || isNaN(seconds)) return "00:00";
@@ -50,6 +66,15 @@ const LongVideoCard = ({ video }) => {
       setTimeleft(formatTime(timeRemaining));
     }
   };
+  const handleClick = () => {
+    console.log("logn card ", video);
+    const videoId = video?._id;
+    const playlistId = playlist;
+    let route = `/video-player/${videoId}`;
+    if (playlistId) route = route + `?playlist=${playlistId}`;
+    navigate(route);
+  };
+
   const [height, setHeight] = useState(0);
   const [isInView, setIsInView] = useState(false);
   const [hovered, setHovered] = useState(false);
@@ -59,11 +84,13 @@ const LongVideoCard = ({ video }) => {
 
   return (
     <Box
+      onClick={() => {
+        handleClick();
+      }}
       sx={{
         display: "flex",
         mb: "15px",
         padding: "0 6px",
-
         cursor: "pointer",
       }}
       onMouseEnter={() => {
@@ -87,9 +114,9 @@ const LongVideoCard = ({ video }) => {
           maxWidth: "400px",
           minWidth: "190px",
           position: "relative",
-          height: "auto",
           borderRadius: hovered ? "0" : "12px",
           overflow: "hidden",
+
           transition: "border-radius 0.3s ease-in-out",
           "@media (max-width:560px)": {
             borderRadius: 0,
@@ -102,6 +129,7 @@ const LongVideoCard = ({ video }) => {
           alt="Thumbnail"
           sx={{
             display: hovered && "none",
+            aspectRatio: "16/9",
             width: "100%",
             height: "100%",
             objectFit: "cover",
@@ -119,6 +147,7 @@ const LongVideoCard = ({ video }) => {
             loop={true}
             onTimeUpdate={handleTimeUpdate}
             component="video"
+            muted={true}
             src={video?.videoUrl}
             sx={{
               display: !hovered && "none",
@@ -184,7 +213,7 @@ const LongVideoCard = ({ video }) => {
             },
           }}
         >
-          {video.views} views * {formatUploadTime(video?.createdAt)}
+          {video.views} views {formatUploadTime(video?.createdAt)}
         </Typography>
         <Typography
           sx={{
@@ -224,12 +253,12 @@ const LongVideoCard = ({ video }) => {
             },
           }}
         >
-          {/* {video?.description} */}
+          {video?.description}
         </Typography>
       </Box>
 
       <MoreIconButton
-        removeFrom="Remove from Watch history"
+        removeFrom={remove}
         isInView={isInView}
         channelInfo={channelInfo}
         videoId={video._id}

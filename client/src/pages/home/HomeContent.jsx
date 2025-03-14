@@ -49,6 +49,7 @@ const HomeContent = () => {
   //                   <<--- Handels the scroll behaviour for the infinete scrolling *****************************
   let scrollingTimeout;
   const handleScroll = () => {
+    console.log("scrolling home");
     const bottom =
       window.innerHeight + window.scrollY >=
       document.documentElement.scrollHeight - 100;

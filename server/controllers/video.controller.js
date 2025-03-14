@@ -26,23 +26,47 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
   }
 
   await Channel.findByIdAndUpdate(video.channel, { $inc: { views: 1 } });
-
+  let isLiked = false;
   try {
     const token = req.cookies.jwt;
     const decodedData = jwt.verify(token, JWT_SECRET);
-    await Channel.findByIdAndUpdate(decodedData.channelId, {
-      $push: { watchHistory: videoId },
-    });
+
+    const channel = await Channel.findById(decodedData.channelId).select(
+      "watchHistory"
+    );
+
+    // Extract the last 10 videos from the array
+    const recentVideos = channel.watchHistory.slice(-10);
+
+    // Check if the `videoId` is present in the last 10 entries
+    if (recentVideos.some((id) => id.toString() === videoId.toString())) {
+      // Swap the matched video with the most recent one
+      const videoIndex = channel.watchHistory
+        .map((id) => id.toString()) // Ensure all IDs are strings
+        .lastIndexOf(videoId.toString());
+      // Swap logic
+      const lastIndex = channel.watchHistory.length - 1;
+      console.log("videod Index", videoIndex);
+      console.log("last ind ", lastIndex);
+      [channel.watchHistory[videoIndex], channel.watchHistory[lastIndex]] = [
+        channel.watchHistory[lastIndex],
+        channel.watchHistory[videoIndex],
+      ];
+    } else {
+      // Push the video as a new entry
+      channel.watchHistory.push(videoId);
+    }
+    isLiked = (await Channel.exists({
+      _id: decodedData.channelId,
+      likedVideos: videoId,
+    }))
+      ? true
+      : false;
+    // Save the updated document
+    await channel.save();
   } catch (error) {
     console.log("user not logged in to save to watch history");
   }
-
-  const isLiked = (await Channel.exists({
-    _id: decodedData.channelId,
-    likedVideos: videoId,
-  }))
-    ? true
-    : false;
 
   console.log(isLiked);
 
@@ -53,9 +77,9 @@ export const getComments = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.params;
   const { limit = 2, skip = 0 } = req.query; // Default limit is 20, skip is 0
 
-  console.log("bla bla bla");
+  //console.log("bla bla bla");
 
-  console.log("skip", skip);
+  //console.log("skip", skip);
 
   const video = await Video.findById(videoId);
   if (video.canComment === false)
@@ -70,11 +94,11 @@ export const getComments = AsyncTryCatch(async (req, res, next) => {
 
   // Check if there are more comments to load
   const totalComments = await Comment.countDocuments({ videoId: videoId });
-  console.log(totalComments);
+  // console.log(totalComments);
   const hasMore = comments.length === parseInt(limit);
-  console.log(comments);
-  console.log(hasMore);
-  console.log("space");
+  // console.log(comments);
+  // console.log(hasMore);
+  // console.log("space");
 
   // Return the comments and pagination info
   return res.status(200).json({

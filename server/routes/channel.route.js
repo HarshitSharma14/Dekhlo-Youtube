@@ -5,6 +5,8 @@ import {
   getChannelInfo,
   getChannelPlaylists,
   getChannelVideos,
+  getMyPlaylists,
+  getPlaylistVideos,
   getSelfChannelInfo,
   getSubscribedChannel,
   getSubscribedChannelVideos,
@@ -31,9 +33,11 @@ app.get("/get-info", isUserLoggedIn, getSelfChannelInfo);
 app.get("/get-info/:channelId", getChannelInfo);
 app.get("/playlists/:channelId", getChannelPlaylists);
 app.get("/videos/:channelId", getChannelVideos);
+app.get("/playlist", getPlaylistVideos);
 
 // login required routes ****************************************
 app.use(isUserLoggedIn);
+app.get("/myplaylist", getMyPlaylists);
 app.get("/get-subscribedchannels", getSubscribedChannel);
 app.post("/add-to-playlist", addVideosToPlaylist);
 app.post("/update-profile", upload.single("profilePhotoFile"), updateProfile);

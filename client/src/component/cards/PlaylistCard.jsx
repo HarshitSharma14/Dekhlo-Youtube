@@ -3,7 +3,7 @@ import { Box, Typography, IconButton } from "@mui/material";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useNavigate } from "react-router-dom";
 import { VideoLibrary } from "@mui/icons-material";
-import pic from "../../../assets/emptyPlaylist.jpg";
+import pic from "/assets/emptyPlaylist.jpg";
 
 const PlaylistCard = ({
   playlistId,
@@ -200,7 +200,7 @@ const PlaylistCard = ({
           }}
           onClick={(e) => {
             e.stopPropagation(); // Prevents the card click event
-            navigate(`/playlist/${playlistId}`);
+            navigate(`/playlist?playlistId=${playlistId}`);
           }}
         >
           View full playlist

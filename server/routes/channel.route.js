@@ -5,6 +5,7 @@ import {
   getChannelInfo,
   getChannelPlaylists,
   getChannelVideos,
+  getPlaylistVideos,
   getSelfChannelInfo,
   getSubscribedChannel,
   getSubscribedChannelVideos,
@@ -31,6 +32,7 @@ app.get("/get-info", isUserLoggedIn, getSelfChannelInfo);
 app.get("/get-info/:channelId", getChannelInfo);
 app.get("/playlists/:channelId", getChannelPlaylists);
 app.get("/videos/:channelId", getChannelVideos);
+app.get("/playlist", getPlaylistVideos);
 
 // login required routes ****************************************
 app.use(isUserLoggedIn);

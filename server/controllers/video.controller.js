@@ -91,20 +91,22 @@ export const getComments = AsyncTryCatch(async (req, res, next) => {
 
 export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.params;
+  const cursor = req.query.cursor;
+  const limit = 3
   const video = await Video.findById(videoId);
   if (!video) {
     return next(new ErrorHandler(404, "Video not found"));
   }
 
-  const videosChannel = await Video.find({ channel: video.channel }).limit(2);
-  console.log("videosChannel")
-  console.log(videosChannel)
+  let query = { channel: video.channel, _id: { $ne: videoId } };
 
-  const videosCategory = await Video.find({ category: video.category }).limit(4);
-  console.log("videosCategory")
-  console.log(videosCategory)
-  const watchNext = videosChannel.concat(videosCategory).filter((vid) => vid._id.toString() !== videoId);
+  if (cursor) {
+    query._id = { $gt: cursor, $ne: videoId }; // Fetch videos with _id > cursor (next batch)
+  }
 
+  const watchNext = await Video.find(query).populate("channel", "profilePhoto channelName").limit(limit);
+  console.log('watchnext')
+  console.log(watchNext)
   return res.status(200).json({ watchNext });
 })
 
@@ -196,7 +198,7 @@ export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
   if (!videoDetails) {
     next(new ErrorHandler(404, "Video not found"));
   }
-  console.log(videoDetails);
+  // console.log(videoDetails);
 
   return res.status(200).json({ videoDetails });
 });
@@ -230,14 +232,25 @@ export const getAllVideos = AsyncTryCatch(async (req, res, next) => {
 
 export const getPlayNext = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.params;
+  const cursor = req.query.cursor;
+  const limit = 10
   const video = await Video.findById(videoId);
   if (!video) {
     return next(new ErrorHandler(404, "Video not found"));
   }
 
-  const videos = await Video.find({ channel: video.channel }).limit(10);
+  let query = { channel: video.channel, _id: { $ne: videoId } };
 
-  const playNext = videos.filter((vid) => vid._id.toString() !== videoId);
+  if (cursor) {
+    query._id = { $gt: cursor, $ne: videoId }; // Fetch videos with _id > cursor (next batch)
+  }
 
-  return res.status(200).json({ playNext });
+  const watchNext = await Video.find(query).populate("channel").limit(limit);
+  console.log('watchnext')
+  console.log(watchNext)
+  return res.status(200).json({ watchNext });
 });
+
+
+
+

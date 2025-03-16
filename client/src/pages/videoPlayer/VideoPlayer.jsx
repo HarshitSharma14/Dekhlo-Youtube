@@ -7,17 +7,20 @@ import axios from "axios";
 import {
   GET_COMMENTS,
   GET_PLAY_NEXT,
+  GET_PLAYLIST_VIDEOS,
   GET_VIDEO,
   GET_WATCH_NEXT,
   LIKE_UNLIKE,
   PUT_COMMENT,
 } from "../../utils/constants";
+import RepeatIcon from '@mui/icons-material/Repeat';
+import CloseIcon from '@mui/icons-material/Close';
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import { BsThreeDots } from "react-icons/bs";
 import Description from "../../component/Description";
-import WatchNext from "../../component/WatchNext";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
+import ShuffleIcon from '@mui/icons-material/Shuffle';
 import Comments from "../../component/Comments";
 import toast from "react-hot-toast";
 import { TextField } from "@mui/material";
@@ -30,72 +33,117 @@ import MenuItem from "@mui/material/MenuItem";
 import { debounce } from "lodash";
 import { useAppStore } from "../../store";
 import LongVideoCard from "../../component/cards/LongVideoCard";
+import { useSearchParams } from "react-router-dom";
+import PlayingPlaylistComp from "../../component/playingPlaylistComp";
+import { useNavigate } from "react-router-dom";
+import { Global } from '@emotion/react';
+import { styled } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+import { grey } from '@mui/material/colors';
+// import Button from '@mui/material/Button';
+import Box from '@mui/material/Box';
+import Skeleton from '@mui/material/Skeleton';
+import Typography from '@mui/material/Typography';
+import SwipeableDrawer from '@mui/material/SwipeableDrawer';
+
+
 
 const VideoPlayer = () => {
   const { channelInfo } = useAppStore();
 
+  const navigate = useNavigate();
+
   // states and refs
+
+
   const { videoId } = useParams();
   const [videoDetails, setVideoDetails] = useState({});
-  const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
 
   const playerRef = useRef(null); // Reference to the video element
   const [loggedIn, setLoggedIn] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(0);
-  const [comments, setComments] = useState([]);
-  const [skip, setSkip] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
-  const [commentText, setCommentText] = useState("");
   const [watchNext, setWatchNext] = useState([])
+  const [cursor, setCursor] = useState(null)
+  const [watchNextLoading, setWatchNextLoading] = useState(false)
+  const [watchNextHasMore, setWatchNextHasMore] = useState(true)
+  const lastElementRef = useRef(null);
+  const [playingPlaylist, setPlayingPlaylist] = useState(false)
+  const [playlist, setPlaylist] = useState([])
+  const plyrInstance = useRef(null); // Ref for Plyr instance
 
-  const putComment = async () => {
-    const toastId = toast.loading("Commenting...");
+  const [searchParams] = useSearchParams();
+  const queryValue = searchParams.get("playlist"); // Get query param 'q'
+  const playlistId = queryValue
 
-    console.log(commentText);
-    if (commentText.length === 0) {
-      return;
-    }
-    if (!loggedIn) {
-      toast.error("Login to comment on videos.", { id: toastId });
-      return;
-    }
-    try {
-      const response = await axios.post(
-        `${PUT_COMMENT}/${videoId}`,
-        { text: commentText },
-        { withCredentials: true }
-      );
-      toast.success("Comment added successfully", { id: toastId });
-      setVideoDetails((prevDetails) => ({
-        ...prevDetails, commentCount: prevDetails.commentCount + 1,
-      }));
+  useEffect(() => {
+    if (queryValue) {
+      console.log("playlist", queryValue)
+      setPlayingPlaylist(true);
 
-      setComments((prevComments) => [response.data.comment, ...prevComments]);
-      setSkip(skip + 1);
-      console.log(response.data);
-      setCommentText("");
-    } catch (error) {
-      console.error("Error posting comment:", error);
+      const getPlaylistVideos = async () => {
+        const response = await axios.get(`${GET_PLAYLIST_VIDEOS}?playlistId=${playlistId}`, { withCredentials: true })
+        console.log(response.data)
+        setPlaylist(response.data.playlist)
+      }
+
+      getPlaylistVideos()
+
     }
-  };
+  }, [queryValue, playlistId]);
+
+
 
   // use effects
 
-  //getting watch-next videos
-  useEffect(() => {
-    const getWatchNext = async () => {
-      try {
-        const response = await axios.get(`${GET_WATCH_NEXT}/${videoId}`);
-        setWatchNext(response.data.watchNext);
-        console.log(response)
-      } catch (error) {
-        console.error("Error fetching video data:", error);
+
+  const getWatchNext = async () => {
+    if (watchNextLoading || !watchNextHasMore) return
+
+    setWatchNextLoading(true)
+
+    try {
+      const response = await axios.get(`${GET_WATCH_NEXT}/${videoId}?cursor=${cursor}`);
+      if (response.data.watchNext.length === 0) {
+        setWatchNextHasMore(false)
       }
+      else {
+        setWatchNext((watchNext) => [...watchNext, ...response.data.watchNext]);
+        console.log(response)
+        setCursor(response.data.watchNext[response.data.watchNext.length - 1]?._id);
+        console.log(response.data.watchNext[response.data.watchNext.length - 1].title)
+      }
+      setWatchNextLoading(false);
+    } catch (error) {
+      console.error("Error fetching video data:", error);
+    }
+  };
+
+  useEffect(() => {
+    const fetchInitialVideos = async () => {
+      const res = await axios.get(`${GET_WATCH_NEXT}/${videoId}`);
+      console.log(res)
+      setWatchNext(res.data.watchNext);
+      setCursor(res.data.watchNext[res.data.watchNext.length - 1]._id);
     };
-    getWatchNext();
-  }, [])
+
+    fetchInitialVideos(); // Fetch first batch when component mounts
+  }, []);
+
+  // Use Intersection Observer to detect when the last item is visible
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => {
+      if (entries[0].isIntersecting) {
+        getWatchNext(); // Fetch more data when last item appears
+        console.log('innnn')
+      }
+    });
+
+    if (lastElementRef.current) observer.observe(lastElementRef.current);
+    return () => observer.disconnect();
+  }, [watchNext]); // Re-run when videos change
+
+
 
   // getting video data
   useEffect(() => {
@@ -117,78 +165,33 @@ const VideoPlayer = () => {
       }
     };
     getVideoData();
-  }, []);
+  }, [videoId]);
 
-  //         const player = new Plyr(playerRef.current, {
-  //             autoplay: true, quality: {
-  //                 default: 1080,
-  //                 options: [1080, 720, 480],
-  //                 forced: true,
-  //                 onend: true,
-  //             },
-  //             settings: ['quality', 'speed'],
-  //             fullscreen: {
-  //                 enabled: true,
-  //                 fallback: true, // Ensures a fallback for unsupported browsers
-  //                 iosNative: true,
-  //             },
-  //         });
+  const player = new Plyr(playerRef.current, {
+    autoplay: true, quality: {
+      default: 1080,
+      options: [1080, 720, 480],
+      forced: true,
+      onend: true,
+    },
+    settings: ['quality', 'speed'],
+    fullscreen: {
+      enabled: true,
+      fallback: true, // Ensures a fallback for unsupported browsers
+      iosNative: true,
+    },
+  });
 
-  // getting comments first time
-  useEffect(() => {
-    fetchComments();
-  }, []);
 
-  const fetchComments = async () => {
-    const response = await axios.get(
-      `${GET_COMMENTS}/${videoId}?limit=2&skip=0`
-    );
-    console.log(response);
-    setComments(response.data.comments);
-    setHasMore(response.data.hasMore);
-  };
 
-  // getting coments after scrolling
-
-  useEffect(() => {
-    const handleScroll = debounce(() => {
-      if (
-        window.innerHeight + document.documentElement.scrollTop >=
-        document.documentElement.offsetHeight - 10
-      ) {
-        console.log("init 1");
-        if (hasMore) {
-          loadMoreComments();
-        }
-      }
-    }, 1000); // Debounce by 300ms
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, [skip, hasMore, comments]);
-
-  const loadMoreComments = async () => {
-    const newSkip = skip + 2;
-    console.log("init 2");
-    const response = await axios.get(
-      `${GET_COMMENTS}/${videoId}?limit=2&skip=${newSkip}`
-    );
-    console.log(response);
-    console.log("init 3");
-    if (response.data.comments?.length > 0) {
-      console.log("yes len is more");
-      setComments((prevComments) => {
-        console.log("in cnt", response.data.comments.length);
-        return [...prevComments, ...response.data.comments];
-      });
-      setSkip(newSkip);
-    }
-    setHasMore(response.data.hasMore ?? false); // Default to false if undefined
-
-    console.log(comments);
-    console.log(response.data.hasMore);
-    console.log(newSkip);
-  };
+  const navigateToVideo = (videoIdNew) => {
+    console.log('navingatinggggggggggggggggggggg')
+    navigate(`/video-player/${videoIdNew}`)
+    setTimeout(() => {
+      navigate(0); // Force page reload (not recommended but works)
+    }, 0);
+    return
+  }
 
   useEffect(() => {
     const getPlayNext = async () => {
@@ -200,8 +203,35 @@ const VideoPlayer = () => {
     };
   }, []);
 
-  const handleCommentMenuClick = (event) => setAnchorEl(event.currentTarget);
-  const handleCommentMenuClose = () => setAnchorEl(null);
+  useEffect(() => {
+    if (playerRef.current && videoDetails.videoUrl) {
+      // Initialize Plyr
+      plyrInstance.current = new Plyr(playerRef.current, {
+        autoplay: true,
+        controls: [
+          "play",
+          "progress",
+          "current-time",
+          "mute",
+          "volume",
+          "settings",
+          "fullscreen",
+        ],
+        settings: ['quality', 'speed'],
+        fullscreen: { enabled: true, fallback: true, iosNative: true },
+        quality: {
+          default: 1080,
+          options: [1080, 720, 480], // Available quality levels
+          forced: true,
+        },
+      });
+
+      return () => {
+        // Destroy Plyr instance on unmount
+        plyrInstance.current?.destroy();
+      };
+    }
+  }, [videoDetails.videoUrl]);
 
   // useEffect(() => {
   //     if (playerRef.current && videoDetails.videoUrl) {
@@ -255,12 +285,13 @@ const VideoPlayer = () => {
         className="bg-[#121212] flex flex-col lg:flex-row w-full h-full mx-auto  box-border overflow-x-hidden"
       >
         {/* Left Side */}
-        <div className="flex flex-col w-full h-auto max-w-full lg:w-[60%] box-border">
+        <div className="flex flex-col w-full h-auto max-w-full lg:w-[65%] box-border">
           {/* Video Player */}
           <div className="w-full flex justify-center box-border">
             {videoDetails.videoUrl ? (
               <video
-                className="w-full h-auto max-h-[70vh] lg:max-h-[60vh] object-contain rounded-2xl"
+                className="plyr-video w-full h-full max-h-[90vh] object-contain rounded-2xl"
+
                 ref={playerRef}
                 controls
                 // allowFullScreen="true"
@@ -272,6 +303,10 @@ const VideoPlayer = () => {
             ) : (
               <p>Loading video...</p>
             )}
+          </div>
+
+          <div className={`border-2 lg:hidden rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${playingPlaylist ? "block" : "hidden"} h-auto`}>
+            <PlayingPlaylistComp playlist={playlist} videoId={videoId} />
           </div>
 
           {/* Description */}
@@ -354,128 +389,25 @@ const VideoPlayer = () => {
           {/* play next for small screens */}
           <div className="lg:hidden flex flex-col  w-full pt-3 h-auto box-border">
             {/* Right side content */}
+
             {watchNext?.map((video, index) => {
               return (
-                <LongVideoCard
-                  key={index}
-                  remove={"Remove from Watch histor"}
-                  video={video}
-                />
+                <div key={index} onClick={() => navigateToVideo(video._id)}>
+                  <LongVideoCard
+                    remove={"Remove from Watch histor"}
+                    video={video}
+                  />
+                </div>
               );
             })}
+          </div>
+          <div className="py-4" >
+            <button hidden={!watchNextHasMore} className="w-[100%] h-10 rounded-full border-gray-500 border-2 text-blue-400" onClick={getWatchNext}>Show more</button>
           </div>
 
           {/* comments */}
           {videoDetails.canComment ? (
-            <div className="w-full  h-auto max-w-[100vw] overflow-hidden box-border">
-              {videoDetails && comments ? (
-                <div className="flex flex-col w-full h-auto max-w-[100vw] mt-4 overflow-hidden box-border">
-                  <div className="pl-3 font-roboto font-bold text-lg">
-                    {videoDetails.commentCount} Comments
-                  </div>
-                  <div className="flex flex-row mt-5">
-                    <div className="rounded-full h-[50px] w-[50px]">
-                      <img
-                        className="object-contain w-full h-full rounded-full"
-                        src={videoDetails.channel?.profilePhoto}
-                      />
-                    </div>
-                    <div className="flex ml-3 w-full flex-col">
-                      <div>
-                        <TextField
-                          id="standard-basic"
-                          value={commentText}
-                          onChange={(e) => setCommentText(e.target.value)}
-                          variant="standard"
-                          multiline
-                          className="w-full"
-                        />
-                      </div>
-                      <div className="flex flex-row h-[50px] items-center justify-between">
-                        <MdOutlineEmojiEmotions className="h-[30px] w-[30px]" />
-                        <div className="flex flex-row">
-                          <div className="rounded-3xl px-3 py-1 hover:bg-slate-600 mr-3 cursor-pointer ">
-                            Cancel
-                          </div>
-                          <div
-                            onClick={putComment}
-                            className={`mr-1 rounded-3xl px-3 py-1 bg-blue-500  text-black font-roboto ${commentText.length === 0
-                              ? "disabled bg-slate-400"
-                              : "hover:bg-blue-300"
-                              } font-semibold cursor-pointer`}
-                          >
-                            Comment
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="overflow-hidden">
-                    {comments.map((comment) => {
-                      console.log("in comment map", comments.length);
-                      return (
-                        <div className="flex flex-row my-5" key={comment?._id}>
-                          <div className="flex w-[40px] h-[40px] rounded-full mr-2">
-                            <img
-                              className="w-full h-auto rounded-full"
-                              src={comment?.channel.profilePhoto}
-                            />
-                          </div>
-                          <div className="flex-1 ml-2 flex-col">
-                            <div className="font-semibold overflow-hidden w-full">
-                              {comment?.channel.channelName}
-                              <span className="font-normal text-sm text-gray-500 ml-2">
-                                {formatTimeAgo(comment?.createdAt)}
-                              </span>
-                            </div>
-                            <div className="break-all w-full whitespace-pre-wrap">
-                              {comment?.commentData}
-                            </div>
-                          </div>
-                          <div
-                            className={`${comment?.channel._id === channelInfo?._id ||
-                              videoDetails.channel._id === channelInfo?._id
-                              ? "block"
-                              : "hidden"
-                              }`}
-                          >
-                            <BsThreeDotsVertical
-                              className="mt-2 ml-2"
-                              onClick={handleCommentMenuClick}
-                            />
-                            <Menu
-                              id="basic-menu"
-                              anchorEl={anchorEl}
-                              open={open}
-                              onClose={handleCommentMenuClose}
-                              MenuListProps={{
-                                "aria-labelledby": "basic-button",
-                              }}
-                            >
-                              <MenuItem
-                                className={`${comment?.channel._id === channelInfo?._id
-                                  ? "block"
-                                  : "hidden"
-                                  }`}
-                                onClick={handleCommentMenuClose}
-                              >
-                                Edit
-                              </MenuItem>
-                              <MenuItem onClick={handleCommentMenuClose}>
-                                Delete
-                              </MenuItem>
-                            </Menu>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {hasMore && <p>Loading more comments...</p>}
-                  </div>
-                </div>
-              ) : (
-                <p>Loading comments...</p>
-              )}
-            </div>
+            <Comments videoDetails={videoDetails} setVideoDetails={setVideoDetails} loggedIn={loggedIn} />
           ) : (
             <div className="flex mx-auto mt-4">
               Comments are disabled for this video
@@ -484,15 +416,22 @@ const VideoPlayer = () => {
         </div>
 
         {/* Right Side */}
-        <div className="hidden lg:flex flex-col lg:w-[40%] pt-3 w-full h-auto box-border lg:mx-6">
+        <div className={`hidden lg:flex flex-col lg:w-[35%] pt-3 w-full h-auto box-border lg:mx-6`}>
           {/* Right side content */}
+          {/* {console.log(watchNext)} */}
+          <div className={`border-2 rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${playingPlaylist ? "block" : "hidden"} h-auto`}>
+            <PlayingPlaylistComp playlist={playlist} playingVideoId={videoId} />
+          </div>
           {watchNext?.map((video, index) => {
+            // console.log(video)
             return (
-              <LongVideoCard
-                key={index}
-                remove={"Remove from Watch histor"}
-                video={video}
-              />
+              <div key={index} onClick={() => navigateToVideo(video._id)} ref={index === watchNext.length - 1 ? lastElementRef : null}>
+                <LongVideoCard
+                  remove={"Remove from Watch histor"}
+                  video={video}
+                />
+              </div>
+
             );
           })}
         </div>

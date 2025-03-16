@@ -80,7 +80,7 @@ const router = createBrowserRouter([
             <Suspense
               fallback={<div>Getting the VideoPlayer Page ready...</div>}
             >
-              <VideoPlayer />
+              <VideoPlayer key={window.location.href} />
             </Suspense>
           </Suspense>
         ),

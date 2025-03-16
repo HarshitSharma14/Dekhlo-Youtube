@@ -31,6 +31,7 @@ export const ADD_VIDEO_TO_PLAYLISTS = `${CHANNEL_ROUTE}/add-to-playlist`;
 export const UNSUBSCRIBE_CHANNEL = `${CHANNEL_ROUTE}/unsubscribe`;
 export const TOGGLE_BELL = `${CHANNEL_ROUTE}/toggle-bell`;
 export const UPDATE_VIDEO_INFO = `${CHANNEL_ROUTE}/update-videoinfo`;
+export const GET_PLAYLIST_VIDEOS = `${CHANNEL_ROUTE}/playlist`;
 
 export const VIDEO_ROUTE = `${server}/video`;
 

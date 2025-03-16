@@ -184,30 +184,34 @@ const LongVideoCard = ({ video }) => {
             },
           }}
         >
-          {video.views} views * {formatUploadTime(video?.createdAt)}
+          {/* {video.views} views  {formatUploadTime(video?.createdAt)} */}
         </Typography>
-        <Typography
-          sx={{
-            padding: "2px 10px",
-            fontSize: "12px",
-            color: "#b1b1b1",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            "@media (max-width:530px)": {
-              fontSize: "10px",
-            },
-          }}
-        >
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <Avatar
-            src=""
+            src={video.channel?.profilePhoto}
             sx={{
               width: "25px",
               height: "25px",
+              marginLeft: "10px",
             }}
           />
-          avatar
-        </Typography>
+          <Typography
+            sx={{
+              padding: "2px 10px",
+              fontSize: "12px",
+              color: "#b1b1b1",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              "@media (max-width:530px)": {
+                fontSize: "10px",
+              },
+            }}
+          >
+
+            {video.channel?.channelName}
+          </Typography>
+        </Box>
         <Typography
           sx={{
             padding: "2px 10px",
@@ -226,7 +230,7 @@ const LongVideoCard = ({ video }) => {
         >
           {/* {video?.description} */}
         </Typography>
-      </Box>
+      </Box >
 
       <MoreIconButton
         removeFrom="Remove from Watch history"
@@ -234,7 +238,7 @@ const LongVideoCard = ({ video }) => {
         channelInfo={channelInfo}
         videoId={video._id}
       />
-    </Box>
+    </Box >
   );
 };
 

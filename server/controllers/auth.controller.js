@@ -33,6 +33,7 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
 
       const newPlaylist = await Playlist.create({
         name: "Watch later",
+        channel: channel._id,
         videos: [],
         videoCount: 0,
         private: true,

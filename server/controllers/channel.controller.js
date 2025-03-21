@@ -498,7 +498,7 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
 
   const dataToSend = playlists.map((plist) => {
     const videoCount = plist.videos.length;
-    const vids = plist.videos.slice(0, 3); // only neccessory  the top three videos
+    const vids = plist.videos.slice(-3).reverse(); // only neccessory  the top three videos
     return { ...plist, videos: vids, videoCount };
   });
 

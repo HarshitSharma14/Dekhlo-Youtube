@@ -5,9 +5,11 @@
 
 .video-card {
   display: flex;
+  flex-grow: 1;
   flex-direction: column;
   width: 23%;
   margin: 12px;
+  max-width: 350px;
   background-color: #121212;
   overflow: hidden;
   cursor: pointer;

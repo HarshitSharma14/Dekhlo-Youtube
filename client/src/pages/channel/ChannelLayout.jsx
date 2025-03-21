@@ -139,7 +139,7 @@ const ChannelLayout = () => {
 
   useEffect(() => {
     getChannelInfo();
-  }, []);
+  }, [channelId]);
 
   return (
     <>
@@ -602,7 +602,7 @@ const DiscriptionDialogBox = ({ isBig = false, channel }) => {
 };
 
 const ButtonForCreatorSupport = ({
-  button,
+  button, // enter button == 1 for subscribe button and 2 for creator support button
   isSubscribedInitially = false,
   isBellInitially = false,
   config = {
@@ -694,7 +694,6 @@ const ButtonForCreatorSupport = ({
     <>
       <Button
         sx={{
-          ...config,
           mt: "28px",
           bgcolor: isSubscribed || button == 2 ? "#272727" : "red",
           color: "white",
@@ -706,6 +705,7 @@ const ButtonForCreatorSupport = ({
           ":hover": {
             bgcolor: isSubscribed || button == 2 ? "#767676" : "#b10202",
           },
+          ...config,
         }}
         onClick={handleClick}
         disabled={disabled}

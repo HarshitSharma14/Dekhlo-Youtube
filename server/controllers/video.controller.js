@@ -40,18 +40,16 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
 
     // Check if the `videoId` is present in the last 10 entries
     if (recentVideos.some((id) => id.toString() === videoId.toString())) {
-      // Swap the matched video with the most recent one
+      // Find the index of the matched video
       const videoIndex = channel.watchHistory
         .map((id) => id.toString()) // Ensure all IDs are strings
         .lastIndexOf(videoId.toString());
-      // Swap logic
-      const lastIndex = channel.watchHistory.length - 1;
-      console.log("videod Index", videoIndex);
-      console.log("last ind ", lastIndex);
-      [channel.watchHistory[videoIndex], channel.watchHistory[lastIndex]] = [
-        channel.watchHistory[lastIndex],
-        channel.watchHistory[videoIndex],
-      ];
+
+      // Remove the video from its current position
+      const [video] = channel.watchHistory.splice(videoIndex, 1);
+
+      // Push the video to the end
+      channel.watchHistory.push(video);
     } else {
       // Push the video as a new entry
       channel.watchHistory.push(videoId);

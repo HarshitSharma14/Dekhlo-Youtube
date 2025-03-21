@@ -471,7 +471,7 @@ const ProfileSetup = () => {
                 disabled={
                   currentStep == 0
                     ? !formData.name || !formData.profilePhotoUrl
-                    : formData.bio.length < 20
+                    : formData?.bio?.length < 20
                 }
               >
                 Next

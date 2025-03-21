@@ -72,7 +72,7 @@ const PlaylistSideArea = ({ playlist = samplePlaylist, history = false }) => {
         margin: "auto",
         minHeight: "85vh",
         position: "sticky",
-        top: "70px",
+        top: "90px",
         "@media (max-width:900px)": {
           minHeight: "0",
         },

@@ -49,6 +49,20 @@ const formatTime = (seconds) => {
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 };
 
+const video = {
+  _id: "1a2b3c4d",
+  title: "Exploring the Streets of New York City in 4K",
+  views: "1.2M",
+  duration: 1345, // in seconds (approx 22 minutes and 25 seconds)
+  createdAt: "2023-06-15T14:30:00Z", // ISO format for date
+  thumbnailUrl:
+    "https://images.pexels.com/photos/30426849/pexels-photo-30426849/free-photo-of-urban-black-and-white-bicycle-scene.jpeg?auto=compress&cs=tinysrgb&w=400&lazy=load",
+  videoUrl:
+    "https://static.videezy.com/system/resources/previews/000/006/997/original/MR8_8189.mp4",
+  description:
+    "Take a breathtaking virtual tour through the streets of New York City, exploring famous landmarks and hidden gems in stunning 4K quality.",
+};
+
 const VideoCard = ({
   id,
   thumbnail,
@@ -110,209 +124,211 @@ const VideoCard = ({
     videoRef.current.currentTime = newTime;
   };
   return (
-    <div
-      ref={cardRef}
-      onClick={() => navigate(`/video-player/${id}`)}
-      className="video-card"
-      style={{
-        height: isInChannel ? "270px" : "333px",
-        display: "flex",
-
-        flexDirection: "column",
-        justifyContent: "space-between",
-      }}
-      onMouseEnter={() => {
-        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-        setIsInView(true);
-      }}
-      onMouseLeave={() => {
-        // Clear the timeout on mouse leave
-        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-        setIsInView(false);
-        setIsHovered(false);
-        handleMouseLeave();
-      }}
-    >
+    <>
       <div
+        ref={cardRef}
+        onClick={() => navigate(`/video-player/${id}`)}
+        className="video-card"
         style={{
-          height: "70%",
-        }}
-        className={`video-card-thumbnail ${
-          isHovered ? "thumbnail-transition" : ""
-        }`}
-      >
-        {isInView && (
-          <div
-            className={`video-container ${isHovered ? "hovered" : ""}`}
-            style={{
-              position: "relative",
-              width: "100%",
-            }}
-          >
-            <video
-              ref={videoRef}
-              onCanPlay={() => {
-                hoverTimeoutRef.current = setTimeout(() => {
-                  setIsHovered(true);
-                  handleHover();
-                }, 300);
-              }}
-              src={videoUrl} // Start loading the video when in view
-              muted={true}
-              onTimeUpdate={handleTimeUpdate}
-              controls={false}
-              loop
-              className={`video-preview ${isHovered ? "hovered" : ""}`}
-              preload="auto"
-              style={{
-                width: "100%",
-                height: "100%",
-                minHeight: "186.425px",
-              }}
-            ></video>
+          height: isInChannel ? "270px" : "333px",
+          display: "flex",
 
-            {/* Progress bar ****************************************************** */}
-            {isHovered && (
-              <Box
-                sx={{
-                  height: "16px",
-                  width: "100%",
-                  position: "absolute",
-                  bottom: "0px",
-                  // boxSizing: "border-box",
-                  // borderBottom: "8px solid #121212",
-                  left: 0,
-                  cursor: "pointer",
+          flexDirection: "column",
+          justifyContent: "space-between",
+        }}
+        onMouseEnter={() => {
+          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+          setIsInView(true);
+        }}
+        onMouseLeave={() => {
+          // Clear the timeout on mouse leave
+          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+          setIsInView(false);
+          setIsHovered(false);
+          handleMouseLeave();
+        }}
+      >
+        <div
+          style={{
+            height: "70%",
+          }}
+          className={`video-card-thumbnail ${
+            isHovered ? "thumbnail-transition" : ""
+          }`}
+        >
+          {isInView && (
+            <div
+              className={`video-container ${isHovered ? "hovered" : ""}`}
+              style={{
+                position: "relative",
+                width: "100%",
+              }}
+            >
+              <video
+                ref={videoRef}
+                onCanPlay={() => {
+                  hoverTimeoutRef.current = setTimeout(() => {
+                    setIsHovered(true);
+                    handleHover();
+                  }, 300);
                 }}
-                onMouseEnter={() => setShowThumb(true)}
-                onMouseLeave={() => setShowThumb(false)}
-                onClick={handleSeek}
-              >
+                src={videoUrl} // Start loading the video when in view
+                muted={true}
+                onTimeUpdate={handleTimeUpdate}
+                controls={false}
+                loop
+                className={`video-preview ${isHovered ? "hovered" : ""}`}
+                preload="auto"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  minHeight: "186.425px",
+                }}
+              ></video>
+
+              {/* Progress bar ****************************************************** */}
+              {isHovered && (
                 <Box
                   sx={{
-                    height: "4px",
-                    bgcolor: "gray",
+                    height: "16px",
                     width: "100%",
                     position: "absolute",
                     bottom: "0px",
+                    // boxSizing: "border-box",
+                    // borderBottom: "8px solid #121212",
                     left: 0,
                     cursor: "pointer",
                   }}
+                  onMouseEnter={() => setShowThumb(true)}
+                  onMouseLeave={() => setShowThumb(false)}
+                  onClick={handleSeek}
                 >
                   <Box
                     sx={{
-                      height: "100%",
-                      bgcolor: showThumb ? "#ff0000" : "#400f0f",
-                      width: `${progress}%`,
-                      position: "relative",
+                      height: "4px",
+                      bgcolor: "gray",
+                      width: "100%",
+                      position: "absolute",
+                      bottom: "0px",
+                      left: 0,
+                      cursor: "pointer",
                     }}
-                  ></Box>
+                  >
+                    <Box
+                      sx={{
+                        height: "100%",
+                        bgcolor: showThumb ? "#ff0000" : "#400f0f",
+                        width: `${progress}%`,
+                        position: "relative",
+                      }}
+                    ></Box>
+                  </Box>
                 </Box>
-              </Box>
-            )}
-          </div>
-        )}
-        <CardMedia
-          component="img"
-          image={thumbnail}
-          alt="Thumbnail"
-          loading="lazy"
-          sx={{
-            display: isHovered && "hidden",
-            aspectRatio: "16/9",
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
-        />
+              )}
+            </div>
+          )}
+          <CardMedia
+            component="img"
+            image={thumbnail}
+            alt="Thumbnail"
+            loading="lazy"
+            sx={{
+              display: isHovered && "hidden",
+              aspectRatio: "16/9",
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
 
-        <div
-          style={{
-            backgroundColor: "rgba(0, 0, 0, 0.7)",
-            color: "white",
-            position: "absolute",
-            right: "10px",
-            bottom: "16px",
-            fontSize: "12px",
-            padding: "4px 8px",
-            borderRadius: "5px",
-            fontWeight: "bold",
-          }}
-        >
-          {timeleft.length ? timeleft : "22:44"}
-          {/* {timeleft.length ? timeleft : "22:44"} */}
-        </div>
-      </div>
-
-      <div
-        className="video-card-info"
-        style={{
-          position: "relative",
-        }}
-      >
-        {!isInChannel && (
           <div
-            className="video-card-avatar"
-            onClick={(e) => {
-              e.stopPropagation(); // Prevents the card click event
-              navigate(`/channel/${channelId}`);
+            style={{
+              backgroundColor: "rgba(0, 0, 0, 0.7)",
+              color: "white",
+              position: "absolute",
+              right: "10px",
+              bottom: "16px",
+              fontSize: "12px",
+              padding: "4px 8px",
+              borderRadius: "5px",
+              fontWeight: "bold",
             }}
           >
-            {/* <img
+            {timeleft.length ? timeleft : "22:44"}
+            {/* {timeleft.length ? timeleft : "22:44"} */}
+          </div>
+        </div>
+
+        <div
+          className="video-card-info"
+          style={{
+            position: "relative",
+          }}
+        >
+          {!isInChannel && (
+            <div
+              className="video-card-avatar"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevents the card click event
+                navigate(`/channel/${channelId}`);
+              }}
+            >
+              {/* <img
               src={channelProfile}
               alt={channelName}
               className="channel-avatar"
             /> */}
-            <Avatar
-              src={channelProfile}
-              sx={{
-                width: "40px",
-                height: "40px",
-              }}
-            />
-          </div>
-        )}
-        <div className="video-card-details">
-          <h3
-            className="video-card-title"
-            style={{
-              width: "95%",
-            }}
-          >
-            {title}
-          </h3>
-          <div className="meta">
-            {!isInChannel && (
-              <Typography
-                className="video-card-channel"
+              <Avatar
+                src={channelProfile}
                 sx={{
-                  display: "inline-block",
-                  maxWidth: "100%",
-                  ":hover": {
-                    color: "white",
-                  },
+                  width: "40px",
+                  height: "40px",
                 }}
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevents the card click event
-                  navigate(`/channel/${channelId}`);
-                }}
-              >
-                {channelName}
-              </Typography>
-            )}
-            <p className="video-card-meta">
-              {views} views • {formatUploadTime(uploadTime)}
-            </p>
+              />
+            </div>
+          )}
+          <div className="video-card-details">
+            <h3
+              className="video-card-title"
+              style={{
+                width: "95%",
+              }}
+            >
+              {title}
+            </h3>
+            <div className="meta">
+              {!isInChannel && (
+                <Typography
+                  className="video-card-channel"
+                  sx={{
+                    display: "inline-block",
+                    maxWidth: "100%",
+                    ":hover": {
+                      color: "white",
+                    },
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation(); // Prevents the card click event
+                    navigate(`/channel/${channelId}`);
+                  }}
+                >
+                  {channelName}
+                </Typography>
+              )}
+              <p className="video-card-meta">
+                {views} views • {formatUploadTime(uploadTime)}
+              </p>
+            </div>
           </div>
+          <MoreIconButton
+            channelInfo={channelInfo}
+            isInView={isInView}
+            isOwner={isOwner}
+            videoId={id}
+          />
         </div>
-        <MoreIconButton
-          channelInfo={channelInfo}
-          isInView={isInView}
-          isOwner={isOwner}
-          videoId={id}
-        />
       </div>
-    </div>
+    </>
   );
 };
 

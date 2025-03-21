@@ -89,6 +89,7 @@ const HomeContent = () => {
           sx={{
             display: "flex",
             flexWrap: "wrap",
+
             "@media(max-width: 680px)": { justifyContent: "center" },
           }}
         >

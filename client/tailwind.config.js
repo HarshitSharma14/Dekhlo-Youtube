@@ -11,8 +11,8 @@ export default {
         roboto: ['Roboto', 'sans-serif'],
       },
       screens: {
-        xs: '500px', // Custom breakpoint
-        xxs: '420px',
+        xs: '650px', // Custom breakpoint
+        xxs: '430px',
       },
     },
   },

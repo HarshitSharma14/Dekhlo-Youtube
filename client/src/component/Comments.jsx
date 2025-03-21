@@ -24,7 +24,8 @@ import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import { useRef } from 'react';
-
+import { formatViews } from './Description';
+import ClearIcon from '@mui/icons-material/Clear';
 
 const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
     const { channelInfo } = useAppStore();
@@ -292,8 +293,14 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
             </div>
 
             <div className="lg:hidden flex flex-col items-center bg-[#121212]">
-                <Button variant="contained" onClick={toggleDrawer(true)}>Open Comments</Button>
-
+                {/* <Button variant="contained" onClick={toggleDrawer(true)}>Open Comments</Button> */}
+                <div onClick={toggleDrawer(true)} className="bg-[#292828] cursor-pointer w-full mt-1 font-roboto font-semibold rounded-xl min-h-[80px] flex flex-col px-3 py-3">
+                    <div> Comments {formatViews(videoDetails.commentCount)}</div>
+                    <div className='flex flex-row h-[42px] relative overflow-hidden w-[82vw]'>
+                        <div className='absolute top-0 left-0 w-[40px] h-[40px] flex items-center mr-2'><img className="rounded-full w-[40px] h-[40px] " src={comments[0]?.channel?.profilePhoto} /></div>
+                        <div className='truncate overflow-hidden  pl-[45px] '>{comments[0]?.commentData}</div>
+                    </div>
+                </div>
                 <SwipeableDrawer
                     anchor="bottom"
                     open={open}
@@ -327,8 +334,13 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
                     </StyledBox>
 
                     <div className="flex flex-col w-full h-auto max-w-[100vw] mt-4 overflow-hidden box-border">
-                        <div className="pl-3 font-roboto font-bold text-lg pb-3 border-b-2 border-[#7b7e8344]">
-                            {videoDetails.commentCount} Comments
+                        <div className='flex flex-row justify-between'>
+                            <div className="pl-3 font-roboto font-bold text-lg pb-3 border-b-2 border-[#7b7e8344]">
+                                {videoDetails.commentCount} Comments
+                            </div>
+                            <div className='m-2 cursor-pointer'>
+                                <ClearIcon onClick={toggleDrawer(false)} />
+                            </div>
                         </div>
                         <div className="flex flex-row mt-5 border-b-2 border-[#7b7e8344]">
                             <div className="rounded-full h-[50px] w-[50px]">

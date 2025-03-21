@@ -121,6 +121,8 @@ export const updateProfile = AsyncTryCatch(async (req, res, next) => {
 export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
   const { creatorId } = req.body;
 
+  console.log('inside subsccribe')
+
   const channelToBeSubscribed = await Channel.findById(creatorId);
 
   if (!channelToBeSubscribed) next(new ErrorHandler(404, "Channel not found"));
@@ -156,6 +158,9 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
 // unsubscribe ************************************************************************************************
 export const unSubscribeChannel = AsyncTryCatch(async (req, res, next) => {
   const { creatorId } = req.body;
+
+  console.log('in unsubscribe')
+  console.log(creatorId)
 
   const channelToBeUnSubscribed = await Channel.findById(creatorId);
 

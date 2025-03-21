@@ -63,7 +63,7 @@ const LongVideoCard = ({ video }) => {
         display: "flex",
         mb: "15px",
         padding: "0 6px",
-
+        position: "relative",
         cursor: "pointer",
       }}
       onMouseEnter={() => {
@@ -85,7 +85,7 @@ const LongVideoCard = ({ video }) => {
         sx={{
           flex: "5",
           maxWidth: "400px",
-          minWidth: "190px",
+          minWidth: "180px",
           position: "relative",
           height: "auto",
           borderRadius: hovered ? "0" : "12px",

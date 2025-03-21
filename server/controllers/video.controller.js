@@ -5,6 +5,7 @@ import { JWT_SECRET } from "../utils/constants.js";
 import { ErrorHandler } from "../utils/utility.js";
 import jwt from "jsonwebtoken";
 import Comment from "../models/comment.model.js";
+import Subscription from "../models/subscription.model.js";
 // view video *************************************************************
 export const getVideo = AsyncTryCatch(async (req, res, next) => {
   // console.log("in");
@@ -25,11 +26,15 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
     return next(new ErrorHandler(404, "Video not found"));
   }
 
+
+
   await Channel.findByIdAndUpdate(video.channel, { $inc: { views: 1 } });
 
   let decodedData = null;
 
   let isLiked = false
+  let isSubscribed = false
+  let isBell = false
 
   try {
     const token = req.cookies.jwt;
@@ -43,7 +48,17 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
     }))
       ? true
       : false;
-    return res.status(200).json({ video, isLiked, loggedIn: true });
+
+    const subscription = await Subscription.findOne({ subscriber: decodedData.channelId, creator: video.channel })
+
+    if (subscription) {
+      isSubscribed = true
+      if (subscription.bell) {
+        isBell = true
+      }
+    }
+
+    return res.status(200).json({ video, isLiked, loggedIn: true, isSubscribed, isBell });
   } catch (error) {
     console.log("user not logged in to save to watch history");
   }
@@ -51,7 +66,7 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
 
   // console.log(isLiked);
 
-  return res.status(200).json({ video, isLiked, loggedIn: false });
+  return res.status(200).json({ video, isLiked, loggedIn: false, isSubscribed, isBell });
 });
 
 export const getComments = AsyncTryCatch(async (req, res, next) => {

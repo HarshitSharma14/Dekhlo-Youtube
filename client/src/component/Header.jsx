@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -17,6 +17,7 @@ import {
   Search as SearchIcon,
   AddCircle as CreateIcon,
 } from "@mui/icons-material";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { LOGOUT_ROUTE, UPDATE_VIDEO_INFO } from "../utils/constants";
@@ -26,8 +27,9 @@ const Header = ({ isDisabled }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
-
   const { channelInfo, setChannelInfo, setIsLoggedIn } = useAppStore()
+  const [back, setBack] = useState(false)
+  const [searchText, setSearchText] = useState("")
 
   // Toggle the menu (avatar options)
   const handleAvatarClick = (event) => {
@@ -57,13 +59,32 @@ const Header = ({ isDisabled }) => {
     }
   }
 
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
+      if (window.innerWidth > 650) {
+        setBack(false);
+      }
+    }
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // const clickSmallSearch = async()=>{
+  //   if(screenWidth<650){
+  //     setBack(true);
+  //   }
+  // }
+
   const { toggelSidebar } = useAppStore();
 
   return (
     <header className="sticky top-0 bg-[#121212] shadow-none h-[70px] z-10">
-      <div className="flex h-full px-4 justify-between items-center">
+      <div className="flex h-full px-2 justify-between items-center">
         {/* Left Section: Hamburger Icon & Logo */}
-        <div className="flex items-center">
+        <div className={`${back ? "hidden" : "flex"} items-center`}>
           <button
             disabled={isDisabled}
             onClick={toggelSidebar}
@@ -82,9 +103,12 @@ const Header = ({ isDisabled }) => {
             </span>
           </button>
         </div>
+        <div className={`${back ? "flex" : "hidden"}`}>
+          <ArrowBackIcon onClick={() => setBack(false)} />
+        </div>
 
         {/* Center Section: Search Bar */}
-        <div className="hidden items-center border mr-1 border-s-2 border-[#303030] h-[40px] rounded-3xl w-[600px] max-w-full bg-[#121212] overflow-hidden xs:flex">
+        <div className={`${back ? "flex ml-[60px] mr-[20px]" : "hidden"} items-center border mr-1 border-s-2 border-[#303030] h-[40px] rounded-3xl w-[600px] max-w-full bg-[#121212] overflow-hidden xs:flex`}>
           <input
             disabled={isDisabled}
             className="flex-1 min-w-[30px] bg-[#121212] text-white px-4 outline-none placeholder-gray-500"
@@ -112,10 +136,11 @@ const Header = ({ isDisabled }) => {
         </div>
 
         {/* Right Section: Create Button, Notifications, User Avatar */}
-        <div className="flex items-center">
+        <div className={`${back ? "hidden" : "flex"} items-center`}>
           <button
             disabled={isDisabled}
             className=" xs:hidden p-2 mr-2 justify-self-end flex items-center justify-center hover:bg-[#303030]"
+            onClick={() => { setBack(true); }}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"

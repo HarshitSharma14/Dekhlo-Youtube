@@ -25,7 +25,9 @@ const PlayingPlaylistComp = ({ playlist, playingVideoId }) => {
         return
     }
 
-    const repeat = () => { }
+    const repeat = () => {
+
+    }
 
     const shuffle = () => { }
 

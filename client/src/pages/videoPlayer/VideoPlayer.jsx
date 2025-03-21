@@ -12,6 +12,8 @@ import {
   GET_WATCH_NEXT,
   LIKE_UNLIKE,
   PUT_COMMENT,
+  SUBSCRIBE_CHANNEL,
+  UNSUBSCRIBE_CHANNEL,
 } from "../../utils/constants";
 import RepeatIcon from '@mui/icons-material/Repeat';
 import CloseIcon from '@mui/icons-material/Close';
@@ -45,8 +47,8 @@ import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 import Typography from '@mui/material/Typography';
 import SwipeableDrawer from '@mui/material/SwipeableDrawer';
-
-
+import { ButtonForCreatorSupport } from "../channel/ChannelLayout";
+import { MoreIconButton } from "../../component/cards/VideoCard";
 
 const VideoPlayer = () => {
   const { channelInfo } = useAppStore();
@@ -71,31 +73,110 @@ const VideoPlayer = () => {
   const [playingPlaylist, setPlayingPlaylist] = useState(false)
   const [playlist, setPlaylist] = useState([])
   const plyrInstance = useRef(null); // Ref for Plyr instance
+  const [copied, setCopied] = useState(false);
 
   const [searchParams] = useSearchParams();
   const queryValue = searchParams.get("playlist"); // Get query param 'q'
   const playlistId = queryValue
+  const [subscribed, setSubscribed] = useState(false);
+  const [bell, setBell] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  const [anchorEl, setAnchorEl] = useState(null);
+  const open = Boolean(anchorEl);
+
+  const openSubscribeMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const closeSubscribeMenu = () => {
+    setAnchorEl(null);
+  };
+
+
+  // getting video data
+  useEffect(() => {
+    const getVideoData = async () => {
+      try {
+        const response = await axios.get(`${GET_VIDEO}/${videoId}`, {
+          withCredentials: true,
+        });
+        // setLoggedIn(response.data.loggedIn);
+        setLoggedIn(channelInfo != undefined && channelInfo != null)
+        setLikes(response.data.video.likes);
+        console.log(response.data);
+        console.log("login ", response.data.loggedIn);
+        console.log("liked ", response.data.isLiked);
+        console.log("subsribed ", response.data.isSubscribed);
+        console.log("bell ", response.data.isBell);
+
+        setSubscribed(response.data.isSubscribed)
+        setBell(response.data.isBell)
+
+        setIsLiked(response.data.isLiked);
+        setVideoDetails(response.data.video);
+        // console.log(channelInfo)
+
+
+      } catch (error) {
+        toast.error("Error fetching video data");
+        navigate("/")
+        console.error("Error fetching video data:", error);
+      }
+    };
+    getVideoData();
+  }, [videoId]);
+
+
+
 
   useEffect(() => {
     if (queryValue) {
       console.log("playlist", queryValue)
+
       setPlayingPlaylist(true);
 
       const getPlaylistVideos = async () => {
-        const response = await axios.get(`${GET_PLAYLIST_VIDEOS}?playlistId=${playlistId}`, { withCredentials: true })
-        console.log(response.data)
-        setPlaylist(response.data.playlist)
+        try {
+          const response = await axios.get(`${GET_PLAYLIST_VIDEOS}?playlistId=${playlistId}`, { withCredentials: true })
+          console.log(response.data)
+          if (response.data.playlist.videos.some((video) => video._id === videoId)) {
+            setPlaylist(response.data.playlist)
+          }
+          else {
+            navigate(`/video-player/${videoId}`)
+            setTimeout(() => {
+              navigate(0); // Force page reload (not recommended but works)
+            }, 0);
+          }
+        } catch (error) {
+          console.error("Error fetching video data:", error);
+          toast.error("Not a valid playlist");
+          setPlayingPlaylist(false);
+          navigate(`/video-player/${videoId}`)
+        }
       }
 
       getPlaylistVideos()
-
     }
   }, [queryValue, playlistId]);
 
+  const toggleBell = async () => {
 
+  }
 
   // use effects
+  const share = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast.success("Link copied to clipboard");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000); // Reset after 2s
+    } catch (err) {
+      toast.error("Failed to copy link");
+      console.error("Failed to copy:", err);
+    }
 
+  };
 
   const getWatchNext = async () => {
     if (watchNextLoading || !watchNextHasMore) return
@@ -145,27 +226,6 @@ const VideoPlayer = () => {
 
 
 
-  // getting video data
-  useEffect(() => {
-    const getVideoData = async () => {
-      try {
-        const response = await axios.get(`${GET_VIDEO}/${videoId}`, {
-          withCredentials: true,
-        });
-        setLoggedIn(response.data.loggedIn);
-        setLikes(response.data.video.likes);
-        console.log(response.data.video);
-        console.log("login ", response.data.loggedIn);
-        console.log("liked ", response.data.isLiked);
-        setIsLiked(response.data.isLiked);
-        setVideoDetails(response.data.video);
-        // console.log(channelInfo)
-      } catch (error) {
-        console.error("Error fetching video data:", error);
-      }
-    };
-    getVideoData();
-  }, [videoId]);
 
   const player = new Plyr(playerRef.current, {
     autoplay: true, quality: {
@@ -182,7 +242,48 @@ const VideoPlayer = () => {
     },
   });
 
+  const subscribeToggle = async () => {
+    if (loading) return;
 
+    console.log('inside subs')
+
+    setLoading(true)
+
+    if (!subscribed) {
+      const toastId = toast.loading('Subscribing...')
+      try {
+        const response = await axios.post(SUBSCRIBE_CHANNEL, { creatorId: videoDetails.channel._id }, { withCredentials: true })
+        console.log(response)
+        setSubscribed(true)
+        setBell(true)
+        videoDetails.channel.subscribersCount += 1
+        toast.success(`${videoDetails.channel.channelName}+' subscribed'`, { id: toastId })
+      }
+      catch (error) {
+        console.log(error)
+        toast.error('Error subscribing', { id: toastId })
+      }
+    }
+    else {
+      const toastId = toast.loading('Unsubscribing...')
+      try {
+
+        const response = await axios.delete(UNSUBSCRIBE_CHANNEL, { data: { creatorId: videoDetails.channel._id }, withCredentials: true })
+        console.log(response)
+        closeSubscribeMenu()
+        setSubscribed(false)
+        setBell(false)
+        videoDetails.channel.subscribersCount -= 1
+        toast.success(`${videoDetails.channel.channelName}+' unsubscribed'`, { id: toastId })
+      }
+      catch (error) {
+        console.log(error)
+        toast.error('Error unsubscribing', { id: toastId })
+      }
+    }
+
+    setLoading(false)
+  }
 
   const navigateToVideo = (videoIdNew) => {
     console.log('navingatinggggggggggggggggggggg')
@@ -209,22 +310,33 @@ const VideoPlayer = () => {
       plyrInstance.current = new Plyr(playerRef.current, {
         autoplay: true,
         controls: [
+          "play-large",          // Large play button in the center
+          "rewind",              // Rewind button
+          "fast-forward",        // Fast forward button
           "play",
           "progress",
           "current-time",
+          "duration",
           "mute",
           "volume",
           "settings",
-          "fullscreen",
+          "pip",                  // Picture-in-picture mode
+          "airplay",              // Airplay for Apple devices
+          "fullscreen"
         ],
-        settings: ['quality', 'speed'],
+        settings: ['speed'],
         fullscreen: { enabled: true, fallback: true, iosNative: true },
-        quality: {
-          default: 1080,
-          options: [1080, 720, 480], // Available quality levels
-          forced: true,
-        },
+        loop: { active: false },
+        keyboard: { focused: true, global: false },
+        autopause: true,
+        hideControls: true,
+        seekTime: 10,
       });
+
+      const videoElement = playerRef.current.querySelector("video");
+      if (videoElement) {
+        videoElement.classList.add("w-full", "h-full", "object-cover");
+      }
 
       return () => {
         // Destroy Plyr instance on unmount
@@ -249,9 +361,13 @@ const VideoPlayer = () => {
   // functions
 
   const handleLike = async () => {
+    if (loading) return
+
+    setLoading(true)
     console.log(loggedIn);
     if (!loggedIn) {
       toast.error("Please login to like the video");
+      setLoading(false)
       return;
     }
     try {
@@ -267,20 +383,30 @@ const VideoPlayer = () => {
     } catch (error) {
       console.error("Error liking video:", error);
     }
+
+    setLoading(false)
   };
 
   dayjs.extend(relativeTime);
   const formatTimeAgo = (date) => {
     return dayjs(date).fromNow();
   };
+  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => setScreenWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <>
+
       <div
         style={{
-          paddingLeft: "clamp(0.5rem, 5vw, 8.25rem)", // Adjusts padding based on screen width
-          paddingRight: "clamp(0.5rem, 5vw, 8.25rem)", // Adjusts padding based on screen width
-          transition: "padding 0.3s ease", // Smooth transition
+          paddingLeft: screenWidth > 500 ? "clamp(0.1rem, 5vw, 8.25rem)" : "0",
+          paddingRight: screenWidth > 500 ? "clamp(0.1rem, 5vw, 8.25rem)" : "0",
+          transition: "padding 0.3s ease",
         }}
         className="bg-[#121212] flex flex-col lg:flex-row w-full h-full mx-auto  box-border overflow-x-hidden"
       >
@@ -290,7 +416,7 @@ const VideoPlayer = () => {
           <div className="w-full flex justify-center box-border">
             {videoDetails.videoUrl ? (
               <video
-                className="plyr-video w-full h-full max-h-[90vh] object-contain rounded-2xl"
+                className="plyr-video w-full h-full max-h-[100vh] object-contain rounded-2xl"
 
                 ref={playerRef}
                 controls
@@ -310,7 +436,7 @@ const VideoPlayer = () => {
           </div>
 
           {/* Description */}
-          <div className="bg-[#121212] mt-3 flex flex-col lg:max-w-[748px] w-full max-w-[100vw] box-border">
+          <div className="bg-[#121212] mt-3 flex flex-col  w-full max-w-[100vw] box-border">
             <div className="w-full h-auto min-h-[100px] flex flex-col box-border">
               <div className="p-2 h-auto box-border">
                 {/* Title */}
@@ -342,9 +468,22 @@ const VideoPlayer = () => {
                       </div>
 
                       {/* Subscribe button */}
-                      <div className="h-[36px] ml-3 hover:bg-slate-200 w-[94.6px] rounded-3xl bg-white text-black text-sm flex-none flex justify-center items-center box-border">
-                        Subscribe
+
+                      <div className={`h-[36px] mr-2  w-auto rounded-3xl overflow-hidden text-sm flex-none flex ml-auto items-center box-border`} >
+                        <ButtonForCreatorSupport button={1} isSubscribedInitially={subscribed}
+                          config={{
+                            justifyContent: "space-around",
+                            m: "0px",
+                            fontSize: "12px",
+
+                            "@media (max-width: 714px)": {
+                              display: "flex",
+                            },
+                          }}
+                          isBellInitially={bell} channelId={videoDetails.channel._id} />
                       </div>
+
+
                     </div>
                   ) : (
                     <p>Loading channel details...</p>
@@ -369,11 +508,16 @@ const VideoPlayer = () => {
                     </div>
 
                     <div className="w-[40px] h-[36px] rounded-3xl flex flex-row justify-evenly ml-3 hover:bg-[#635f5f] items-center bg-[#2e302f] box-border">
-                      <PiShareFatLight />
+                      <PiShareFatLight onClick={share} />
                     </div>
 
-                    <div className="w-[40px] h-[36px] rounded-3xl flex flex-row justify-evenly hover:bg-[#635f5f] ml-3 items-center bg-[#2e302f] box-border">
-                      <BsThreeDots />
+                    <div className="w-[40px] relative h-[36px] rounded-3xl flex flex-row justify-evenly hover:bg-[#635f5f] ml-3 items-center bg-[#2e302f] box-border overflow-hidden">
+                      {/* <BsThreeDots /> */}
+                      <MoreIconButton
+                        isInView={true}
+                        channelInfo={channelInfo}
+                        videoId={videoDetails._id}
+                      />
                     </div>
                   </div>
                 </div>
@@ -387,12 +531,12 @@ const VideoPlayer = () => {
           </div>
 
           {/* play next for small screens */}
-          <div className="lg:hidden flex flex-col  w-full pt-3 h-auto box-border">
+          <div className="lg:hidden flex flex-col w-full overflow-x-hidden  pt-3 h-auto">
             {/* Right side content */}
 
             {watchNext?.map((video, index) => {
               return (
-                <div key={index} onClick={() => navigateToVideo(video._id)}>
+                <div className="overflow-x-hidden w-auto  " key={index} onClick={() => navigateToVideo(video._id)}>
                   <LongVideoCard
                     remove={"Remove from Watch histor"}
                     video={video}
@@ -402,7 +546,7 @@ const VideoPlayer = () => {
             })}
           </div>
           <div className="py-4" >
-            <button hidden={!watchNextHasMore} className="w-[100%] h-10 rounded-full border-gray-500 border-2 text-blue-400" onClick={getWatchNext}>Show more</button>
+            <button hidden={!watchNextHasMore} className={`lg:hidden w-[100%] h-10 rounded-full border-gray-500 border-2 text-blue-400`} onClick={getWatchNext}>Show more</button>
           </div>
 
           {/* comments */}

@@ -602,7 +602,7 @@ const DiscriptionDialogBox = ({ isBig = false, channel }) => {
 };
 
 const ButtonForCreatorSupport = ({
-  button,
+  button = 1,
   isSubscribedInitially = false,
   isBellInitially = false,
   config = {
@@ -694,7 +694,6 @@ const ButtonForCreatorSupport = ({
     <>
       <Button
         sx={{
-          ...config,
           mt: "28px",
           bgcolor: isSubscribed || button == 2 ? "#272727" : "red",
           color: "white",
@@ -706,6 +705,7 @@ const ButtonForCreatorSupport = ({
           ":hover": {
             bgcolor: isSubscribed || button == 2 ? "#767676" : "#b10202",
           },
+          ...config,
         }}
         onClick={handleClick}
         disabled={disabled}
@@ -715,7 +715,7 @@ const ButtonForCreatorSupport = ({
             {isSubscribed &&
               (isBell ? <Notifications /> : <NotificationsOff />)}
             {isSubscribed ? "Subscribed" : "Susbscribe"}
-            {isSubscribed && <KeyboardArrowDownOutlined />}
+            {/* {isSubscribed && <KeyboardArrowDownOutlined />} */}
           </>
         )}
         {button === 2 && (

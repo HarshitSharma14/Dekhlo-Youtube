@@ -36,7 +36,7 @@ import { debounce } from "lodash";
 import { useAppStore } from "../../store";
 import LongVideoCard from "../../component/cards/LongVideoCard";
 import { useSearchParams } from "react-router-dom";
-import PlayingPlaylistComp from "../../component/playingPlaylistComp";
+import PlayingPlaylistComp from "../../component/PlayingPlaylistComp";
 import { useNavigate } from "react-router-dom";
 import { Global } from '@emotion/react';
 import { styled } from '@mui/material/styles';

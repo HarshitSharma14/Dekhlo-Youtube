@@ -6,6 +6,11 @@ const playlistSchema = new Schema(
       type: String,
       required: [true, "Name is required"],
     },
+    channel: {
+      type: Schema.Types.ObjectId,
+      ref: "Channel",
+      required: [true, "Channel is required"],
+    },
     videos: [
       {
         type: Schema.Types.ObjectId,

@@ -5,11 +5,10 @@
 
 .video-card {
   display: flex;
-  flex-grow: 1;
   flex-direction: column;
+  /* flex-grow: 1; */
   width: 23%;
   margin: 12px;
-  max-width: 350px;
   background-color: #121212;
   overflow: hidden;
   cursor: pointer;
@@ -121,7 +120,7 @@
   margin: 0;
 }
 
-@media (max-width: 1370px) {
+@media (max-width: 1400px) {
   .video-card {
     width: 30%;
   }

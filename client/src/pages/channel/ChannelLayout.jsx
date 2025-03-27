@@ -602,7 +602,7 @@ const DiscriptionDialogBox = ({ isBig = false, channel }) => {
 };
 
 const ButtonForCreatorSupport = ({
-  button, // enter button == 1 for subscribe button and 2 for creator support button
+  button = 1,
   isSubscribedInitially = false,
   isBellInitially = false,
   config = {
@@ -715,7 +715,7 @@ const ButtonForCreatorSupport = ({
             {isSubscribed &&
               (isBell ? <Notifications /> : <NotificationsOff />)}
             {isSubscribed ? "Subscribed" : "Susbscribe"}
-            {isSubscribed && <KeyboardArrowDownOutlined />}
+            {/* {isSubscribed && <KeyboardArrowDownOutlined />} */}
           </>
         )}
         {button === 2 && (

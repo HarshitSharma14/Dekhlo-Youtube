@@ -2,18 +2,19 @@ import React, { useState } from 'react'
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 
-const Description = ({ videoDetails }) => {
+export const formatViews = (views) => {
+  if (!views || typeof views !== "number") return "0";
+  if (views >= 1_000_000) {
+    return `${(views / 1_000_000).toFixed(1)}M`; // 1.2M
+  } else if (views >= 1_000) {
+    return `${(views / 1_000).toFixed(1)}K`; // 1.2K
+  }
+  return views.toString(); // Less than 1K
+};
+
+export const Description = ({ videoDetails }) => {
   const [isDescOpen, setIsDescOpen] = useState(false)
 
-  const formatViews = (views) => {
-    if (!views || typeof views !== "number") return "0";
-    if (views >= 1_000_000) {
-      return `${(views / 1_000_000).toFixed(1)}M`; // 1.2M
-    } else if (views >= 1_000) {
-      return `${(views / 1_000).toFixed(1)}K`; // 1.2K
-    }
-    return views.toString(); // Less than 1K
-  };
 
   const formatDate = (date) => {
     return dayjs(date).format("MMM DD, YYYY");

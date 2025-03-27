@@ -6,7 +6,7 @@ import {
   RouterProvider,
 } from "react-router-dom";
 import axios from "axios";
-import HomeLayoutLoadingPage from "./component/LoadingLayouts/HomeLayoutLoadingPage.jsx";
+import HomeLayoutLoadingPage from "./component/loadingLayouts/HomeLayoutLoadingPage.jsx";
 import ProtectedRoute from "./pages/auth/ProtectedRoute.jsx";
 import { useAppStore } from "./store/index.js";
 import { GET_CHANNEL_DETAILS } from "./utils/constants.js";
@@ -92,7 +92,7 @@ const router = createBrowserRouter([
             <Suspense
               fallback={<div>Getting the VideoPlayer Page ready...</div>}
             >
-              <VideoPlayer />
+              <VideoPlayer key={window.location.href} />
             </Suspense>
           </Suspense>
         ),
@@ -170,7 +170,7 @@ const router = createBrowserRouter([
   },
 ]);
 const App = () => {
-  const { setChannelInfo } = useAppStore();
+  const { setChannelInfo, isLoggedIn, setIsLoggedIn } = useAppStore();
   const getChannelInfo = async () => {
     try {
       const { data } = await axios.get(GET_CHANNEL_DETAILS, {
@@ -185,7 +185,7 @@ const App = () => {
   };
   useEffect(() => {
     getChannelInfo();
-  }, []);
+  }, [isLoggedIn]);
 
   return (
     <>

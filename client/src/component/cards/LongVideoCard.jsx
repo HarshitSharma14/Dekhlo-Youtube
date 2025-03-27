@@ -91,6 +91,7 @@ const LongVideoCard = ({ video, playlist = null, remove }) => {
         display: "flex",
         mb: "15px",
         padding: "0 6px",
+        position: "relative",
         cursor: "pointer",
       }}
       onMouseEnter={() => {
@@ -112,7 +113,7 @@ const LongVideoCard = ({ video, playlist = null, remove }) => {
         sx={{
           flex: "5",
           maxWidth: "400px",
-          minWidth: "190px",
+          minWidth: "180px",
           position: "relative",
           borderRadius: hovered ? "0" : "12px",
           overflow: "hidden",
@@ -188,12 +189,13 @@ const LongVideoCard = ({ video, playlist = null, remove }) => {
             width: "95%",
             padding: "2px 10px",
             fontSize: "20px",
-            wordBreak: "break-word",
             display: "-webkit-box",
             WebkitBoxOrient: "vertical",
             WebkitLineClamp: 2,
             overflow: "hidden",
             textOverflow: "ellipsis",
+            wordBreak: "break-word",
+
             "@media (max-width:530px)": {
               fontSize: "16px",
               width: "90%",
@@ -215,28 +217,31 @@ const LongVideoCard = ({ video, playlist = null, remove }) => {
         >
           {video.views} views {formatUploadTime(video?.createdAt)}
         </Typography>
-        <Typography
-          sx={{
-            padding: "2px 10px",
-            fontSize: "12px",
-            color: "#b1b1b1",
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            "@media (max-width:530px)": {
-              fontSize: "10px",
-            },
-          }}
-        >
+        <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
           <Avatar
-            src=""
+            src={video.channel?.profilePhoto}
             sx={{
               width: "25px",
               height: "25px",
+              marginLeft: "10px",
             }}
           />
-          avatar
-        </Typography>
+          <Typography
+            sx={{
+              padding: "2px 10px",
+              fontSize: "12px",
+              color: "#b1b1b1",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              "@media (max-width:530px)": {
+                fontSize: "10px",
+              },
+            }}
+          >
+            {video.channel?.channelName}
+          </Typography>
+        </Box>
         <Typography
           sx={{
             padding: "2px 10px",

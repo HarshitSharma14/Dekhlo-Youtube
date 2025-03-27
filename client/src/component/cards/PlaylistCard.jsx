@@ -138,9 +138,8 @@ const PlaylistCard = ({
                 height: "100%",
                 borderRadius: "5px",
                 overflow: "hidden",
-                transform: `translateY(${(index + 1) * -10}px) translateX(${
-                  -index * 10
-                }px)`,
+                transform: `translateY(${(index + 1) * -10}px) translateX(${-index * 10
+                  }px)`,
                 position: "absolute",
                 right: "0",
                 bottom: "10px",

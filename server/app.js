@@ -18,6 +18,7 @@ import { JWT_SECRET } from "./utils/constants.js";
 import { errorHandlerMiddleware } from "./middlewares/error.middlewares.js";
 import { getVideosForHomePage } from "./controllers/home.controller.js";
 
+
 // localConstansts ************************************
 const app = express();
 const clientURL = process.env.CLIENT_URL;

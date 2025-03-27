@@ -5,12 +5,13 @@ import { JWT_SECRET } from "../utils/constants.js";
 import { ErrorHandler } from "../utils/utility.js";
 import jwt from "jsonwebtoken";
 import Comment from "../models/comment.model.js";
+import Subscription from "../models/subscription.model.js";
 // view video *************************************************************
 export const getVideo = AsyncTryCatch(async (req, res, next) => {
-  console.log("in");
+  // console.log("in");
 
   const { videoId } = req.params;
-  console.log(videoId);
+  // console.log(videoId);
   const video = await Video.findByIdAndUpdate(
     videoId,
     { $inc: { views: 1 } },
@@ -30,45 +31,30 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
   try {
     const token = req.cookies.jwt;
     const decodedData = jwt.verify(token, JWT_SECRET);
-
-    const channel = await Channel.findById(decodedData.channelId).select(
-      "watchHistory"
-    );
-
-    // Extract the last 10 videos from the array
-    const recentVideos = channel.watchHistory.slice(-10);
-
-    // Check if the `videoId` is present in the last 10 entries
-    if (recentVideos.some((id) => id.toString() === videoId.toString())) {
-      // Find the index of the matched video
-      const videoIndex = channel.watchHistory
-        .map((id) => id.toString()) // Ensure all IDs are strings
-        .lastIndexOf(videoId.toString());
-
-      // Remove the video from its current position
-      const [video] = channel.watchHistory.splice(videoIndex, 1);
-
-      // Push the video to the end
-      channel.watchHistory.push(video);
-    } else {
-      // Push the video as a new entry
-      channel.watchHistory.push(videoId);
-    }
+    await Channel.findByIdAndUpdate(decodedData.channelId, {
+      $push: { watchHistory: videoId },
+    });
     isLiked = (await Channel.exists({
       _id: decodedData.channelId,
       likedVideos: videoId,
     }))
       ? true
       : false;
-    // Save the updated document
-    await channel.save();
   } catch (error) {
     console.log("user not logged in to save to watch history");
   }
 
   console.log(isLiked);
 
-  return res.status(200).json({ video, isLiked, loggedIn: true });
+  return res
+    .status(200)
+    .json({
+      video,
+      isLiked,
+      loggedIn: false,
+      isSubscribed: false,
+      isBell: false,
+    });
 });
 
 export const getComments = AsyncTryCatch(async (req, res, next) => {
@@ -104,6 +90,29 @@ export const getComments = AsyncTryCatch(async (req, res, next) => {
     comments,
     hasMore,
   });
+});
+
+export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
+  const { videoId } = req.params;
+  const cursor = req.query.cursor;
+  const limit = 3;
+  const video = await Video.findById(videoId);
+  if (!video) {
+    return next(new ErrorHandler(404, "Video not found"));
+  }
+
+  let query = { channel: video.channel, _id: { $ne: videoId } };
+
+  if (cursor) {
+    query._id = { $gt: cursor, $ne: videoId }; // Fetch videos with _id > cursor (next batch)
+  }
+
+  const watchNext = await Video.find(query)
+    .populate("channel", "profilePhoto channelName")
+    .limit(limit);
+  console.log("watchnext");
+  console.log(watchNext);
+  return res.status(200).json({ watchNext });
 });
 
 export const putComment = AsyncTryCatch(async (req, res, next) => {
@@ -194,21 +203,55 @@ export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
   if (!videoDetails) {
     next(new ErrorHandler(404, "Video not found"));
   }
-  console.log(videoDetails);
+  // console.log(videoDetails);
 
   return res.status(200).json({ videoDetails });
 });
 
+export const getAllVideos = AsyncTryCatch(async (req, res, next) => {
+  const videos = await Video.aggregate([
+    {
+      $lookup: {
+        from: "channels",
+        localField: "channel",
+        foreignField: "_id",
+        as: "channel",
+      },
+    },
+    {
+      $unwind: "$channel",
+    },
+    {
+      $project: {
+        title: 1,
+        description: 1,
+        duration: 1,
+        category: 1,
+        channel: "$channel.channelName", // Makes channel a string instead of an object
+      },
+    },
+  ]);
+
+  return res.status(200).json({ videos });
+});
+
 export const getPlayNext = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.params;
+  const cursor = req.query.cursor;
+  const limit = 10;
   const video = await Video.findById(videoId);
   if (!video) {
     return next(new ErrorHandler(404, "Video not found"));
   }
 
-  const videos = await Video.find({ channel: video.channel }).limit(10);
+  let query = { channel: video.channel, _id: { $ne: videoId } };
 
-  const playNext = videos.filter((vid) => vid._id.toString() !== videoId);
+  if (cursor) {
+    query._id = { $gt: cursor, $ne: videoId }; // Fetch videos with _id > cursor (next batch)
+  }
 
-  return res.status(200).json({ playNext });
+  const watchNext = await Video.find(query).populate("channel").limit(limit);
+  console.log("watchnext");
+  console.log(watchNext);
+  return res.status(200).json({ watchNext });
 });

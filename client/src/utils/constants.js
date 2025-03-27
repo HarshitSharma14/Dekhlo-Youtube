@@ -17,6 +17,7 @@ export const CATEGORY_ENUM = [
 export const AUTH_ROUTE = `${server}/auth`;
 export const GOOGLE_LOGIN_URL = `${AUTH_ROUTE}/login/google`;
 export const LOGIN_ROUTE = `${AUTH_ROUTE}/login`;
+export const LOGOUT_ROUTE = `${AUTH_ROUTE}/logout`;
 
 export const CHANNEL_ROUTE = `${server}/channel`;
 export const UPDATE_CHANNEL_INFO_ROUTE = `${CHANNEL_ROUTE}/update-profile`;
@@ -32,6 +33,7 @@ export const ADD_VIDEO_TO_PLAYLISTS = `${CHANNEL_ROUTE}/add-to-playlist`;
 export const UNSUBSCRIBE_CHANNEL = `${CHANNEL_ROUTE}/unsubscribe`;
 export const TOGGLE_BELL = `${CHANNEL_ROUTE}/toggle-bell`;
 export const UPDATE_VIDEO_INFO = `${CHANNEL_ROUTE}/update-videoinfo`;
+export const GET_PLAYLIST_VIDEOS = `${CHANNEL_ROUTE}/playlist`;
 
 export const VIDEO_ROUTE = `${server}/video`;
 
@@ -41,3 +43,4 @@ export const GET_PLAY_NEXT = `${VIDEO_ROUTE}/get-play-next`;
 export const LIKE_UNLIKE = `${VIDEO_ROUTE}/like-unlike`;
 export const GET_COMMENTS = `${VIDEO_ROUTE}/get-comments`;
 export const PUT_COMMENT = `${VIDEO_ROUTE}/put-comment`;
+export const GET_WATCH_NEXT = `${VIDEO_ROUTE}/get-watch-next`;

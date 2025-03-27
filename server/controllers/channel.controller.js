@@ -121,6 +121,8 @@ export const updateProfile = AsyncTryCatch(async (req, res, next) => {
 export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
   const { creatorId } = req.body;
 
+  console.log("inside subsccribe");
+
   const channelToBeSubscribed = await Channel.findById(creatorId);
 
   if (!channelToBeSubscribed) next(new ErrorHandler(404, "Channel not found"));
@@ -156,6 +158,9 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
 // unsubscribe ************************************************************************************************
 export const unSubscribeChannel = AsyncTryCatch(async (req, res, next) => {
   const { creatorId } = req.body;
+
+  console.log("in unsubscribe");
+  console.log(creatorId);
 
   const channelToBeUnSubscribed = await Channel.findById(creatorId);
 
@@ -416,6 +421,31 @@ export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
   });
 });
 
+// export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
+//   const { playlistId } = req.query;
+
+//   const token = req.cookies.jwt;
+//   const decodedData = jwt.verify(token, JWT_SECRET);
+//   const channelId = decodedData.channelId;
+
+//   const playlist = await Playlist.findById(playlistId).populate({
+//     path: "videos",
+//     select: "title thumbnailUrl views duration channel",
+//     populate: {
+//       path: "channel", // Populating channel inside each video
+//       select: "channelName profilePhoto", // Add fields you need
+//     },
+//   })
+//     .populate("channel", "channelName");
+//   console.log('intttttttt')
+//   console.log(playlist)
+//   if (playlist.private === true && (channelId.toString() !== playlist.channel._id.toString())) {
+//     return next(new ErrorHandler(400, "Playlist is private"));
+
+//   }
+//   return res.status(200).json({ playlist });
+// })
+
 // toggle bell *********************************************************************************
 export const toggleBell = AsyncTryCatch(async (req, res, next) => {
   const { creatorId } = req.body;
@@ -529,6 +559,7 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
   if (playlistIds.length === 0) {
     const newPlaylist = new Playlist({
       name,
+      channel: req.channelId,
       videos: [videoId],
       videoCount: 1,
       private: isPrivate,

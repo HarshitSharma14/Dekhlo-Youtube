@@ -16,8 +16,6 @@ import {
   Modal,
   TextField,
   FormControlLabel,
-  Avatar,
-  CardMedia,
 } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -37,30 +35,13 @@ import {
 import { useAppStore } from "../../store/index.js";
 import axios from "axios";
 import toast from "react-hot-toast";
-import {
-  ADD_VIDEO_TO_PLAYLISTS,
-  GET_MY_PLAYLISTS,
-} from "../../utils/constants.js";
+import { ADD_VIDEO_TO_PLAYLISTS } from "../../utils/constants.js";
 
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return "00:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-};
-
-const video = {
-  _id: "1a2b3c4d",
-  title: "Exploring the Streets of New York City in 4K",
-  views: "1.2M",
-  duration: 1345, // in seconds (approx 22 minutes and 25 seconds)
-  createdAt: "2023-06-15T14:30:00Z", // ISO format for date
-  thumbnailUrl:
-    "https://images.pexels.com/photos/30426849/pexels-photo-30426849/free-photo-of-urban-black-and-white-bicycle-scene.jpeg?auto=compress&cs=tinysrgb&w=400&lazy=load",
-  videoUrl:
-    "https://static.videezy.com/system/resources/previews/000/006/997/original/MR8_8189.mp4",
-  description:
-    "Take a breathtaking virtual tour through the streets of New York City, exploring famous landmarks and hidden gems in stunning 4K quality.",
 };
 
 const VideoCard = ({
@@ -124,211 +105,199 @@ const VideoCard = ({
     videoRef.current.currentTime = newTime;
   };
   return (
-    <>
+    <div
+      ref={cardRef}
+      onClick={() => navigate(`/video-player/${id}`)}
+      className="video-card"
+      style={{
+        height: isInChannel ? "270px" : "333px",
+        display: "flex",
+
+        flexDirection: "column",
+        justifyContent: "space-between",
+      }}
+      onMouseEnter={() => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        setIsInView(true);
+      }}
+      onMouseLeave={() => {
+        // Clear the timeout on mouse leave
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        setIsInView(false);
+        setIsHovered(false);
+        handleMouseLeave();
+      }}
+    >
       <div
-        ref={cardRef}
-        onClick={() => navigate(`/video-player/${id}`)}
-        className="video-card"
         style={{
-          height: isInChannel ? "270px" : "333px",
-          display: "flex",
-
-          flexDirection: "column",
-          justifyContent: "space-between",
+          height: "70%",
         }}
-        onMouseEnter={() => {
-          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-          setIsInView(true);
-        }}
-        onMouseLeave={() => {
-          // Clear the timeout on mouse leave
-          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-          setIsInView(false);
-          setIsHovered(false);
-          handleMouseLeave();
-        }}
+        className={`video-card-thumbnail ${
+          isHovered ? "thumbnail-transition" : ""
+        }`}
       >
-        <div
-          style={{
-            height: "70%",
-          }}
-          className={`video-card-thumbnail ${
-            isHovered ? "thumbnail-transition" : ""
-          }`}
-        >
-          {isInView && (
-            <div
-              className={`video-container ${isHovered ? "hovered" : ""}`}
-              style={{
-                position: "relative",
-                width: "100%",
+        {isInView && (
+          <div
+            className={`video-container ${isHovered ? "hovered" : ""}`}
+            style={{
+              position: "relative",
+              width: "100%",
+            }}
+          >
+            <video
+              ref={videoRef}
+              onCanPlay={() => {
+                hoverTimeoutRef.current = setTimeout(() => {
+                  setIsHovered(true);
+                  handleHover();
+                }, 300);
               }}
-            >
-              <video
-                ref={videoRef}
-                onCanPlay={() => {
-                  hoverTimeoutRef.current = setTimeout(() => {
-                    setIsHovered(true);
-                    handleHover();
-                  }, 300);
-                }}
-                src={videoUrl} // Start loading the video when in view
-                muted={true}
-                onTimeUpdate={handleTimeUpdate}
-                controls={false}
-                loop
-                className={`video-preview ${isHovered ? "hovered" : ""}`}
-                preload="auto"
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  minHeight: "186.425px",
-                }}
-              ></video>
+              src={videoUrl} // Start loading the video when in view
+              muted={true}
+              onTimeUpdate={handleTimeUpdate}
+              controls={false}
+              loop
+              className={`video-preview ${isHovered ? "hovered" : ""}`}
+              preload="auto"
+              style={{
+                width: "100%",
+                height: "100%",
+                minHeight: "186.425px",
+              }}
+            ></video>
 
-              {/* Progress bar ****************************************************** */}
-              {isHovered && (
+            {/* Progress bar ****************************************************** */}
+            {isHovered && (
+              <Box
+                sx={{
+                  height: "16px",
+                  width: "100%",
+                  position: "absolute",
+                  bottom: "0px",
+                  // boxSizing: "border-box",
+                  // borderBottom: "8px solid #121212",
+                  left: 0,
+                  cursor: "pointer",
+                }}
+                onMouseEnter={() => setShowThumb(true)}
+                onMouseLeave={() => setShowThumb(false)}
+                onClick={handleSeek}
+              >
                 <Box
                   sx={{
-                    height: "16px",
+                    height: "4px",
+                    bgcolor: "gray",
                     width: "100%",
                     position: "absolute",
                     bottom: "0px",
-                    // boxSizing: "border-box",
-                    // borderBottom: "8px solid #121212",
                     left: 0,
                     cursor: "pointer",
                   }}
-                  onMouseEnter={() => setShowThumb(true)}
-                  onMouseLeave={() => setShowThumb(false)}
-                  onClick={handleSeek}
                 >
                   <Box
                     sx={{
-                      height: "4px",
-                      bgcolor: "gray",
-                      width: "100%",
-                      position: "absolute",
-                      bottom: "0px",
-                      left: 0,
-                      cursor: "pointer",
+                      height: "100%",
+                      bgcolor: showThumb ? "#ff0000" : "#400f0f",
+                      width: `${progress}%`,
+                      position: "relative",
                     }}
-                  >
-                    <Box
-                      sx={{
-                        height: "100%",
-                        bgcolor: showThumb ? "#ff0000" : "#400f0f",
-                        width: `${progress}%`,
-                        position: "relative",
-                      }}
-                    ></Box>
-                  </Box>
+                  ></Box>
                 </Box>
-              )}
-            </div>
-          )}
-          <CardMedia
-            component="img"
-            image={thumbnail}
-            alt="Thumbnail"
-            loading="lazy"
-            sx={{
-              display: isHovered && "hidden",
-              aspectRatio: "16/9",
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-          />
-
-          <div
-            style={{
-              backgroundColor: "rgba(0, 0, 0, 0.7)",
-              color: "white",
-              position: "absolute",
-              right: "10px",
-              bottom: "16px",
-              fontSize: "12px",
-              padding: "4px 8px",
-              borderRadius: "5px",
-              fontWeight: "bold",
-            }}
-          >
-            {timeleft.length ? timeleft : "22:44"}
-            {/* {timeleft.length ? timeleft : "22:44"} */}
+              </Box>
+            )}
           </div>
-        </div>
+        )}
+        <img
+          src={thumbnail}
+          alt={title}
+          className={`thumbnail ${isHovered ? "hidden" : ""}`}
+          loading="lazy"
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
+        />
 
         <div
-          className="video-card-info"
           style={{
-            position: "relative",
+            backgroundColor: "rgba(0, 0, 0, 0.7)",
+            color: "white",
+            position: "absolute",
+            right: "10px",
+            bottom: "16px",
+            fontSize: "12px",
+            padding: "4px 8px",
+            borderRadius: "5px",
+            fontWeight: "bold",
           }}
         >
-          {!isInChannel && (
-            <div
-              className="video-card-avatar"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevents the card click event
-                navigate(`/channel/${channelId}`);
-              }}
-            >
-              {/* <img
+          {timeleft.length ? timeleft : "22:44"}
+          {/* {timeleft.length ? timeleft : "22:44"} */}
+        </div>
+      </div>
+
+      <div
+        className="video-card-info"
+        style={{
+          position: "relative",
+        }}
+      >
+        {!isInChannel && (
+          <div
+            className="video-card-avatar"
+            onClick={(e) => {
+              e.stopPropagation(); // Prevents the card click event
+              navigate(`/channel/${channelId}`);
+            }}
+          >
+            <img
               src={channelProfile}
               alt={channelName}
               className="channel-avatar"
-            /> */}
-              <Avatar
-                src={channelProfile}
-                sx={{
-                  width: "40px",
-                  height: "40px",
-                }}
-              />
-            </div>
-          )}
-          <div className="video-card-details">
-            <h3
-              className="video-card-title"
-              style={{
-                width: "95%",
-              }}
-            >
-              {title}
-            </h3>
-            <div className="meta">
-              {!isInChannel && (
-                <Typography
-                  className="video-card-channel"
-                  sx={{
-                    display: "inline-block",
-                    maxWidth: "100%",
-                    ":hover": {
-                      color: "white",
-                    },
-                  }}
-                  onClick={(e) => {
-                    e.stopPropagation(); // Prevents the card click event
-                    navigate(`/channel/${channelId}`);
-                  }}
-                >
-                  {channelName}
-                </Typography>
-              )}
-              <p className="video-card-meta">
-                {views} views • {formatUploadTime(uploadTime)}
-              </p>
-            </div>
+            />
           </div>
-          <MoreIconButton
-            channelInfo={channelInfo}
-            isInView={isInView}
-            isOwner={isOwner}
-            videoId={id}
-          />
+        )}
+        <div className="video-card-details">
+          <h3
+            className="video-card-title"
+            style={{
+              width: "95%",
+            }}
+          >
+            {title}
+          </h3>
+          <div className="meta">
+            {!isInChannel && (
+              <Typography
+                className="video-card-channel"
+                sx={{
+                  display: "inline-block",
+                  maxWidth: "100%",
+                  ":hover": {
+                    color: "white",
+                  },
+                }}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevents the card click event
+                  navigate(`/channel/${channelId}`);
+                }}
+              >
+                {channelName}
+              </Typography>
+            )}
+            <p className="video-card-meta">
+              {views} views • {formatUploadTime(uploadTime)}
+            </p>
+          </div>
         </div>
+        <MoreIconButton
+          channelInfo={channelInfo}
+          isInView={isInView}
+          isOwner={isOwner}
+          videoId={id}
+        />
       </div>
-    </>
+    </div>
   );
 };
 
@@ -347,19 +316,6 @@ export const MoreIconButton = ({
   const [createNewPlaylist, setCreateNewPlaylist] = useState(false);
   const [name, setName] = useState("");
   const [isPrivate, setIsPrivate] = useState(true);
-  const [playlistInfo, setPlaylistInfo] = useState(channelInfo);
-
-  const getPlaylists = async () => {
-    try {
-      const { data } = await axios.get(GET_MY_PLAYLISTS, {
-        withCredentials: true,
-      });
-      console.log("my playlists ", data);
-      setPlaylistInfo(data);
-    } catch (error) {
-      console.log("error fetiching playlist ", error);
-    }
-  };
 
   const open = Boolean(anchorEl);
 
@@ -408,7 +364,7 @@ export const MoreIconButton = ({
     closeModal();
     let playlistIds = playlists;
     if (!playlistIds.length) {
-      playlistIds.push(playlistInfo?.watchLater);
+      playlistIds.push(channelInfo?.watchLater);
     }
     const dataToSend = { playlistIds, videoId };
     console.log("add vid", dataToSend);
@@ -438,7 +394,7 @@ export const MoreIconButton = ({
           aria-controls="video-card-menu"
           aria-haspopup="true"
           sx={{
-            display: !!!playlistInfo && "none",
+            display: !!!channelInfo && "none",
             position: "absolute",
             right: "0",
             opacity: isInView ? 1 : 0,
@@ -469,7 +425,6 @@ export const MoreIconButton = ({
           onClick={(e) => {
             e.stopPropagation();
             setAnchorEl(null);
-            getPlaylists();
             setModalOpen(true);
           }}
           sx={{
@@ -632,7 +587,7 @@ export const MoreIconButton = ({
                   overflow: "auto",
                 }}
               >
-                {playlistInfo?.playlists.map((playlist, index) => (
+                {channelInfo?.playlists.map((playlist, index) => (
                   <ListItem
                     key={index}
                     button

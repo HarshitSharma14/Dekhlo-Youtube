@@ -157,7 +157,7 @@ const HomeLayout = () => {
           width: "250px",
           left: "-250px",
           bgcolor: "#121212",
-          position: "absolute",
+          position: "fixed",
           marginLeft: isSidebarOpen ? "250px" : "0px",
           transition: "margin-left 200ms",
         }}

@@ -7,6 +7,7 @@ import {
   getChannelPlaylists,
   getChannelVideos,
   getNotifications,
+  getMyPlaylists,
   getPlaylistVideos,
   getSelfChannelInfo,
   getSubscribedChannel,
@@ -38,6 +39,7 @@ app.get("/playlist", getPlaylistVideos);
 
 // login required routes ****************************************
 app.use(isUserLoggedIn);
+app.get("/myplaylist", getMyPlaylists);
 app.get("/get-subscribedchannels", getSubscribedChannel);
 app.post("/add-to-playlist", addVideosToPlaylist);
 app.post("/update-profile", upload.single("profilePhotoFile"), updateProfile);

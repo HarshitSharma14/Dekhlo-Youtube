@@ -16,6 +16,7 @@
     "@mui/material": "^6.4.7",
     "@tailwindcss/typography": "^0.5.16",
     "axios": "^1.7.9",
+    "colorthief": "^2.6.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
     "framer-motion": "^12.6.3",

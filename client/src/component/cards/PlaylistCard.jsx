@@ -199,7 +199,7 @@ const PlaylistCard = ({
           }}
           onClick={(e) => {
             e.stopPropagation(); // Prevents the card click event
-            navigate(`/playlist/${playlistId}`);
+            navigate(`/playlist?playlistId=${playlistId}`);
           }}
         >
           View full playlist

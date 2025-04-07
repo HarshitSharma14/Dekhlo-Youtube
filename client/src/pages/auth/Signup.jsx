@@ -52,10 +52,10 @@ export const Signup = () => {
       setFormErrors({ ...formErrors, email: "" });
       const newEmail = e.target.value;
       setEmail(newEmail);
-      setValidEmail(emailRegex.test(newEmail));
-      if (!emailRegex.test(newEmail)) {
-        setFormErrors({ ...formErrors, email: "Please enter a valid email." });
-      }
+      // setValidEmail(emailRegex.test(newEmail));
+      // if (!emailRegex.test(newEmail)) {
+      //   setFormErrors({ ...formErrors, email: "Please enter a valid email." });
+      // }
     } else {
       setFormErrors({ ...formErrors, password: "" });
       const newPassword = e.target.value;

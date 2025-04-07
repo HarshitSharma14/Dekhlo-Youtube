@@ -29,19 +29,11 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
     return next(new ErrorHandler(404, "Video not found"));
   }
 
-
-
   await Channel.findByIdAndUpdate(video.channel, { $inc: { views: 1 } });
-
-  let decodedData = null;
-
-  let isLiked = false
-  let isSubscribed = false
-  let isBell = false
-
+  let isLiked = false;
   try {
     const token = req.cookies.jwt;
-    decodedData = jwt.verify(token, JWT_SECRET);
+    const decodedData = jwt.verify(token, JWT_SECRET);
     await Channel.findByIdAndUpdate(decodedData.channelId, {
       $push: { watchHistory: videoId },
     });
@@ -51,25 +43,21 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
     }))
       ? true
       : false;
-
-    const subscription = await Subscription.findOne({ subscriber: decodedData.channelId, creator: video.channel })
-
-    if (subscription) {
-      isSubscribed = true
-      if (subscription.bell) {
-        isBell = true
-      }
-    }
-
-    return res.status(200).json({ video, isLiked, loggedIn: true, isSubscribed, isBell });
   } catch (error) {
     console.log("user not logged in to save to watch history");
   }
 
+  console.log(isLiked);
 
-  // console.log(isLiked);
-
-  return res.status(200).json({ video, isLiked, loggedIn: false, isSubscribed, isBell });
+  return res
+    .status(200)
+    .json({
+      video,
+      isLiked,
+      loggedIn: false,
+      isSubscribed: false,
+      isBell: false,
+    });
 });
 
 export const getComments = AsyncTryCatch(async (req, res, next) => {
@@ -110,7 +98,7 @@ export const getComments = AsyncTryCatch(async (req, res, next) => {
 export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.params;
   const cursor = req.query.cursor;
-  const limit = 3
+  const limit = 3;
   const video = await Video.findById(videoId);
   if (!video) {
     return next(new ErrorHandler(404, "Video not found"));
@@ -126,7 +114,7 @@ export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
   // console.log('watchnext')
   // console.log(watchNext)
   return res.status(200).json({ watchNext });
-})
+});
 
 export const putComment = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.params;
@@ -440,10 +428,10 @@ export const getAllVideos = AsyncTryCatch(async (req, res, next) => {
         localField: "channel",
         foreignField: "_id",
         as: "channel",
-      }
+      },
     },
     {
-      $unwind: "$channel"
+      $unwind: "$channel",
     },
     {
       $project: {
@@ -451,9 +439,9 @@ export const getAllVideos = AsyncTryCatch(async (req, res, next) => {
         description: 1,
         duration: 1,
         category: 1,
-        channel: "$channel.channelName" // Makes channel a string instead of an object
-      }
-    }
+        channel: "$channel.channelName", // Makes channel a string instead of an object
+      },
+    },
   ]);
 
   return res.status(200).json({ videos });

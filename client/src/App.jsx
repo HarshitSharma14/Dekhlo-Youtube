@@ -17,7 +17,10 @@ import Settings from "./pages/channel/Settings.jsx";
 const HomeLayout = lazy(() => import("./pages/home/HomeLayout.jsx"));
 const Signup = lazy(() => import("./pages/auth/Signup.jsx"));
 const ProfileSetup = lazy(() => import("./pages/auth/ProfileSetup.jsx"));
-const WatchHistory = lazy(() => import("./pages/WatchHistory.jsx"));
+const WatchHistory = lazy(() => import("./pages/channel/WatchHistory.jsx"));
+const PlaylistContent = lazy(() =>
+  import("./pages/channel/PlaylistContent.jsx")
+);
 const HomeContent = lazy(() => import("./pages/home/HomeContent.jsx"));
 const ChannelLayout = lazy(() => import("./pages/channel/ChannelLayout.jsx"));
 const ChannelVideos = lazy(() => import("./pages/channel/ChannelVideos.jsx"));
@@ -44,7 +47,7 @@ const router = createBrowserRouter([
         path: "/",
 
         element: (
-          <Suspense fallback={<HomeLayoutLoadingPage />}>
+          <Suspense fallback={<>loading page contents ...</>}>
             <HomeContent />
           </Suspense>
         ),
@@ -84,6 +87,14 @@ const router = createBrowserRouter([
               <Settings />
             </Suspense>
           </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/playlist",
+        element: (
+          <Suspense fallback={<div>Loading...</div>}>
+            <PlaylistContent />
+          </Suspense>
         ),
       },
 
@@ -135,6 +146,7 @@ const router = createBrowserRouter([
       },
     ],
   },
+
   {
     path: "/signup",
     element: (

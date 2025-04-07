@@ -132,8 +132,9 @@ const VideoCard = ({
         style={{
           height: "70%",
         }}
-        className={`video-card-thumbnail ${isHovered ? "thumbnail-transition" : ""
-          }`}
+        className={`video-card-thumbnail ${
+          isHovered ? "thumbnail-transition" : ""
+        }`}
       >
         {isInView && (
           <div

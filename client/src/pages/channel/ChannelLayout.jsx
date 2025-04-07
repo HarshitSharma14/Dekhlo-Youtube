@@ -139,7 +139,7 @@ const ChannelLayout = () => {
 
   useEffect(() => {
     getChannelInfo();
-  }, []);
+  }, [channelId]);
 
   return (
     <>

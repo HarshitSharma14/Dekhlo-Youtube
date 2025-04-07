@@ -6,6 +6,7 @@
 .video-card {
   display: flex;
   flex-direction: column;
+  /* flex-grow: 1; */
   width: 23%;
   margin: 12px;
   background-color: #121212;

@@ -228,7 +228,7 @@ const LongVideoCard = ({ video }) => {
             },
           }}
         >
-          {/* {video?.description} */}
+          {video?.description}
         </Typography>
       </Box >
 

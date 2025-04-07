@@ -17,7 +17,9 @@ import { loginSignup } from "./controllers/auth.controller.js";
 import { JWT_SECRET } from "./utils/constants.js";
 import { errorHandlerMiddleware } from "./middlewares/error.middlewares.js";
 import { getVideosForHomePage } from "./controllers/home.controller.js";
-
+import { setupSocket } from "./socket.js";
+import Channel from "./models/channel.model.js";
+import Setting from "./models/setting.model.js";
 
 // localConstansts ************************************
 const app = express();
@@ -73,16 +75,23 @@ app.get("/", (_, res) => {
   res.send("Home route working on the Youtube app");
 });
 
+
 // Middleware to handle error ***************************
 app.use(errorHandlerMiddleware);
 
 // App starting *****************************************
 const port = process.env.PORT || 3000;
-app.listen(port, () => {
+
+const server = app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 
   mongoose
     .connect(databaseURL)
-    .then(() => console.log("DB Connection success"))
+    .then(async () => {
+      console.log("DB Connection success")
+    })
     .catch((e) => console.log("DB Connection error: ", e.message));
 });
+
+
+setupSocket(server)

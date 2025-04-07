@@ -32,6 +32,7 @@ const videoSchema = new Schema(
       type: Number,
       default: 0,
     },
+    channelName: { type: String },
     duration: {
       type: Number, //in seconds
       required: true,
@@ -56,6 +57,9 @@ const videoSchema = new Schema(
   },
   { timestamps: true }
 );
+
+videoSchema.index({ title: "text", description: "text", category: "text" });
+
 
 const Video = model("Video", videoSchema);
 

@@ -10,6 +10,8 @@ import HomeLayoutLoadingPage from "./component/loadingLayouts/HomeLayoutLoadingP
 import ProtectedRoute from "./pages/auth/ProtectedRoute.jsx";
 import { useAppStore } from "./store/index.js";
 import { GET_CHANNEL_DETAILS } from "./utils/constants.js";
+import SearchPage from "./pages/home/SearchPage.jsx";
+import Settings from "./pages/channel/Settings.jsx";
 
 // Routes imports ****************************************
 const HomeLayout = lazy(() => import("./pages/home/HomeLayout.jsx"));
@@ -72,26 +74,44 @@ const router = createBrowserRouter([
           </ProtectedRoute>
         ),
       },
+      {
+        path: "/settings",
+        element: (
+          <ProtectedRoute>
+            <Suspense
+              fallback={<div>Getting the settings Page ready...</div>}
+            >
+              <Settings />
+            </Suspense>
+          </ProtectedRoute>
+        ),
+      },
 
       {
         path: "/video-player/:videoId",
         element: (
-          <Suspense fallback={<div>Loading...</div>}>
-            <Suspense
-              fallback={<div>Getting the VideoPlayer Page ready...</div>}
-            >
-              <VideoPlayer key={window.location.href} />
-            </Suspense>
+          <Suspense
+            fallback={<div>Getting the VideoPlayer Page ready...</div>}
+          >
+            <VideoPlayer key={window.location.href} />
+          </Suspense>
+        ),
+      },
+      {
+        path: "/search",
+        element: (
+          <Suspense
+            fallback={<div>Getting the videos ready...</div>}
+          >
+            <SearchPage key={window.location.href} />
           </Suspense>
         ),
       },
       {
         path: "/channel/:channelId/",
         element: (
-          <Suspense fallback={<div>Loading...</div>}>
-            <Suspense fallback={<div>Getting the Profile Page ready...</div>}>
-              <ChannelLayout />
-            </Suspense>
+          <Suspense fallback={<div>Getting the Profile Page ready...</div>}>
+            <ChannelLayout />
           </Suspense>
         ),
         children: [

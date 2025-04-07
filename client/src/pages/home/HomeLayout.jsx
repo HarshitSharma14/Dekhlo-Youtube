@@ -91,6 +91,10 @@ const HomeLayout = () => {
     };
   }, []);
 
+  // Empty dependency array ensures it runs only once on mount
+
+
+
   //                    <<--- (using gpt) ignoring the scroll input in the sidebar after its complition (at top and bottom) so that it doesnt interfear with main page's scroll bar
   useEffect(() => {
     const sidebar = sidebarRef.current;
@@ -310,8 +314,8 @@ const SidebarNavigatioButtons = ({
     >
       {isFilled
         ? React.cloneElement(filledIcon, {
-            sx: { ...iconStyle, color: "white" },
-          })
+          sx: { ...iconStyle, color: "white" },
+        })
         : React.cloneElement(outlineIcon, { sx: iconStyle })}
       <p
         style={{

@@ -2,9 +2,11 @@ import { Router } from "express";
 import multer from "multer";
 import {
   addVideosToPlaylist,
+  changeIsread,
   getChannelInfo,
   getChannelPlaylists,
   getChannelVideos,
+  getNotifications,
   getPlaylistVideos,
   getSelfChannelInfo,
   getSubscribedChannel,
@@ -41,9 +43,11 @@ app.post("/add-to-playlist", addVideosToPlaylist);
 app.post("/update-profile", upload.single("profilePhotoFile"), updateProfile);
 app.post("/subscribe", subscribeChannel);
 app.delete("/unsubscribe", unSubscribeChannel);
+app.get("/change-isread", changeIsread);
 app.patch("/toggle-bell", toggleBell);
 app.get("/subscription/videos", getSubscribedChannelVideos);
 app.get("/watch-history", getWatchHistory);
+app.get("/get-notifications", getNotifications);
 app.post(
   "/update-videoinfo",
   upload.fields([{ name: "video" }, { name: "thumbnail" }]),

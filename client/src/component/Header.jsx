@@ -10,7 +10,9 @@ import {
   MenuItem,
   useMediaQuery,
 } from "@mui/material";
+import { AnimatePresence, motion } from "framer-motion";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import NotificationsIcon from '@mui/icons-material/Notifications';
 import MenuIcon from "@mui/icons-material/Menu";
 import axios from "axios";
 import {
@@ -19,18 +21,23 @@ import {
 } from "@mui/icons-material";
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
-import { LOGOUT_ROUTE, UPDATE_VIDEO_INFO } from "../utils/constants";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { AUTOCOMPLETE_ROUTE, GET_NOTIFICATIONS, CHANGE_ISREAD, LOGOUT_ROUTE, SEARCH_VIDEO_ROUTE, UPDATE_VIDEO_INFO } from "../utils/constants";
 import { useAppStore } from "../store";
+import { Autocomplete, TextField } from "@mui/material";
+import Notifications from "./Notifications";
 
 const Header = ({ isDisabled }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
   const isMobile = useMediaQuery("(max-width:768px)");
-  const { channelInfo, setChannelInfo, setIsLoggedIn } = useAppStore()
+  const [searchParams] = useSearchParams();
+  const s = searchParams.get("s");
+  const { channelInfo, setChannelInfo, setIsLoggedIn, setNotifications, clearNotifications, notifications, notificationsPending, setNotificationsPending } = useAppStore()
   const [back, setBack] = useState(false)
-  const [searchText, setSearchText] = useState("")
-
+  const [searchText, setSearchText] = useState(sessionStorage.getItem("searchText") || s || "")
+  const [suggestions, setSuggestions] = useState([])
+  const [notificationsOpen, setNotificationsOpen] = useState(false)
   // Toggle the menu (avatar options)
   const handleAvatarClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -38,6 +45,91 @@ const Header = ({ isDisabled }) => {
   const handleAvatarClose = () => {
     setAnchorEl(null);
   };
+
+  const toggleNotifications = async () => {
+    if (notificationsOpen) {
+      setNotificationsOpen(false)
+    }
+    else {
+      setNotificationsOpen(true)
+      try {
+        await axios.get(`${CHANGE_ISREAD}?t=${notifications[0].createdAt}`, { withCredentials: true })
+        setNotificationsPending(false)
+        console.log("isread done")
+      }
+      catch (e) {
+        console.log(e)
+      }
+    }
+  }
+
+
+
+  const searchVideo = async (value) => {
+    console.log("searchText")
+    console.log(searchText)
+    if (value) {
+      sessionStorage.setItem("searchText", value);
+    }
+    else { sessionStorage.setItem("searchText", searchText); }
+    navigate(`/search?s=${searchText}`);
+    setTimeout(() => {
+      navigate(0); // Force page reload (not recommended but works)
+    }, 0);
+    return
+  }
+
+  const fetchAutocomplete = async (text) => {
+    try {
+      const response = await axios.get(AUTOCOMPLETE_ROUTE, { params: { searchText: text } })
+      console.log(response.data)
+      setSuggestions(response.data.results)
+    }
+    catch (error) {
+      console.log(error)
+    }
+  }
+
+  const handleChange = (value) => {
+    setSearchText(value);
+
+    if (value.length > 1) {
+      console.log("autocomplete")
+      fetchAutocomplete(value)
+    }
+    else {
+      setSuggestions([])
+    }
+
+
+  }
+
+
+  useEffect(() => {
+    const fetchNoti = async () => {
+      try {
+        const response = await axios.get(GET_NOTIFICATIONS, { withCredentials: true })
+        console.log(response.data)
+        if (response.data[response.data.length - 1].isRead) {
+          setNotificationsPending(false)
+        }
+        else {
+          setNotificationsPending(true)
+        }
+        if (response.data) {
+          clearNotifications()
+          response.data.forEach((notification) => {
+            setNotifications(notification); // Adds each notification one by one
+          });
+        }
+      }
+      catch (e) {
+        console.log(e)
+      }
+    }
+    if (channelInfo) fetchNoti()
+  }, [])
+
 
   const logout = async () => {
     try {
@@ -95,7 +187,9 @@ const Header = ({ isDisabled }) => {
           </button>
           <button
             disabled={isDisabled}
-            onClick={() => navigate("/")}
+            onClick={() => {
+              navigate("/")
+            }}
             className="w-[123px] h-[56px] cursor-default text-white font-bold text-2xl"
           >
             <span className="yt-icon-shape flex justify-center items-center">
@@ -109,13 +203,57 @@ const Header = ({ isDisabled }) => {
 
         {/* Center Section: Search Bar */}
         <div className={`${back ? "flex ml-[60px] mr-[20px]" : "hidden"} items-center border mr-1 border-s-2 border-[#303030] h-[40px] rounded-3xl w-[600px] max-w-full bg-[#121212] overflow-hidden xs:flex`}>
-          <input
+          {/* <input
             disabled={isDisabled}
             className="flex-1 min-w-[30px] bg-[#121212] text-white px-4 outline-none placeholder-gray-500"
             placeholder="Search"
+            onChange={handleChange}
+            value={searchText}
+          /> */}
+
+          <Autocomplete
+            freeSolo
+            options={suggestions}
+            onChange={(e, value) => {                            // For selection
+              if (value) {
+                console.log("in")
+                console.log(value)
+                setSearchText(() => value);
+                searchVideo(value)
+                // Trigger search only on selection
+              }
+            }}
+            className="flex-1 min-w-[30px] bg-[#121212] text-white px-4 outline-none placeholder-gray-500"
+            onInputChange={(e, value) => {
+              handleChange(value);
+            }}
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                border: "none",                      // ✅ Remove border
+                "& fieldset": { border: "none" },   // ✅ Remove default fieldset border
+                backgroundColor: "transparent"       // ✅ Transparent background
+              },
+              "& .MuiAutocomplete-option:hover": {       // 🎯 Hover Effect
+                backgroundColor: "rgba(0, 123, 255, 0.1)",
+                color: "blue",
+                fontWeight: "bold"
+              },
+              border: "none",
+            }}
+            disabled={isDisabled}
+            value={searchText}
+            renderInput={(params) => <TextField {...params}
+              onKeyDown={(e) => {                         // ✅ Trigger search on Enter
+                if (e.key === "Enter") {
+                  e.preventDefault();                  // Prevent form submission
+                  searchVideo(searchText);             // Trigger search function
+                }
+              }} label="Search" fullWidth />}
+
           />
           <button
             disabled={isDisabled}
+            onClick={() => searchVideo()}
             className="border-l h-full bg-[#222222] border-[#303030] px-5 flex items-center justify-center hover:bg-[#303030]"
           >
             <svg
@@ -183,10 +321,13 @@ const Header = ({ isDisabled }) => {
           </button>
           <button
             disabled={isDisabled}
+            onClick={toggleNotifications}
             className="text-white hover:bg-gray-700 p-2 rounded-full mr-1"
           >
-            <NotificationsNoneIcon />
+            {!notificationsPending && <NotificationsNoneIcon />}
+            {notificationsPending && <NotificationsIcon />}
           </button>
+
 
           <button
             disabled={isDisabled}
@@ -214,7 +355,26 @@ const Header = ({ isDisabled }) => {
                 Logout
               </button>
             </div>
+
           )}
+          <div className="relative">
+            <AnimatePresence mode="wait">
+
+              {notificationsOpen && ( // Ensuring notifications are conditionally rendered
+                <motion.div
+                  initial={{ scale: 0.0, opacity: 0, y: -200, x: 100 }}
+                  animate={{ scale: 1, opacity: 1, y: 0, x: 0 }}
+                  exit={{ scale: 0.0, opacity: 0, y: -200, x: 100 }}
+                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  className="absolute top-9 right-0 w-[350px] xs:w-[400px] h-[400px] overflow-y-scroll"
+                >
+                  <Notifications toggle={toggleNotifications} />
+                </motion.div>
+              )}
+
+            </AnimatePresence>
+
+          </div>
         </div>
       </div>
     </header>

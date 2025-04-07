@@ -13,6 +13,9 @@ import Video from "../models/video.model.js";
 import Playlist from "../models/playlist.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
+import { emitNotification, io } from "../socket.js";
+import Setting from "../models/setting.model.js";
+import Notification from "../models/notification.model.js";
 
 // const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 // console.log(JWT_SECRET);
@@ -143,6 +146,8 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
 
   await newSubscription.save();
 
+  console.log("subscribed")
+
   channelToBeSubscribed.followers.push(newSubscription._id);
   channelToBeSubscribed.subscribersCount =
     channelToBeSubscribed.subscribersCount + 1;
@@ -152,8 +157,52 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
     $push: { following: newSubscription._id },
   });
 
+  const channelName = (await Channel.findById(req.channelId).select('channelName'))?.channelName
+
+  const creatorSettings = await Setting.findById({ _id: channelToBeSubscribed.settings })
+
+  console.log(channelName)
+  // console.log(channelToBeSubscribed)
+
+  if (creatorSettings && creatorSettings.newFollowerNotification) {
+
+    const notification = new Notification({
+      channel: creatorId,
+      message: `<span style="color: #1DA1F2; font-weight: bold;">${channelName}</span> 
+      subscribed your channel.`,
+      isRead: false,
+    })
+
+    await notification.save()
+
+    console.log("emitting new noti before")
+
+    emitNotification(creatorId, {
+      message: notification.message,
+      channel: creatorId,
+      isRead: false,
+      createdAt: notification.createdAt,
+    })
+
+
+  }
+
   return res.status(200).json({ message: "Channel subscribed successfully" });
 });
+
+
+export const changeIsread = AsyncTryCatch(async (req, res, next) => {
+  const { channelId } = req
+  console.log('init')
+  const { t } = req.query
+
+  const notifications = await Notification.updateMany({ channel: channelId, createdAt: { $lte: new Date(t) } },
+    { $set: { isRead: true } })
+
+
+  res.status(200).json({ message: "Notifications updated successfully.", updatedCount: notifications.modifiedCount })
+})
+
 
 // unsubscribe ************************************************************************************************
 export const unSubscribeChannel = AsyncTryCatch(async (req, res, next) => {
@@ -216,6 +265,16 @@ export const getSubscribedChannelVideos = AsyncTryCatch(
   }
 );
 
+export const getNotifications = AsyncTryCatch(async (req, res, next) => {
+  const channelId = req.channelId
+
+  const notifications = await Notification.find({ channel: channelId }).sort({ createdAt: 1 })
+
+  // console.log(notifications)
+
+  return res.status(200).json(notifications)
+})
+
 // get watch history **********************************************
 export const getWatchHistory = AsyncTryCatch(async (req, res, next) => {
   const { page = 1, limit = 20 } = req.query;
@@ -235,7 +294,7 @@ export const getWatchHistory = AsyncTryCatch(async (req, res, next) => {
     { $match: { _id: new mongoose.Types.ObjectId(String(req.channelId)) } },
     { $project: { watchHistoryCount: { $size: "$watchHistory" } } },
   ]);
-  console.log("channel", totalVideoCount[0]);
+  // console.log("channel", totalVideoCount[0]);
 
   const totalPages =
     Math.ceil(totalVideoCount[0]?.watchHistoryCount / limit) || 0;
@@ -260,9 +319,9 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   // console.log(req.files.video)
   // console.log(req.files.thumbnail)
   let videoIfAvailable = null;
-  console.log(videoId?.length);
+  // console.log(videoId?.length);
   if (videoId && videoId.toString() !== "null") {
-    console.log("in");
+    // console.log("in");
     videoIfAvailable = await Video.findById(videoId);
   }
   if (videoIfAvailable) {
@@ -325,6 +384,8 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
       runValidators: true, // Apply schema validation
     });
 
+
+
     return res
       .status(201)
       .json({ message: "Video updated successfully", updatedVideo });
@@ -339,7 +400,7 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   // console.log("inside2")
 
   const { videoUrlNew, thumbnailUrlNew } = await UploadVideoAndThumbnail(req);
-  console.log("inside3");
+  // console.log("inside3");
 
   const videonew = new Video({
     title,
@@ -356,9 +417,47 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   console.log("done");
   await videonew.save();
 
+
+
   const channel = await Channel.findById(channelId);
   channel.videos.push(videonew._id);
   await channel.save();
+
+  console.log('getting in')
+
+  console.log(channel.followers)
+
+  for (const follower of channel.followers) {
+
+    const subscription = await Subscription.findById(follower)
+
+    console.log(subscription)
+
+    if (!subscription.bell) {
+      continue
+    }
+
+
+
+    const notification = new Notification({
+      channel: subscription.subscriber,
+      message: `<span style="color: #1DA1F2; font-weight: bold;">${channel.channelName}</span> 
+      has posted a new video:
+      <span style="color: #FFD700; font-weight: bold;">${videonew.title}</span>`,
+      isRead: false,
+    })
+    await notification.save()
+
+    console.log('in noti')
+    console.log(subscription.subscriber)
+    emitNotification(subscription.subscriber.toString(), {
+      message: notification.message,
+      channel: subscription.subscriber,
+      isRead: false,
+      createdAt: notification.createdAt,
+    })
+
+  }
 
   return res
     .status(201)
@@ -370,7 +469,7 @@ export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
   const channelIdForVideos = req.params.channelId;
   const { page = 0, limit = 20, sort = "createdAt_desc" } = req.query;
   let canSendPrivateVideos = false;
-  console.log("get channel page and sort", page, sort);
+  // console.log("get channel page and sort", page, sort);
   const channelToFetchVideosFrom = await Channel.findById(
     channelIdForVideos
   ).populate("videos");
@@ -429,8 +528,8 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
     },
   })
     .populate("channel", "channelName");
-  console.log('intttttttt')
-  console.log(playlist)
+  // console.log('intttttttt')
+  // console.log(playlist)
   if (playlist.private === true && (channelId.toString() !== playlist.channel._id.toString())) {
     return next(new ErrorHandler(400, "Playlist is private"));
 

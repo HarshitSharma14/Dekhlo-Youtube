@@ -261,8 +261,8 @@ const SidebarNavigatioButtons = ({
     >
       {isFilled
         ? React.cloneElement(filledIcon, {
-            sx: sidebarIconsStyleConfig,
-          })
+          sx: sidebarIconsStyleConfig,
+        })
         : React.cloneElement(outlineIcon, { sx: sidebarIconsStyleConfig })}
       <p style={sidebarButtonNamesStyleConfig}>{name}</p>
     </Button>

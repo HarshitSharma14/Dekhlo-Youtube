@@ -1,4 +1,4 @@
-# 🎬 YouTube Clone
+# 🎬 Dekhlo
 
 A full-stack YouTube clone featuring user authentication via Google, video upload and playback, search functionality, subscriptions, comments, likes/dislikes, and more. Built to replicate the core experience of YouTube with modern tech and search indexing support.
 

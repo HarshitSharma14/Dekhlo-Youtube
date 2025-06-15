@@ -58,7 +58,12 @@ const videoSchema = new Schema(
   { timestamps: true }
 );
 
-videoSchema.index({ title: "text", description: "text", category: "text" });
+videoSchema.index({ channel: 1, createdAt: -1, _id: -1 });
+videoSchema.index({ channel: 1, createdAt: 1, _id: 1 });
+videoSchema.index({ channel: 1, views: -1, _id: -1 });
+
+videoSchema.index({ channel: 1, _id: -1 });
+
 
 
 const Video = model("Video", videoSchema);

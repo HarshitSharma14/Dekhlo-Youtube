@@ -5,6 +5,7 @@ const notificationSchema = new Schema(
     {
         channel: {
             type: Schema.Types.ObjectId,
+            index: true,
             ref: "Channel",
             required: [true, "channel id is required"]
         },

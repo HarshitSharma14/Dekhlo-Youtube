@@ -86,7 +86,7 @@ const server = app.listen(port, () => {
   console.log(`Server is listening on port ${port}`);
 
   mongoose
-    .connect(databaseURL)
+    .connect(databaseURL, { autoIndex: true })
     .then(async () => {
       console.log("DB Connection success")
     })

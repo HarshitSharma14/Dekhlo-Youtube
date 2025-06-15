@@ -31,17 +31,34 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
         profilePhoto: profile.photos[0]?.value || "", // Google profile picture
       });
 
-      const newPlaylist = await Playlist.create({
+      const watchLater = await Playlist.create({
         name: "Watch later",
         channel: channel._id,
-        videos: [],
         videoCount: 0,
         private: true,
       });
 
-      channel.playlists.push(newPlaylist._id);
+      channel.permanentPlaylist.push(watchLater._id);
 
-      await channel.save();
+      const watchHistory = await Playlist.create({
+        name: "Watch History",
+        channel: channel._id,
+        videoCount: 0,
+        private: true,
+      });
+      // channel.watchHistory = watchHistory._id;
+      channel.permanentPlaylist.push(watchHistory._id);
+
+      const likedVideos = await Playlist.create({
+        name: "Liked Videos",
+        channel: channel._id,
+        videoCount: 0,
+        private: true,
+      });
+      channel.permanentPlaylist.push(likedVideos._id);
+
+      await channel.save()
+
       profileAlreadyExist = false;
     }
 

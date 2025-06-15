@@ -7,7 +7,7 @@ import {
   UploadSinglePhotoToCloudinary,
   UploadVideoAndThumbnail,
 } from "../utils/features.js";
-import { ErrorHandler, sortByKey } from "../utils/utility.js";
+import { ErrorHandler, LogedInChannel, sortByKey } from "../utils/utility.js";
 import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
 import Playlist from "../models/playlist.model.js";
@@ -16,15 +16,13 @@ import mongoose from "mongoose";
 import { emitNotification, io } from "../socket.js";
 import Setting from "../models/setting.model.js";
 import Notification from "../models/notification.model.js";
-
-// const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
-// console.log(JWT_SECRET);
+import PlaylistVideos from "../models/playlistVideos.js";
 
 /// get self channel if logged in ************************************************************************************
 export const getSelfChannelInfo = AsyncTryCatch(async (req, res, next) => {
   const channel = await Channel.findById(req.channelId)
     .select(
-      "channelName email profilePhoto bio subscribersCount videosCount views playlists"
+      "channelName email profilePhoto bio subscribersCount videosCount views "
     )
     .populate("playlists", "name private");
   const dataToSend = {
@@ -36,8 +34,6 @@ export const getSelfChannelInfo = AsyncTryCatch(async (req, res, next) => {
     followers: channel.subscribersCount,
     videos: channel.videosCount,
     views: channel.views,
-    watchLater: channel.playlists[0],
-    playlists: channel.playlists,
   };
 
   res
@@ -63,6 +59,7 @@ export const getChannelInfo = AsyncTryCatch(async (req, res, next) => {
   } catch (error) {
     console.log("cant send private videos");
   }
+
   const channel = await Channel.findById(channelId).select(
     "channelName email profilePhoto bio coverImage subscribersCount videosCount views"
   );
@@ -73,8 +70,10 @@ export const getChannelInfo = AsyncTryCatch(async (req, res, next) => {
       creator: channelId,
     });
   }
+
   // console.log(channel);
   if (!channel) next(new ErrorHandler(404, "Channel not found"));
+
   console.log("channel to be visiteed", channel);
   const dataToSend = {
     channelName: channel.channelName,
@@ -148,14 +147,10 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
 
   console.log("subscribed")
 
-  channelToBeSubscribed.followers.push(newSubscription._id);
   channelToBeSubscribed.subscribersCount =
     channelToBeSubscribed.subscribersCount + 1;
   await channelToBeSubscribed.save();
 
-  await Channel.findByIdAndUpdate(req.channelId, {
-    $push: { following: newSubscription._id },
-  });
 
   const channelName = (await Channel.findById(req.channelId).select('channelName'))?.channelName
 
@@ -224,53 +219,18 @@ export const unSubscribeChannel = AsyncTryCatch(async (req, res, next) => {
   if (!subscription)
     return next(new ErrorHandler(400, "User already unsubscribed"));
 
-  channelToBeUnSubscribed.followers = channelToBeUnSubscribed.followers.filter(
-    (id) => !id.equals(subscription._id)
-  );
   channelToBeUnSubscribed.subscribersCount -= 1;
   await channelToBeUnSubscribed.save();
-
-  await Channel.findByIdAndUpdate(req.channelId, {
-    $pull: { following: subscription._id },
-  });
 
   return res.status(200).json({ message: "Channel unsubscribed successfully" });
 });
 
-// get VideosFromSubscribedChannel ****************************
-export const getSubscribedChannelVideos = AsyncTryCatch(
-  async (req, res, next) => {
-    const { page = 1, limit = 20 } = req.query;
-    const totalVideoCount = await Video.countDocuments();
-    const totalPages = Math.ceil(totalVideoCount / limit) || 0;
-
-    const channel = await Channel.findById(req.channelId).populate("following");
-
-    const videos = await Video.find({
-      channel: {
-        $in: channel.following.map((follow) => follow.creator),
-      },
-      isPrivate: {
-        $nin: true,
-      },
-    })
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .populate("channel", "channelName");
-
-    return res
-      .status(200)
-      .json({ videos, totalPages, message: "fetched successfully" });
-  }
-);
-
+//get notifications ************************************************************************************************
 export const getNotifications = AsyncTryCatch(async (req, res, next) => {
   const channelId = req.channelId
 
   const notifications = await Notification.find({ channel: channelId }).sort({ createdAt: 1 })
 
-  // console.log(notifications)
 
   return res.status(200).json(notifications)
 })
@@ -278,38 +238,65 @@ export const getNotifications = AsyncTryCatch(async (req, res, next) => {
 // get watch history **********************************************
 export const getWatchHistory = AsyncTryCatch(async (req, res, next) => {
   const { page = 1, limit = 20 } = req.query;
+
   let affectiveLimit = limit;
-  const totalVideoCount = await Channel.aggregate([
-    { $match: { _id: new mongoose.Types.ObjectId(String(req.channelId)) } },
-    { $project: { watchHistoryCount: { $size: "$watchHistory" } } },
-  ]);
-  const totalCount = totalVideoCount[0].watchHistoryCount || 0;
 
-  let temp = totalCount - page * limit;
-  const skipValue = Math.max(0, temp);
-  if (temp < 0) {
-    affectiveLimit = parseInt(limit) + parseInt(temp);
+  const myChannel = await Channel.findById(req.channelId)
+
+  const watchHistoryPlaylistId = myChannel.permanentPlaylist[1];
+
+  const watchHistoryPlaylist = await Playlist.findById(watchHistoryPlaylistId).select("videosCount");
+  const totalCount = watchHistoryPlaylist.videosCount;
+
+
+  let videosLeftToSendForNextQuery = totalCount - (page * limit);
+
+  const skipValue = ((page - 1) * limit);
+
+  if (videosLeftToSendForNextQuery < 0) {
+    affectiveLimit = parseInt(limit) + parseInt(videosLeftToSendForNextQuery);
   }
 
-  const channel = await Channel.findById(req.channelId)
-    .select("watchHistory")
-    .populate({
-      path: "watchHistory",
-      options: {
-        skip: skipValue,
-        limit: parseInt(affectiveLimit),
-      },
-    });
-  if (!channel) {
-    return next(new ErrorHandler(404, "Error: Channel not found"));
+  const rawResults = await PlaylistVideos.find({ playlist: watchHistoryPlaylistId })
+    .sort({ createdAt: -1 })
+    .skip(skipValue)
+    .limit(affectiveLimit).populate("videoId")
+
+  // if (!channelVideos) {
+  //   return next(new ErrorHandler(404, "Error: Channel not found"));
+  // // }
+
+  const videos = [];
+
+  for (const entry of rawResults) {
+    if (entry.videoId) {
+      videos.push(entry.videoId);
+    } else {
+      // video was deleted, so remove from PlaylistVideos
+      await PlaylistVideos.findByIdAndDelete(entry._id);
+    }
   }
-  const historyInOrder = channel.watchHistory.reverse();
+
+
+  console.log(videos)
+
+  // const channel = await Channel.findById(req.channelId)
+  //   .select("watchHistory")
+  //   .populate({
+  //     path: "watchHistory",
+  //     options: {
+  //       skip: skipValue,
+  //       limit: parseInt(affectiveLimit),
+  //     },
+  //   });
+  // const historyInOrder = channel.watchHistory.reverse();
 
   const totalPages = Math.ceil(totalCount / limit) || 0;
+  res.status(200).json({ videos, totalPages });
 
-  res.status(200).json({ videos: historyInOrder, totalPages });
 });
 
+// upload/update video ********************************************************************************************
 export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   console.log("in upload video");
   // console.log("inside")
@@ -425,30 +412,17 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   console.log("done");
   await videonew.save();
 
+  const subscibersId = await Subscription.find({ creator: channelId, bell: true }).select('subscriber');
 
-
-  const channel = await Channel.findById(channelId);
-  channel.videos.push(videonew._id);
-  await channel.save();
+  const channel = await Channel.findById(channelId).select("channelName");
 
   console.log('getting in')
 
-  console.log(channel.followers)
+  // console.log(channel.followers)
 
-  for (const follower of channel.followers) {
-
-    const subscription = await Subscription.findById(follower)
-
-    console.log(subscription)
-
-    if (!subscription.bell) {
-      continue
-    }
-
-
-
+  for (const { subscriber } of subscibersId) {
     const notification = new Notification({
-      channel: subscription.subscriber,
+      channel: subscriber,
       message: `<span style="color: #1DA1F2; font-weight: bold;">${channel.channelName}</span> 
       has posted a new video:
       <span style="color: #FFD700; font-weight: bold;">${videonew.title}</span>`,
@@ -457,10 +431,10 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
     await notification.save()
 
     console.log('in noti')
-    console.log(subscription.subscriber)
-    emitNotification(subscription.subscriber.toString(), {
+    console.log(subscriber)
+    emitNotification(subscriber.toString(), {
       message: notification.message,
-      channel: subscription.subscriber,
+      channel: subscriber,
       isRead: false,
       createdAt: notification.createdAt,
     })
@@ -474,49 +448,104 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
 
 // get Channel Videoss *********************************************************************************
 export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
+
   const channelIdForVideos = req.params.channelId;
-  const { page = 0, limit = 20, sort = "createdAt_desc" } = req.query;
+  const {
+    cursor,
+    limit = 20,
+    sortField = "createdAt",
+    sortOrder = 1,
+  } = req.query;
+
+  // Validate sortField
+  const ALLOWED_SORT_FIELDS = ["createdAt", "views"];
+  if (!ALLOWED_SORT_FIELDS.includes(sortField)) {
+    return res.status(400).json({ message: "Invalid sort field" });
+  }
+
+  // Sanitize limit
+  const sanitizedLimit = Math.min(Number(limit), 100);
+
+  // Check if channel exists
+  const channel = await Channel.findById(channelIdForVideos);
+  if (!channel) {
+    return res.status(404).json({ message: "Channel not found" });
+  }
+
+  // Determine if private videos can be shown
   let canSendPrivateVideos = false;
-  // console.log("get channel page and sort", page, sort);
-  const channelToFetchVideosFrom = await Channel.findById(
-    channelIdForVideos
-  ).populate("videos");
-  if (!channelToFetchVideosFrom) {
-    return next(new ErrorHandler(404, "Channel not found"));
+  const token = req.cookies?.jwt;
+
+  const visitingChannelId = LogedInChannel(token);
+  if (visitingChannelId)
+    canSendPrivateVideos =
+      visitingChannelId.toString() === channelIdForVideos.toString();
+
+  // if (token) {
+  //   try {
+  //     const decoded = jwt.verify(token, JWT_SECRET);
+  //     if (decoded.channelId === channelIdForVideos.toString()) {
+  //       canSendPrivateVideos = true;
+  //     }
+  //   } catch {
+  //     console.log("JWT invalid or expired - only public videos will be shown.");
+  //   }
+  // }
+
+  const query = {
+    channel: channelIdForVideos,
+  };
+
+  if (!canSendPrivateVideos) {
+    query.isPrivate = false;
   }
 
-  // checking wheather the user asking for the videos can access the private videos
-
-  try {
-    const token = req.cookies.jwt;
-    const decodedData = jwt.verify(token, JWT_SECRET);
-    const channelIdVisiting = decodedData.channelId;
-    if (channelIdVisiting.toString() == channelIdForVideos.toString()) {
-      canSendPrivateVideos = true;
+  // Add pagination logic if cursor exists
+  if (cursor) {
+    let parsedCursor;
+    try {
+      parsedCursor = typeof cursor === "string" ? JSON.parse(cursor) : cursor;
+    } catch {
+      return res.status(400).json({ message: "Invalid cursor format" });
     }
-  } catch (error) {
-    console.log("cant send private videos");
+
+    const cursorValue = parsedCursor.value;
+    const cursorId = new mongoose.Types.ObjectId(parsedCursor._id.toString());
+
+    query.$or = [
+      { [sortField]: { [sortOrder === 1 ? "$gt" : "$lt"]: cursorValue } },
+      {
+        [sortField]: cursorValue,
+        _id: { [sortOrder === 1 ? "$gt" : "$lt"]: cursorId },
+      },
+    ];
   }
-  let videosCanBeSent = channelToFetchVideosFrom.videos.filter(
-    (vid) => !vid.isPrivate || canSendPrivateVideos
-  );
 
-  const [sortField, sortDirection] = sort.split("_"); // splits the sort string in the query parameter and takes the first two subarray from it and assign it to the corresponding variable
+  // Build sort object
+  const sortObj = {
+    [sortField]: Number(sortOrder),
+    _id: Number(sortOrder),
+  };
 
-  const sortedVideos = sortByKey(videosCanBeSent, sortField, sortDirection); // function created in utitlity.js file can take name_acs, name_desc , views_acs, ...,createdAt_asc
+  // Fetch videos
+  const videos = await Video.find(query).sort(sortObj).limit(sanitizedLimit);
 
-  const startingIndex = parseInt(page, 10) * parseInt(limit, 10);
+  // Prepare next cursor
+  let nextCursor = null;
 
-  let videosToSend = sortedVideos.slice(
-    startingIndex,
-    startingIndex + parseInt(limit, 10)
-  );
+  if (videos.length > 0) {
+    const lastVideo = videos[videos.length - 1];
+    nextCursor = {
+      value: lastVideo[sortField],
+      _id: lastVideo._id,
+    };
+  }
 
-  const totalPages = Math.ceil(sortedVideos.length / limit) || 0;
   res.status(200).json({
-    message: "videos fetched successfully",
-    totalPages,
-    videos: videosToSend,
+    message: "Videos fetched successfully",
+    videos,
+    nextCursor,
+    hasMore: videos.length === sanitizedLimit,
   });
 });
 
@@ -564,23 +593,29 @@ export const toggleBell = AsyncTryCatch(async (req, res, next) => {
 
 // get getSubscribedChannel *****************************************************************
 export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
-  const data = await Channel.findById(req.channelId)
-    .select("following")
+  const subs = await Subscription.find({ subscriber: req.channelId })
+    .select("creator")
     .populate({
-      path: "following",
-      select: "creator bell",
-      populate: {
-        path: "creator",
-        select: "channelName bio profilePhoto subscribersCount email",
-      },
+      path: "creator",
+      select: "channelName bio profilePhoto subscribersCount email",
     });
 
-  if (!data)
+  if (!subs)
     return next(
       new ErrorHandler(404, "Data not found or something went wrong in server")
     );
 
-  res.status(200).json({ following: data.following });
+  const invalidSubIds = subs // creator which have deleted their channels
+    .filter((sub) => !sub.creator)
+    .map((sub) => sub._id);
+
+  if (invalidSubIds.length > 0) {
+    await Subscription.deleteMany({ _id: { $in: invalidSubIds } });
+  }
+
+  const following = subs.filter((sub) => sub.creator).map((sub) => sub.creator);
+
+  res.status(200).json({ following });
 });
 
 // get any channels playlist **********************************************************************************
@@ -588,16 +623,27 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
   const { channelId } = req.params;
 
   let canSendPrivatePlaylist = false;
-  try {
-    const token = req.cookies.jwt;
-    const decodedData = jwt.verify(token, JWT_SECRET);
-    const channelIdVisiting = decodedData.channelId;
-    if (channelIdVisiting.toString() == channelId.toString()) {
-      canSendPrivatePlaylist = true;
-    }
-  } catch (error) {
-    console.log("cant send private playlist");
+
+  const visitingChannelId = LogedInChannel(req.cookies?.jwt);
+
+  if (visitingChannelId) canSendPrivatePlaylist = visitingChannelId.toString() === channelId.toString();
+
+
+  const query = {
+    channel: channelId
   }
+  if (!canSendPrivatePlaylist) query.isPrivate = false;
+  const allPlaylists = await Playlist.find(query);
+
+  const thumbnails = allPlaylists?.map(async (playlist) => {
+    const recentVidoesOfPlaylist = await PlaylistVideos.find({ playListId: playlist._id }).sort({ createdAt: -1 }).limit(3).populate({ path: "videoId", select: "thumbnailUrl" });
+
+    return recentVidoesOfPlaylist;
+
+  })
+
+
+
   const x = await Channel.findById(channelId);
   // console.log("in playlist ", x);
   const channel = await Channel.findById(channelId)
@@ -613,6 +659,8 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
     .sort({ updatedAt: -1 })
     .lean()
     .exec();
+
+
 
   if (!channel) return next(new ErrorHandler(404, "Channel not found"));
 
@@ -637,13 +685,16 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
 // get my channels playlist **********************************************************************************
 export const getMyPlaylists = AsyncTryCatch(async (req, res, next) => {
   const channelId = req.channelId;
-  const channel = await Channel.findById(channelId)
-    .select("playlists")
-    .populate({ path: "playlists", select: "name private" });
-  const playlists = channel.playlists;
+  const playlists = await Playlist.find({ channel: channelId }).select("name isPrivate");
+
+  // const channel = await Channel.findById(channelId)
+  //   .select("playlists")
+  //   .populate({ path: "playlists", select: "name private" });
+  // const playlists = channel.playlists;
   // console.log("chennel ", playlists);
   res.status(200).json({ playlists });
 });
+
 // Add to Playlist *************************************************************************
 export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
   const {
@@ -652,38 +703,50 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
     isPrivate = true,
     videoId,
   } = req.body;
+
   if (!videoId) return next(new ErrorHandler(400, "Video not found"));
 
-  // creating new playlist *****************************
+  // Create a new playlist if none are provided
   if (playlistIds.length === 0) {
     const newPlaylist = new Playlist({
       name,
       channel: req.channelId,
-      videos: [videoId],
-      videoCount: 1,
-      private: isPrivate,
+      videoCount: 0,
+      isPrivate,
     });
 
     await newPlaylist.save();
 
-    await Channel.findByIdAndUpdate(req.channelId, {
-      $push: { playlists: newPlaylist },
+    playlistIds.push(newPlaylist._id);
+  }
+
+  try {
+    // Create video documents for each playlist
+    const videosToInsert = playlistIds.map((id) => ({
+      videoId,
+      playlistId: id,
+    }));
+
+    await Video.insertMany(videosToInsert);
+
+    // Increment video count in all affected playlists
+    await Playlist.updateMany(
+      { _id: { $in: playlistIds } },
+      { $inc: { videosCount: 1 } }
+    );
+
+  } catch (err) {
+    console.error("Error inserting videos:", err);
+
+    // Fix filter field name from `id` → `_id` and from `videosCount` → `videoCount`
+    await Playlist.deleteMany({
+      _id: { $in: playlistIds },
+      videosCount: 0,
     });
 
-    return res.status(200).json({ success: true });
+    return next(new ErrorHandler(500, "Failed to add videos to playlist"));
   }
 
-  for (let i = 0; i < playlistIds.length; i++) {
-    const playlist = await Playlist.findById(playlistIds[i]);
-
-    if (!playlist) continue;
-
-    if (!playlist.videos.includes(videoId)) {
-      playlist.videos.push(videoId);
-      playlist.videosCount += 1; // Increment video count
-      await playlist.save(); // Save only once per playlist
-    }
-  }
   res.status(200).json({ success: true });
 });
 
@@ -697,22 +760,34 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
   );
   if (!playlistForVideoCount)
     return next(new ErrorHandler(404, "Error: Playlist not found"));
-  const totalCount = playlistForVideoCount.videosCount || 0;
-  let temp = totalCount - page * limit;
-  const skipValue = Math.max(0, temp);
-  if (temp < 0) {
-    affectiveLimit = parseInt(limit) + parseInt(temp);
-  }
-  const playlist = await Playlist.findById(playlistId).populate({
-    path: "videos",
-    options: {
-      skip: skipValue,
-      limit: parseInt(affectiveLimit),
-    },
-  });
 
-  playlist.videos = playlist.videos.reverse();
+  const totalCount = playlistForVideoCount.videosCount || 0;
+
+  let videosLeftToSendForNextQuery = totalCount - page * limit;
+
+  // const skipValue = Math.max(0, videosLeftToSendForNextQuery);
+  const skipValue = ((page - 1) * limit);
+
+  if (videosLeftToSendForNextQuery < 0) {
+    affectiveLimit = parseInt(limit) + parseInt(videosLeftToSendForNextQuery);
+  }
+  const playlistVideos = await PlaylistVideos.find({ playlistId: playlistId })
+    .sort({ createdAt: -1 })
+    .skip(skipValue)
+    .limit(affectiveLimit).populate("videoId")
+
+  const videos = [];
+
+  for (const entry of playlistVideos) {
+    if (entry.videoId) {
+      videos.push(entry.videoId);
+    } else {
+      // video was deleted, so remove from PlaylistVideos
+      await PlaylistVideos.findByIdAndDelete(entry._id);
+    }
+  }
 
   const totalPages = Math.ceil(totalCount / limit) || 0;
-  res.status(200).json({ playlist, totalPages });
+  res.status(200).json({ videos, totalPages });
+
 });

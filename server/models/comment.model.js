@@ -13,13 +13,15 @@ const commentSchema = new Schema(
     },
     videoId: {
       type: Schema.Types.ObjectId,
-      index: true,
       ref: "Video",
       required: [true, "Video Id is Required."],
     }
   },
   { timestamps: true }
 );
+
+commentSchema.index({ videoId: -1 });
+
 
 const Comment = model("Comment", commentSchema);
 export default Comment;

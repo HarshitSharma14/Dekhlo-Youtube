@@ -14,36 +14,33 @@ const channelSchema = new Schema(
     password: {
       type: String,
     },
-    videos: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Video",
-      },
-    ],
     profilePhoto: {
       type: String,
     },
     bio: {
       type: String,
     },
-    playlists: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Playlist",
-      },
-    ],
-    watchHistory: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Video",
-      },
-    ],
-    likedVideos: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Video",
-      },
-    ],
+
+    permanentPlaylist: [{
+      type: Schema.Types.ObjectId,
+      ref: "Playlist",
+    }],
+
+    // watchHistory:
+    // {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "Playlist",
+    // },
+    // likedVideos:
+    // {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "Playlist",
+    // },
+    // watchLater:
+    // {
+    //   type: Schema.Types.ObjectId,
+    //   ref: "Playlist",
+    // },
     settings: {
       type: Schema.Types.ObjectId,
       ref: "Settings",
@@ -62,19 +59,7 @@ const channelSchema = new Schema(
     videosCount: {
       type: Number,
       default: 0,
-    },
-    following: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Subscription",
-      },
-    ],
-    followers: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Subscription",
-      },
-    ],
+    }
   },
   { timestamps: true }
 );

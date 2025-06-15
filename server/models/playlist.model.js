@@ -8,20 +8,15 @@ const playlistSchema = new Schema(
     },
     channel: {
       type: Schema.Types.ObjectId,
+      index: true,
       ref: "Channel",
       required: [true, "Channel is required"],
     },
-    videos: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Video",
-      },
-    ],
     videosCount: {
       type: Number,
       default: 0,
     },
-    private: {
+    isPrivate: {
       type: Boolean,
       default: true,
     },

@@ -145,59 +145,63 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
 
   await newSubscription.save();
 
-  console.log("subscribed")
+  console.log("subscribed");
 
   channelToBeSubscribed.subscribersCount =
     channelToBeSubscribed.subscribersCount + 1;
   await channelToBeSubscribed.save();
 
+  const channelName = (
+    await Channel.findById(req.channelId).select("channelName")
+  )?.channelName;
 
-  const channelName = (await Channel.findById(req.channelId).select('channelName'))?.channelName
+  const creatorSettings = await Setting.findById({
+    _id: channelToBeSubscribed.settings,
+  });
 
-  const creatorSettings = await Setting.findById({ _id: channelToBeSubscribed.settings })
-
-  console.log(channelName)
+  console.log(channelName);
   // console.log(channelToBeSubscribed)
 
   if (creatorSettings && creatorSettings.newFollowerNotification) {
-
     const notification = new Notification({
       channel: creatorId,
       message: `<span style="color: #1DA1F2; font-weight: bold;">${channelName}</span> 
       subscribed your channel.`,
       isRead: false,
-    })
+    });
 
-    await notification.save()
+    await notification.save();
 
-    console.log("emitting new noti before")
+    console.log("emitting new noti before");
 
     emitNotification(creatorId, {
       message: notification.message,
       channel: creatorId,
       isRead: false,
       createdAt: notification.createdAt,
-    })
-
-
+    });
   }
 
   return res.status(200).json({ message: "Channel subscribed successfully" });
 });
 
-
 export const changeIsread = AsyncTryCatch(async (req, res, next) => {
-  const { channelId } = req
-  console.log('init')
-  const { t } = req.query
+  const { channelId } = req;
+  console.log("init");
+  const { t } = req.query;
 
-  const notifications = await Notification.updateMany({ channel: channelId, createdAt: { $lte: new Date(t) } },
-    { $set: { isRead: true } })
+  const notifications = await Notification.updateMany(
+    { channel: channelId, createdAt: { $lte: new Date(t) } },
+    { $set: { isRead: true } }
+  );
 
-
-  res.status(200).json({ message: "Notifications updated successfully.", updatedCount: notifications.modifiedCount })
-})
-
+  res
+    .status(200)
+    .json({
+      message: "Notifications updated successfully.",
+      updatedCount: notifications.modifiedCount,
+    });
+});
 
 // unsubscribe ************************************************************************************************
 export const unSubscribeChannel = AsyncTryCatch(async (req, res, next) => {
@@ -227,13 +231,14 @@ export const unSubscribeChannel = AsyncTryCatch(async (req, res, next) => {
 
 //get notifications ************************************************************************************************
 export const getNotifications = AsyncTryCatch(async (req, res, next) => {
-  const channelId = req.channelId
+  const channelId = req.channelId;
 
-  const notifications = await Notification.find({ channel: channelId }).sort({ createdAt: 1 })
+  const notifications = await Notification.find({ channel: channelId }).sort({
+    createdAt: 1,
+  });
 
-
-  return res.status(200).json(notifications)
-})
+  return res.status(200).json(notifications);
+});
 
 // get watch history **********************************************
 export const getWatchHistory = AsyncTryCatch(async (req, res, next) => {
@@ -241,26 +246,30 @@ export const getWatchHistory = AsyncTryCatch(async (req, res, next) => {
 
   let affectiveLimit = limit;
 
-  const myChannel = await Channel.findById(req.channelId)
+  const myChannel = await Channel.findById(req.channelId);
 
   const watchHistoryPlaylistId = myChannel.permanentPlaylist[1];
 
-  const watchHistoryPlaylist = await Playlist.findById(watchHistoryPlaylistId).select("videosCount");
+  const watchHistoryPlaylist = await Playlist.findById(
+    watchHistoryPlaylistId
+  ).select("videosCount");
   const totalCount = watchHistoryPlaylist.videosCount;
 
+  let videosLeftToSendForNextQuery = totalCount - page * limit;
 
-  let videosLeftToSendForNextQuery = totalCount - (page * limit);
-
-  const skipValue = ((page - 1) * limit);
+  const skipValue = (page - 1) * limit;
 
   if (videosLeftToSendForNextQuery < 0) {
     affectiveLimit = parseInt(limit) + parseInt(videosLeftToSendForNextQuery);
   }
 
-  const rawResults = await PlaylistVideos.find({ playlist: watchHistoryPlaylistId })
+  const rawResults = await PlaylistVideos.find({
+    playlist: watchHistoryPlaylistId,
+  })
     .sort({ createdAt: -1 })
     .skip(skipValue)
-    .limit(affectiveLimit).populate("videoId")
+    .limit(affectiveLimit)
+    .populate("videoId");
 
   // if (!channelVideos) {
   //   return next(new ErrorHandler(404, "Error: Channel not found"));
@@ -277,8 +286,7 @@ export const getWatchHistory = AsyncTryCatch(async (req, res, next) => {
     }
   }
 
-
-  console.log(videos)
+  console.log(videos);
 
   // const channel = await Channel.findById(req.channelId)
   //   .select("watchHistory")
@@ -293,7 +301,6 @@ export const getWatchHistory = AsyncTryCatch(async (req, res, next) => {
 
   const totalPages = Math.ceil(totalCount / limit) || 0;
   res.status(200).json({ videos, totalPages });
-
 });
 
 // upload/update video ********************************************************************************************
@@ -379,8 +386,6 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
       runValidators: true, // Apply schema validation
     });
 
-
-
     return res
       .status(201)
       .json({ message: "Video updated successfully", updatedVideo });
@@ -412,11 +417,14 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   console.log("done");
   await videonew.save();
 
-  const subscibersId = await Subscription.find({ creator: channelId, bell: true }).select('subscriber');
+  const subscibersId = await Subscription.find({
+    creator: channelId,
+    bell: true,
+  }).select("subscriber");
 
   const channel = await Channel.findById(channelId).select("channelName");
 
-  console.log('getting in')
+  console.log("getting in");
 
   // console.log(channel.followers)
 
@@ -427,18 +435,17 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
       has posted a new video:
       <span style="color: #FFD700; font-weight: bold;">${videonew.title}</span>`,
       isRead: false,
-    })
-    await notification.save()
+    });
+    await notification.save();
 
-    console.log('in noti')
-    console.log(subscriber)
+    console.log("in noti");
+    console.log(subscriber);
     emitNotification(subscriber.toString(), {
       message: notification.message,
       channel: subscriber,
       isRead: false,
       createdAt: notification.createdAt,
-    })
-
+    });
   }
 
   return res
@@ -448,7 +455,6 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
 
 // get Channel Videoss *********************************************************************************
 export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
-
   const channelIdForVideos = req.params.channelId;
   const {
     cursor,
@@ -620,72 +626,74 @@ export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
 
 // get any channels playlist **********************************************************************************
 export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
-  const { channelId } = req.params;
+  const channelId = req.params.channelId;
 
   let canSendPrivatePlaylist = false;
+  const channelVisitingId = LogedInChannel(req.cookies?.jwt);
+  if (channelVisitingId)
+    canSendPrivatePlaylist =
+      channelVisitingId.toString() === channelId.toString();
 
-  const visitingChannelId = LogedInChannel(req.cookies?.jwt);
+  const matchQuery = {
+    channelId: mongoose.Types.ObjectId(channelId),
+  };
+  if (canSendPrivatePlaylist) matchQuery.isPrivate = false;
 
-  if (visitingChannelId) canSendPrivatePlaylist = visitingChannelId.toString() === channelId.toString();
-
-
-  const query = {
-    channel: channelId
-  }
-  if (!canSendPrivatePlaylist) query.isPrivate = false;
-  const allPlaylists = await Playlist.find(query);
-
-  const thumbnails = allPlaylists?.map(async (playlist) => {
-    const recentVidoesOfPlaylist = await PlaylistVideos.find({ playListId: playlist._id }).sort({ createdAt: -1 }).limit(3).populate({ path: "videoId", select: "thumbnailUrl" });
-
-    return recentVidoesOfPlaylist;
-
-  })
-
-
-
-  const x = await Channel.findById(channelId);
-  // console.log("in playlist ", x);
-  const channel = await Channel.findById(channelId)
-    .select("playlists")
-    .populate({
-      path: "playlists",
-      select: "name videos private",
-      populate: {
-        path: "videos",
-        select: "thumbnailUrl",
+  const playlists = await Playlist.aggregate([
+    {
+      $match: matchQuery,
+    },
+    {
+      $lookup: {
+        from: "playlistvideos",
+        localField: "_id",
+        foreignField: "playlistId",
+        pipeline: [
+          { $sort: { createdAt: -1 } },
+          { $limit: 5 },
+          {
+            $lookup: {
+              from: "videos",
+              localField: "videoId",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    _id: 1,
+                    thumbnailUrl: 1,
+                  },
+                },
+              ],
+              as: "video",
+            },
+          },
+          { $unwind: "$video" },
+          { $replaceRoot: { newRoot: "$video" } },
+          { $limit: 3 },
+        ],
+        as: "videos",
       },
-    })
-    .sort({ updatedAt: -1 })
-    .lean()
-    .exec();
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        description: 1,
+        videos: 1,
+        videosCount: 1,
+      },
+    },
+  ]);
 
-
-
-  if (!channel) return next(new ErrorHandler(404, "Channel not found"));
-
-  let playlists = channel.playlists;
-  // console.log("all play", playlists);
-  if (!canSendPrivatePlaylist) {
-    // console.log("in ");
-    // console.log(playlists);
-    playlists = playlists.filter((plist) => plist.private !== true);
-  }
-  // console.log("sendin ", playlists);
-
-  const dataToSend = playlists.map((plist) => {
-    const videoCount = plist.videos.length;
-    const vids = plist.videos.slice(-3).reverse(); // only neccessory  the top three videos
-    return { ...plist, videos: vids, videoCount };
-  });
-
-  res.status(200).json({ playlists: dataToSend });
+  res.status(200).json({ playlists });
 });
 
 // get my channels playlist **********************************************************************************
 export const getMyPlaylists = AsyncTryCatch(async (req, res, next) => {
   const channelId = req.channelId;
-  const playlists = await Playlist.find({ channel: channelId }).select("name isPrivate");
+  const playlists = await Playlist.find({ channel: channelId }).select(
+    "name isPrivate"
+  );
 
   // const channel = await Channel.findById(channelId)
   //   .select("playlists")
@@ -734,7 +742,6 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
       { _id: { $in: playlistIds } },
       { $inc: { videosCount: 1 } }
     );
-
   } catch (err) {
     console.error("Error inserting videos:", err);
 
@@ -766,7 +773,7 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
   let videosLeftToSendForNextQuery = totalCount - page * limit;
 
   // const skipValue = Math.max(0, videosLeftToSendForNextQuery);
-  const skipValue = ((page - 1) * limit);
+  const skipValue = (page - 1) * limit;
 
   if (videosLeftToSendForNextQuery < 0) {
     affectiveLimit = parseInt(limit) + parseInt(videosLeftToSendForNextQuery);
@@ -774,7 +781,8 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
   const playlistVideos = await PlaylistVideos.find({ playlistId: playlistId })
     .sort({ createdAt: -1 })
     .skip(skipValue)
-    .limit(affectiveLimit).populate("videoId")
+    .limit(affectiveLimit)
+    .populate("videoId");
 
   const videos = [];
 
@@ -789,5 +797,4 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
 
   const totalPages = Math.ceil(totalCount / limit) || 0;
   res.status(200).json({ videos, totalPages });
-
 });

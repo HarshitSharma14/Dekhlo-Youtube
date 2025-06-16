@@ -58,13 +58,14 @@ const videoSchema = new Schema(
   { timestamps: true }
 );
 
-videoSchema.index({ channel: 1, createdAt: -1, _id: -1 });
-videoSchema.index({ channel: 1, createdAt: 1, _id: 1 });
+// TODO: discuss the indexs again, as a/c to gpt the _id can also act as createdAt in the sort({_id: -1}) query, as the first 4 bytes of _id is the timeStamp;
+
+// videoSchema.index({ channel: 1, createdAt: -1, _id: -1 });
+// videoSchema.index({ channel: 1, createdAt: 1, _id: 1 });
+
 videoSchema.index({ channel: 1, views: -1, _id: -1 });
-
 videoSchema.index({ channel: 1, _id: -1 });
-
-
+videoSchema.index({ channel: 1, _id: 1 });
 
 const Video = model("Video", videoSchema);
 

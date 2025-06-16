@@ -21,26 +21,13 @@ const channelSchema = new Schema(
       type: String,
     },
 
-    permanentPlaylist: [{
-      type: Schema.Types.ObjectId,
-      ref: "Playlist",
-    }],
+    permanentPlaylist: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "Playlist",
+      },
+    ],
 
-    // watchHistory:
-    // {
-    //   type: Schema.Types.ObjectId,
-    //   ref: "Playlist",
-    // },
-    // likedVideos:
-    // {
-    //   type: Schema.Types.ObjectId,
-    //   ref: "Playlist",
-    // },
-    // watchLater:
-    // {
-    //   type: Schema.Types.ObjectId,
-    //   ref: "Playlist",
-    // },
     settings: {
       type: Schema.Types.ObjectId,
       ref: "Settings",
@@ -59,7 +46,7 @@ const channelSchema = new Schema(
     videosCount: {
       type: Number,
       default: 0,
-    }
+    },
   },
   { timestamps: true }
 );

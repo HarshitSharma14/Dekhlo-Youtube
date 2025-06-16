@@ -1,22 +1,22 @@
-import Channel from "../models/channel.model.js";
+import { v2 as cloudinary } from "cloudinary";
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "../utils/constants.js";
+import mongoose, { Cursor } from "mongoose";
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
+import Channel from "../models/channel.model.js";
+import Notification from "../models/notification.model.js";
+import Playlist from "../models/playlist.model.js";
+import PlaylistVideos from "../models/playlistVideos.js";
+import Setting from "../models/setting.model.js";
+import Subscription from "../models/subscription.model.js";
+import Video from "../models/video.model.js";
+import { emitNotification } from "../socket.js";
+import { JWT_SECRET } from "../utils/constants.js";
 import {
   UpdateThumbnail,
   UploadSinglePhotoToCloudinary,
   UploadVideoAndThumbnail,
 } from "../utils/features.js";
-import { ErrorHandler, LogedInChannel, sortByKey } from "../utils/utility.js";
-import Subscription from "../models/subscription.model.js";
-import Video from "../models/video.model.js";
-import Playlist from "../models/playlist.model.js";
-import { v2 as cloudinary } from "cloudinary";
-import mongoose from "mongoose";
-import { emitNotification, io } from "../socket.js";
-import Setting from "../models/setting.model.js";
-import Notification from "../models/notification.model.js";
-import PlaylistVideos from "../models/playlistVideos.js";
+import { ErrorHandler, LogedInChannel } from "../utils/utility.js";
 
 /// get self channel if logged in ************************************************************************************
 export const getSelfChannelInfo = AsyncTryCatch(async (req, res, next) => {
@@ -195,12 +195,10 @@ export const changeIsread = AsyncTryCatch(async (req, res, next) => {
     { $set: { isRead: true } }
   );
 
-  res
-    .status(200)
-    .json({
-      message: "Notifications updated successfully.",
-      updatedCount: notifications.modifiedCount,
-    });
+  res.status(200).json({
+    message: "Notifications updated successfully.",
+    updatedCount: notifications.modifiedCount,
+  });
 });
 
 // unsubscribe ************************************************************************************************
@@ -695,11 +693,6 @@ export const getMyPlaylists = AsyncTryCatch(async (req, res, next) => {
     "name isPrivate"
   );
 
-  // const channel = await Channel.findById(channelId)
-  //   .select("playlists")
-  //   .populate({ path: "playlists", select: "name private" });
-  // const playlists = channel.playlists;
-  // console.log("chennel ", playlists);
   res.status(200).json({ playlists });
 });
 
@@ -735,7 +728,7 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
       playlistId: id,
     }));
 
-    await Video.insertMany(videosToInsert);
+    await PlaylistVideos.insertMany(videosToInsert);
 
     // Increment video count in all affected playlists
     await Playlist.updateMany(
@@ -745,7 +738,6 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
   } catch (err) {
     console.error("Error inserting videos:", err);
 
-    // Fix filter field name from `id` → `_id` and from `videosCount` → `videoCount`
     await Playlist.deleteMany({
       _id: { $in: playlistIds },
       videosCount: 0,
@@ -759,42 +751,60 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
 
 // get videso of playlist *****************************************************************
 export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
-  const { playlistId, page = 1, limit = 20 } = req.query;
+  const { playlistId, cursor, limit = 20 } = req.query;
 
-  let affectiveLimit = limit;
-  const playlistForVideoCount = await Playlist.findById(playlistId).select(
-    "videosCount"
-  );
-  if (!playlistForVideoCount)
-    return next(new ErrorHandler(404, "Error: Playlist not found"));
+  if (!playlistId) return next(new ErrorHandler(400, "Missing playlistId"));
 
-  const totalCount = playlistForVideoCount.videosCount || 0;
+  const parsedLimit = parseInt(limit);
 
-  let videosLeftToSendForNextQuery = totalCount - page * limit;
-
-  // const skipValue = Math.max(0, videosLeftToSendForNextQuery);
-  const skipValue = (page - 1) * limit;
-
-  if (videosLeftToSendForNextQuery < 0) {
-    affectiveLimit = parseInt(limit) + parseInt(videosLeftToSendForNextQuery);
+  const query = { playlistId };
+  if (cursor) {
+    query._id = { $lt: new mongoose.Types.ObjectId(cursor) };
   }
-  const playlistVideos = await PlaylistVideos.find({ playlistId: playlistId })
-    .sort({ createdAt: -1 })
-    .skip(skipValue)
-    .limit(affectiveLimit)
-    .populate("videoId");
+
+  const playlistVideos = await PlaylistVideos.aggregate([
+    { $match: query },
+    { $sort: { _id: -1 } },
+    { $limit: parsedLimit },
+    {
+      $lookup: {
+        from: "videos",
+        localField: "videoId",
+        foreignField: "_id",
+        as: "video",
+      },
+    },
+    {
+      $unwind: {
+        path: "$video",
+        preserveNullAndEmptyArrays: true,
+      },
+    },
+  ]);
 
   const videos = [];
+  const idsToDelete = [];
 
   for (const entry of playlistVideos) {
-    if (entry.videoId) {
-      videos.push(entry.videoId);
+    if (entry.video) {
+      videos.push(entry.video);
     } else {
-      // video was deleted, so remove from PlaylistVideos
-      await PlaylistVideos.findByIdAndDelete(entry._id);
+      idsToDelete.push(entry._id);
     }
   }
 
-  const totalPages = Math.ceil(totalCount / limit) || 0;
-  res.status(200).json({ videos, totalPages });
+  if (idsToDelete.length > 0) {
+    await PlaylistVideos.deleteMany({ _id: { $in: idsToDelete } });
+    await Playlist.updateOne(
+      { _id: playlistId },
+      { $inc: { videosCount: -idsToDelete.length } }
+    );
+  }
+
+  const hasMore = playlistVideos.length === parsedLimit;
+  const nextCursor = hasMore
+    ? playlistVideos[playlistVideos.length - 1]._id
+    : null;
+
+  res.status(200).json({ videos, hasMore, nextCursor });
 });

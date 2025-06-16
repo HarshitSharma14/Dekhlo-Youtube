@@ -7,7 +7,7 @@ import {
   UploadSinglePhotoToCloudinary,
   UploadVideoAndThumbnail,
 } from "../utils/features.js";
-import { ErrorHandler, sortByKey } from "../utils/utility.js";
+import { ErrorHandler, LogedInChannel, sortByKey } from "../utils/utility.js";
 import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
 import Playlist from "../models/playlist.model.js";
@@ -50,16 +50,21 @@ export const getChannelInfo = AsyncTryCatch(async (req, res, next) => {
   let isSubscribed = false;
   let channelIdVisiting = null;
 
-  try {
-    const token = req.cookies.jwt;
-    const decodedData = jwt.verify(token, JWT_SECRET);
-    channelIdVisiting = decodedData.channelId;
-    if (channelIdVisiting.toString() == channelId.toString()) {
-      isOwner = true;
-    }
-  } catch (error) {
-    console.log("cant send private videos");
-  }
+  const token = req.cookies?.jwt;
+  const channelVisitingId = LogedInChannel(token);
+  if (channelVisitingId)
+    isOwner = channelVisitingId.toString() === channelId.toString();
+
+  // try {
+  //   const decodedData = jwt.verify(token, JWT_SECRET);
+  //   channelIdVisiting = decodedData.channelId;
+  //   if (channelIdVisiting.toString() == channelId.toString()) {
+  //     isOwner = true;
+  //   }
+  // } catch (error) {
+  //   console.log("cant send private videos");
+  // }
+
   const channel = await Channel.findById(channelId).select(
     "channelName email profilePhoto bio coverImage subscribersCount videosCount views"
   );
@@ -377,7 +382,8 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
 export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
   const channelIdForVideos = req.params.channelId;
   const { page = 0, limit = 20, sort = "createdAt_desc" } = req.query;
-  let canSendPrivateVideos = false;
+
+  // let canSendPrivateVideos = false;
   console.log("get channel page and sort", page, sort);
   const channelToFetchVideosFrom = await Channel.findById(
     channelIdForVideos
@@ -465,41 +471,46 @@ export const toggleBell = AsyncTryCatch(async (req, res, next) => {
 
 // get getSubscribedChannel *****************************************************************
 export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
-  const data = await Channel.findById(req.channelId)
-    .select("following")
+  const subs = await Subscription.find({ subscriber: req.channelId })
+    .select("creator")
     .populate({
-      path: "following",
-      select: "creator bell",
-      populate: {
-        path: "creator",
-        select: "channelName bio profilePhoto subscribersCount email",
-      },
+      path: "creator",
+      select: "channelName bio profilePhoto subscribersCount email",
     });
 
-  if (!data)
+  if (!subs)
     return next(
       new ErrorHandler(404, "Data not found or something went wrong in server")
     );
 
-  res.status(200).json({ following: data.following });
+  const invalidSubIds = subs // creator which have deleted their channels
+    .filter((sub) => !sub.creator)
+    .map((sub) => sub._id);
+
+  if (invalidSubIds.length > 0) {
+    await Subscription.deleteMany({ _id: { $in: invalidSubIds } });
+  }
+
+  const following = subs.filter((sub) => sub.creator).map((sub) => sub.creator);
+
+  res.status(200).json({ following });
 });
 
+// start from here
+
 // get any channels playlist **********************************************************************************
-export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
+export const getChannelPlaylistss = AsyncTryCatch(async (req, res, next) => {
   const { channelId } = req.params;
 
   let canSendPrivatePlaylist = false;
-  try {
-    const token = req.cookies.jwt;
-    const decodedData = jwt.verify(token, JWT_SECRET);
-    const channelIdVisiting = decodedData.channelId;
-    if (channelIdVisiting.toString() == channelId.toString()) {
-      canSendPrivatePlaylist = true;
-    }
-  } catch (error) {
-    console.log("cant send private playlist");
-  }
+
+  const channelVisitingId = LogedInChannel(req.cookies?.jwt);
+  if (channelVisitingId)
+    canSendPrivatePlaylist =
+      channelVisitingId.toString() === channelId.toString();
+
   const x = await Channel.findById(channelId);
+
   // console.log("in playlist ", x);
   const channel = await Channel.findById(channelId)
     .select("playlists")
@@ -542,9 +553,10 @@ export const getMyPlaylists = AsyncTryCatch(async (req, res, next) => {
     .select("playlists")
     .populate({ path: "playlists", select: "name private" });
   const playlists = channel.playlists;
-  // console.log("chennel ", playlists);
+
   res.status(200).json({ playlists });
 });
+
 // Add to Playlist *************************************************************************
 export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
   const {
@@ -616,4 +628,176 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
 
   const totalPages = Math.ceil(totalCount / limit) || 0;
   res.status(200).json({ playlist, totalPages });
+});
+
+// corrected Version
+
+export const getChannelVideoss = AsyncTryCatch(async (req, res, next) => {
+  const channelIdForVideos = req.params.channelId;
+  const {
+    cursor,
+    limit = 20,
+    sortField = "createdAt",
+    sortOrder = 1,
+  } = req.query;
+
+  // Validate sortField
+  const ALLOWED_SORT_FIELDS = ["createdAt", "views"];
+  if (!ALLOWED_SORT_FIELDS.includes(sortField)) {
+    return res.status(400).json({ message: "Invalid sort field" });
+  }
+
+  // Sanitize limit
+  const sanitizedLimit = Math.min(Number(limit), 100);
+
+  // Check if channel exists
+  const channel = await Channel.findById(channelIdForVideos);
+  if (!channel) {
+    return res.status(404).json({ message: "Channel not found" });
+  }
+
+  // Determine if private videos can be shown
+  let canSendPrivateVideos = false;
+  const token = req.cookies?.jwt;
+
+  const channelVisitingId = LogedInChannel(token);
+  if (channelVisitingId)
+    canSendPrivatePlaylist =
+      channelVisitingId.toString() === channelIdForVideos.toString();
+
+  // if (token) {
+  //   try {
+  //     const decoded = jwt.verify(token, JWT_SECRET);
+  //     if (decoded.channelId === channelIdForVideos.toString()) {
+  //       canSendPrivateVideos = true;
+  //     }
+  //   } catch {
+  //     console.log("JWT invalid or expired - only public videos will be shown.");
+  //   }
+  // }
+
+  const query = {
+    channel: channelIdForVideos,
+  };
+
+  if (!canSendPrivateVideos) {
+    query.isPrivate = false;
+  }
+
+  // Add pagination logic if cursor exists
+  if (cursor) {
+    let parsedCursor;
+    try {
+      parsedCursor = typeof cursor === "string" ? JSON.parse(cursor) : cursor;
+    } catch {
+      return res.status(400).json({ message: "Invalid cursor format" });
+    }
+
+    const cursorValue = parsedCursor.value;
+    const cursorId = new mongoose.Types.ObjectId(parsedCursor._id.toString());
+
+    query.$or = [
+      { [sortField]: { [sortOrder === 1 ? "$gt" : "$lt"]: cursorValue } },
+      {
+        [sortField]: cursorValue,
+        _id: { [sortOrder === 1 ? "$gt" : "$lt"]: cursorId },
+      },
+    ];
+  }
+
+  // Build sort object
+  const sortObj = {
+    [sortField]: Number(sortOrder),
+    _id: Number(sortOrder),
+  };
+
+  // Fetch videos
+  const videos = await Video.find(query).sort(sortObj).limit(sanitizedLimit);
+
+  // Prepare next cursor
+  let nextCursor = null;
+
+  if (videos.length > 0) {
+    const lastVideo = videos[videos.length - 1];
+    nextCursor = {
+      value: lastVideo[sortField],
+      _id: lastVideo._id,
+    };
+  }
+
+  res.status(200).json({
+    message: "Videos fetched successfully",
+    videos,
+    nextCursor,
+    hasMore: videos.length === sanitizedLimit,
+  });
+});
+
+export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
+  const channelId = req.params.channelId;
+
+  let canSendPrivatePlaylist = false;
+
+  const channelVisitingId = LogedInChannel(req.cookies?.jwt);
+
+  if (channelVisitingId)
+    canSendPrivatePlaylist =
+      channelVisitingId.toString() === channelId.toString();
+
+  const matchQuery = {
+    channelId: mongoose.Types.ObjectId(channelId),
+  };
+  if (canSendPrivatePlaylist) matchQuery.isPrivate = false;
+
+  const playlists = await Playlist.aggregate([
+    {
+      $match: { channelId: channelId, isPrivate: isPrivate },
+    },
+    {
+      $lookup: {
+        from: "playlistvideos",
+        localField: "_id",
+        foreignField: "playlistId",
+        pipeline: [
+          { $sort: { createdAt: -1 } },
+          { $limit: 5 },
+          {
+            $lookup: {
+              from: "videos",
+              localField: "videoId",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    _id: 1,
+                    thumbnailUrl: 1,
+                  },
+                },
+              ],
+              as: "video",
+            },
+          },
+          { $unwind: "$video" },
+          { $replaceRoot: { newRoot: "$video" } },
+          { $limit: 3 },
+        ],
+        as: "videos",
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        description: 1,
+        videos: 1,
+        videoCount: "$videosCount",
+      },
+    },
+  ]);
+
+  // i am still picking the deleted and private videos, frontend can handle both,
+
+  // todo also correct the watch history, use cursor,delete the deleted vid, and dont play the private vid
+
+  res.status(200).json({ playlists });
 });

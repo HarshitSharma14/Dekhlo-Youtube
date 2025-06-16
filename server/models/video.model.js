@@ -57,6 +57,13 @@ const videoSchema = new Schema(
   { timestamps: true }
 );
 
+// For sorting by createdAt within a channel
+videoSchema.index({ channel: 1, createdAt: -1, _id: -1 }); // descending
+videoSchema.index({ channel: 1, createdAt: 1, _id: 1 }); // ascending (optional)
+
+// For sorting by views within a channel
+videoSchema.index({ channel: 1, views: -1, _id: -1 }); // descending
+
 const Video = model("Video", videoSchema);
 
 export default Video;

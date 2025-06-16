@@ -1,4 +1,4 @@
-import { Box, Button, Drawer } from "@mui/material";
+import { Box, Button, Drawer, Menu } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../store";
@@ -91,121 +91,123 @@ const Sidebar = ({ isVideoPlayer }) => {
   }, []);
   console.log("sidebar ", drawerVariant);
   return (
-    <Drawer
-      variant={drawerVariant}
-      open={isSidebarOpen}
-      onClose={() => {
-        toggelSidebar();
-      }}
-      sx={{
-        display: drawerVariant === "persistent" && !isSidebarOpen && "none",
-        // display: isSidebarOpen ? "block" : "none",
-        width: "250px",
-        height: "calc(100vh - 70px)",
-        top: "70px",
-
-        "& .MuiDrawer-paper": {
-          width: "250px",
-          background: "#121212",
-          height: "calc(100vh - 70px)",
-          position: "relative",
-        },
-      }}
-    >
-      <Box
-        ref={sidebarRef}
+    <>
+      <Drawer
+        variant={drawerVariant}
+        open={isSidebarOpen}
+        onClose={() => {
+          toggelSidebar();
+        }}
         sx={{
-          p: 2,
-          color: "white",
-          overflowY: "auto", // Ensure vertical scrolling is enabled
-          height: "100%",
+          display: drawerVariant === "persistent" && !isSidebarOpen && "none",
+          // display: isSidebarOpen ? "block" : "none",
+          width: "250px",
+          height: "calc(100vh - 70px)",
+          top: "70px",
+
+          "& .MuiDrawer-paper": {
+            width: "250px",
+            background: "#121212",
+            height: "calc(100vh - 70px)",
+            position: "relative",
+          },
         }}
       >
-        <div className="section top-section">
-          <SidebarNavigatioButtons
-            isFilled={sidebarActivity.isHome}
-            filledIcon={<HomeIcon />}
-            outlineIcon={<HomeOutlined />}
-            navigateLink={"/"}
-            name={"Home"}
-            drawerVariant={drawerVariant}
-          />
-          <SidebarNavigatioButtons
-            isFilled={sidebarActivity.isSubscriptionVideos}
-            filledIcon={<SubscriptionsIcon />}
-            outlineIcon={<SubscriptionsOutlined />}
-            navigateLink={"/subs"}
-            name={"Subs"}
-            drawerVariant={drawerVariant}
-          />
-        </div>
-        <div className="section you-section">
-          <p>You</p>
-          <SidebarNavigatioButtons
-            isFilled={sidebarActivity.isWatchHistory}
-            filledIcon={<HistoryIcon />}
-            outlineIcon={<HistoryOutlined />}
-            navigateLink={"/history"}
-            name={"History"}
-            drawerVariant={drawerVariant}
-          />
-          <SidebarNavigatioButtons
-            isFilled={sidebarActivity.isPlaylist}
-            filledIcon={<PlaylistPlayIcon />}
-            outlineIcon={<PlaylistPlayOutlined />}
-            navigateLink={"/playlist"}
-            name={"Playlist"}
-            drawerVariant={drawerVariant}
-          />
-          <SidebarNavigatioButtons
-            isFilled={sidebarActivity.isWatchLater}
-            filledIcon={<WatchLaterIcon />}
-            outlineIcon={<WatchLaterOutlined />}
-            navigateLink={"/watch-later"}
-            name={"Watch Later"}
-            drawerVariant={drawerVariant}
-          />
-          <SidebarNavigatioButtons
-            isFilled={sidebarActivity.isLikedVideos}
-            filledIcon={<ThumbUpIcon />}
-            outlineIcon={<ThumbUpOutlined />}
-            navigateLink={"/watch-later"}
-            name={"Liked Videos"}
-            drawerVariant={drawerVariant}
-          />
-        </div>
-        <div
-          className="section subscription-section"
-          style={{ border: "none" }}
+        <Box
+          ref={sidebarRef}
+          sx={{
+            p: 2,
+            color: "white",
+            overflowY: "auto", // Ensure vertical scrolling is enabled
+            height: "100%",
+          }}
         >
-          <p>Others</p>
-          <SidebarNavigatioButtons
-            isFilled={sidebarActivity.isProfile}
-            filledIcon={<AccountCircle />}
-            outlineIcon={<AccountCircleOutlined />}
-            navigateLink={
-              channelInfo ? `/channel/${channelInfo?._id}` : "/signup"
-            }
-            name={"You"}
-            drawerVariant={drawerVariant}
-          />
+          <div className="section top-section">
+            <SidebarNavigatioButtons
+              isFilled={sidebarActivity.isHome}
+              filledIcon={<HomeIcon />}
+              outlineIcon={<HomeOutlined />}
+              navigateLink={"/"}
+              name={"Home"}
+              drawerVariant={drawerVariant}
+            />
+            <SidebarNavigatioButtons
+              isFilled={sidebarActivity.isSubscriptionVideos}
+              filledIcon={<SubscriptionsIcon />}
+              outlineIcon={<SubscriptionsOutlined />}
+              navigateLink={"/subs"}
+              name={"Subs"}
+              drawerVariant={drawerVariant}
+            />
+          </div>
+          <div className="section you-section">
+            <p>You</p>
+            <SidebarNavigatioButtons
+              isFilled={sidebarActivity.isWatchHistory}
+              filledIcon={<HistoryIcon />}
+              outlineIcon={<HistoryOutlined />}
+              navigateLink={"/history"}
+              name={"History"}
+              drawerVariant={drawerVariant}
+            />
+            <SidebarNavigatioButtons
+              isFilled={sidebarActivity.isPlaylist}
+              filledIcon={<PlaylistPlayIcon />}
+              outlineIcon={<PlaylistPlayOutlined />}
+              navigateLink={"/playlist"}
+              name={"Playlist"}
+              drawerVariant={drawerVariant}
+            />
+            <SidebarNavigatioButtons
+              isFilled={sidebarActivity.isWatchLater}
+              filledIcon={<WatchLaterIcon />}
+              outlineIcon={<WatchLaterOutlined />}
+              navigateLink={"/watch-later"}
+              name={"Watch Later"}
+              drawerVariant={drawerVariant}
+            />
+            <SidebarNavigatioButtons
+              isFilled={sidebarActivity.isLikedVideos}
+              filledIcon={<ThumbUpIcon />}
+              outlineIcon={<ThumbUpOutlined />}
+              navigateLink={"/watch-later"}
+              name={"Liked Videos"}
+              drawerVariant={drawerVariant}
+            />
+          </div>
+          <div
+            className="section subscription-section"
+            style={{ border: "none" }}
+          >
+            <p>Others</p>
+            <SidebarNavigatioButtons
+              isFilled={sidebarActivity.isProfile}
+              filledIcon={<AccountCircle />}
+              outlineIcon={<AccountCircleOutlined />}
+              navigateLink={
+                channelInfo ? `/channel/${channelInfo?._id}` : "/signup"
+              }
+              name={"You"}
+              drawerVariant={drawerVariant}
+            />
 
-          <SidebarNavigatioButtons
-            isFilled={sidebarActivity.isSettings}
-            filledIcon={<Settings />}
-            outlineIcon={<Settings />}
-            navigateLink={"/history"}
-            name={"Settings"}
-            drawerVariant={drawerVariant}
-          />
-        </div>
-        {/* <div className="section setting-section" style={{ border: "none" }}>
+            <SidebarNavigatioButtons
+              isFilled={sidebarActivity.isSettings}
+              filledIcon={<Settings />}
+              outlineIcon={<Settings />}
+              navigateLink={"/history"}
+              name={"Settings"}
+              drawerVariant={drawerVariant}
+            />
+          </div>
+          {/* <div className="section setting-section" style={{ border: "none" }}>
          
         </div> */}
-        {/* <div></div>
+          {/* <div></div>
         <div></div> */}
-      </Box>
-    </Drawer>
+        </Box>
+      </Drawer>
+    </>
   );
 };
 

@@ -30,7 +30,12 @@ const videoUrl =
 //   description:
 //     "Take a breathtaking virtual tour through the streets of New York City, exploring famous landmarks and hidden gems in stunning 4K quality.",
 // };
-const LongVideoCard = ({ video, playlist = null, remove }) => {
+const LongVideoCard = ({
+  video,
+  playlist = null,
+  remove,
+  videoHeight = true,
+}) => {
   const boxRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
   const videoRef = useRef(null);
@@ -93,6 +98,7 @@ const LongVideoCard = ({ video, playlist = null, remove }) => {
         padding: "0 6px",
         position: "relative",
         cursor: "pointer",
+        height: videoHeight ? "120px" : "auto",
       }}
       onMouseEnter={() => {
         if (boxRef.current) {
@@ -242,6 +248,7 @@ const LongVideoCard = ({ video, playlist = null, remove }) => {
             {video.channel?.channelName}
           </Typography>
         </Box>
+
         <Typography
           sx={{
             padding: "2px 10px",
@@ -253,6 +260,8 @@ const LongVideoCard = ({ video, playlist = null, remove }) => {
             WebkitLineClamp: 2,
             overflow: "hidden",
             textOverflow: "ellipsis",
+            display: videoHeight && "none",
+
             "@media (max-width:530px)": {
               display: "none",
             },

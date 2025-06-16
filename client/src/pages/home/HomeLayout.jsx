@@ -143,17 +143,17 @@ const HomeLayout = () => {
   // function for onclick for a video card
 
   return (
-    <div className="app-container" ref={containerRef}>
-      {/* <Header isDisabled={false} /> */}
+    <>
       <Box
         sx={{
           display: bigWindow && !isVideoPlayer && "none",
           zIndex: "1201",
           height: "70px",
           width: "250px",
-          left: "-250px",
           bgcolor: "#121212",
-          position: "absolute",
+          position: "fixed",
+          left: "-250px",
+          top: "0px",
           marginLeft: isSidebarOpen ? "250px" : "0px",
           transition: "margin-left 200ms",
         }}
@@ -181,35 +181,37 @@ const HomeLayout = () => {
           </button>
         </div>
       </Box>
-      <Header isDisabled={false} />
-      <div className="main-layout">
-        <aside
-          className="sidebar "
-          ref={sidebarRef}
-          style={{
-            alignItems: "center",
-          }}
-        >
-          {!isVideoPlayer && (!isSidebarOpen || !bigWindow) && (
-            <PermanentSideBar />
-          )}
+      <div className="app-container" ref={containerRef}>
+        <Header isDisabled={false} />
+        <div className="main-layout">
+          <aside
+            className="sidebar "
+            ref={sidebarRef}
+            style={{
+              alignItems: "center",
+            }}
+          >
+            {!isVideoPlayer && (!isSidebarOpen || !bigWindow) && (
+              <PermanentSideBar />
+            )}
 
-          {/* Always render the Sidebar to avoid the flash effect seeming a component mount time taken */}
+            {/* Always render the Sidebar to avoid the flash effect seeming a component mount time taken */}
 
-          <Siderbar isVideoPlayer={isVideoPlayer} />
-        </aside>
+            <Siderbar isVideoPlayer={isVideoPlayer} />
+          </aside>
 
-        {/* Main content of the pages starts here */}
-        <main
-          className="main-content"
-          style={{
-            paddingBottom: "10px",
-          }}
-        >
-          <Outlet />
-        </main>
+          {/* Main content of the pages starts here */}
+          <main
+            className="main-content"
+            style={{
+              paddingBottom: "10px",
+            }}
+          >
+            <Outlet />
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

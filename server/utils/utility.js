@@ -1,3 +1,6 @@
+import { JWT_SECRET } from "./constants";
+import jwt from "jsonwebtoken";
+
 export class ErrorHandler extends Error {
   constructor(statusCode, message) {
     super(message);
@@ -14,4 +17,16 @@ export const sortByKey = (arr, key, order = "desc") => {
     }
     return order === "desc" ? b[key] - a[key] : a[key] - b[key];
   });
+};
+
+export const LogedInChannel = (token) => {
+  try {
+    const decodedData = jwt.verify(token, JWT_SECRET);
+    const channelIdVisiting = decodedData.channelId;
+    return channelIdVisiting;
+    
+  } catch (error) {
+    console.log("User not logged in");
+    return null;
+  }
 };

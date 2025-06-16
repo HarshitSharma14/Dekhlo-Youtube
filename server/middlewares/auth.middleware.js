@@ -5,7 +5,7 @@ import { AsyncTryCatch } from "./error.middlewares.js";
 import jwt from "jsonwebtoken";
 
 export const isUserLoggedIn = AsyncTryCatch(async (req, res, next) => {
-  const token = req.cookies.jwt;
+  const token = req.cookie.jwt; // just check wheather it is cookie of cookies
   console.log("token ", token);
   if (!token)
     return next(new ErrorHandler(401, "Please Login to access this resource"));

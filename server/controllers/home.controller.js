@@ -4,17 +4,21 @@ import { JWT_SECRET } from "../utils/constants.js";
 import Channel from "../models/channel.model.js";
 import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
+import { LogedInChannel } from "../utils/utility.js";
 
 export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
   // console.log("in ");
-  const token = req.cookies.jwt;
-  let channelId;
-  try {
-    const decodedData = jwt.verify(token, JWT_SECRET);
-    channelId = decodedData.channelId;
-  } catch (error) {
-    channelId = null;
-  }
+  // const token = req.cookies.jwt;
+
+  const channelId = LogedInChannel(req.cookies?.jwt);
+
+  // try {
+  //   const decodedData = jwt.verify(token, JWT_SECRET);
+  //   channelId = decodedData.channelId;
+  // } catch (error) {
+  //   channelId = null;
+  // }
+
   // let seenIds = [];
   // seenIds = req.body;
   // console.log(seenIds);

@@ -47,7 +47,7 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
         private: true,
       });
       // channel.watchHistory = watchHistory._id;
-      channel.permanentPlaylist.push(watchHistory._id);
+      channel.permanentPlaylist.push(watchHistory._id); //TODO: make this a map which has field value pair, to get the playlist id by name not by index, would be more readable
 
       const likedVideos = await Playlist.create({
         name: "Liked Videos",

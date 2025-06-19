@@ -475,7 +475,9 @@ export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
     }
 
     const cursorValue = parsedCursor.value;
-    const cursorId = new mongoose.Types.ObjectId(parsedCursor._id.toString());
+    const cursorId = new mongoose.Types.ObjectId.createFromHexString(
+      parsedCursor._id.toString()
+    );
 
     if (sortField === "_id") {
       query._id = { [sortOrder === 1 ? "$gt" : "$lt"]: cursorId };
@@ -573,7 +575,13 @@ export const toggleBell = AsyncTryCatch(async (req, res, next) => {
 //✅ get getSubscribedChannel *****************************************************************
 export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
   const subs = await Subscription.aggregate([
-    { $match: { subscriber: new mongoose.Types.ObjectId(req.channelId) } },
+    {
+      $match: {
+        subscriber: new mongoose.Types.ObjectId.createFromHexString(
+          req.channelId
+        ),
+      },
+    },
     {
       $lookup: {
         from: "channels",
@@ -625,7 +633,7 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
       channelIdVisiting.toString() === channelId.toString();
 
   const matchQuery = {
-    channelId: mongoose.Types.ObjectId(channelId),
+    channelId: new mongoose.Types.ObjectId.createFromHexString(channelId),
   };
   if (canSendPrivatePlaylist) matchQuery.isPrivate = false;
 
@@ -751,7 +759,9 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
 
   const query = { playlistId };
   if (cursor) {
-    query._id = { $lt: new mongoose.Types.ObjectId(cursor) };
+    query._id = {
+      $lt: new mongoose.Types.ObjectId.createFromHexString(cursor),
+    };
   }
 
   const playlistVideos = await PlaylistVideos.aggregate([

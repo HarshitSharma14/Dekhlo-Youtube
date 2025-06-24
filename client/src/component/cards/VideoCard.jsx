@@ -132,9 +132,8 @@ const VideoCard = ({
         style={{
           height: "70%",
         }}
-        className={`video-card-thumbnail ${
-          isHovered ? "thumbnail-transition" : ""
-        }`}
+        className={`video-card-thumbnail ${isHovered ? "thumbnail-transition" : ""
+          }`}
       >
         {isInView && (
           <div
@@ -587,7 +586,7 @@ export const MoreIconButton = ({
                   overflow: "auto",
                 }}
               >
-                {channelInfo?.playlists.map((playlist, index) => (
+                {/* {channelInfo?.playlists.map((playlist, index) => (
                   <ListItem
                     key={index}
                     button
@@ -626,7 +625,7 @@ export const MoreIconButton = ({
                       <PublicIcon fontSize="small" />
                     )}
                   </ListItem>
-                ))}
+                ))} */}
               </List>
               <Divider />
               <Box

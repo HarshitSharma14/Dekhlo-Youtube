@@ -9,6 +9,9 @@ import Subscription from "../models/subscription.model.js";
 import mongoose, { isValidObjectId, Types } from "mongoose";
 import Notification from "../models/notification.model.js";
 import { emitNotification } from "../socket.js";
+import Setting from "../models/setting.model.js";
+import PlaylistVideos from "../models/playlistVideos.js";
+import { deleteImageFromCloudinary, deleteVideoFromCloudinary } from "../utils/features.js";
 
 // view video *************************************************************
 export const getVideo = AsyncTryCatch(async (req, res, next) => {
@@ -32,15 +35,32 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
   let isLiked = false;
 
   const channelIdVisiting = LogedInChannel(req.cookies?.jwt);
+
   if (channelIdVisiting) {
-    //TODO: add to the watch history of the channel
-    // TODO: find the videos in the liked playlist of the channel, is the video liked
+    const channelVisiting = await Channel.findById(channelIdVisiting).populate("settings");
+
+    if (channelVisiting.settings.watchHistoryOn) {
+      const watchHistoryPlaylistId = channelVisiting.permanentPlaylist.watchHistory;
+      const newPlaylist = new PlaylistVideos({
+        playlistId: watchHistoryPlaylistId,
+        videoId: videoId
+      })
+
+      await newPlaylist.save();
+    }
+    // Check if the video is liked by the visiting channel
+    const likedVideoPlaylistId = channelVisiting.permanentPlaylist.likedVideos;
+
+    isLiked = !!(await PlaylistVideos.find({
+      playlistId: likedVideoPlaylistId,
+      videoId: videoId
+    }))
+
   }
 
   return res.status(200).json({
     video,
     isLiked,
-    loggedIn: false, // TODO: ask, why is this declared false staticly ???
     isSubscribed: false,
     isBell: false,
   });
@@ -138,13 +158,11 @@ export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
 });
 
 export const putComment = AsyncTryCatch(async (req, res, next) => {
-  // TODO: tera likha hai dekh lena ...
   const { videoId } = req.params;
   const { text } = req.body;
   const { channelId } = req;
 
   if (!text) return next(new ErrorHandler(400, "Comment is required"));
-  console.log("here 2");
 
   const newComment = new Comment({
     commentData: text,
@@ -154,13 +172,16 @@ export const putComment = AsyncTryCatch(async (req, res, next) => {
   await newComment.save();
 
   await Video.findByIdAndUpdate(videoId, { $inc: { commentCount: 1 } });
-  console.log("here 3");
-  await newComment.populate("channel", "channelName profilePhoto _id");
-  console.log("here 4");
+
+  await newComment.populate("channel", "channelName profilePhoto _id settings");
+
+  const settings = await Setting.findById(newComment.channel.settings)
+
+  if (settings.commentNotification === false) {
+    return res.status(201).json({ success: true, comment: newComment });
+  }
 
   const video = await Video.findById(videoId).select("channel title");
-
-  console.log(video.channel);
 
   const notification = new Notification({
     channel: video.channel,
@@ -184,32 +205,35 @@ export const putComment = AsyncTryCatch(async (req, res, next) => {
 });
 
 export const likeUnlikeVideo = AsyncTryCatch(async (req, res, next) => {
-  // TODO: tera likha hai dekh lena ...
 
   const { videoId } = req.params;
   const { isLiked } = req.body;
 
-  console.log("first");
-
   const video = await Video.findById(videoId);
-  // console.log(video)
+
   if (!video) next(new ErrorHandler(404, "Video not found"));
-  console.log("second");
 
-  console.log(isLiked);
-  const token = req.cookies.jwt;
-  const decodedData = jwt.verify(token, JWT_SECRET);
-  const channel = await Channel.findById(decodedData.channelId);
+  const channelId = req.channelId
 
-  if (isLiked && !channel.likedVideos.includes(videoId)) {
-    console.log("inside true");
-    video.likes += 1;
-    await video.save();
-    channel.likedVideos.push(videoId);
-    await channel.save();
-    // const channel = await Channel.findByIdAndUpdate(decodedData.channelId, {
-    //   $push: { likedVideos: videoId },
-    // });
+  const channel = await Channel.findById(channelId).select("permanentPlaylist");
+  const likedVideosPlaylistId = channel.permanentPlaylist.likedVideos;
+
+  const videoToggle = await PlaylistVideos.find({
+    playlistId: likedVideosPlaylistId,
+    videoId: videoId
+  });
+
+  if (videoToggle) {
+    await videoToggle.deleteOne();
+    await Video.findByIdAndUpdate(videoId, { $inc: { likes: -1 } });
+    return res.status(200).json({ message: "Video unliked", likes: video.likes });
+  }
+  else {
+    const playlistVideo = new PlaylistVideos({
+      playlistId: likedVideosPlaylistId,
+      videoId: videoId
+    })
+    await playlistVideo.save();
 
     const notification = new Notification({
       channel: video.channel,
@@ -228,27 +252,9 @@ export const likeUnlikeVideo = AsyncTryCatch(async (req, res, next) => {
       isRead: false,
       createdAt: notification.createdAt,
     });
-
-    console.log("third");
-    return res.status(200).json({ message: "Video liked", likes: video.likes });
-  } else if (!isLiked && channel.likedVideos.includes(videoId)) {
-    console.log("forth");
-    if (video.likes > 0) {
-      video.likes -= 1;
-    }
-    await video.save();
-    channel.likedVideos.pull(videoId);
-    await channel.save();
-    // const channel = await Channel.findByIdAndUpdate(decodedData.channelId, {
-    //   $pull: { likedVideos: videoId },
-    // });
-    console.log("fifth");
-    return res
-      .status(200)
-      .json({ message: "Video unliked", likes: video.likes });
-  } else {
-    return res.status(400).json({ message: "Somethings wrong" });
+    await Video.findByIdAndUpdate(videoId, { $inc: { likes: 1 } });
   }
+  return res.status(200).json({ message: "success" });
 });
 
 // ✅ get video details ********************************************************************************
@@ -265,7 +271,6 @@ export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
 
 export const searchVideo = AsyncTryCatch(async (req, res, next) => {
   const { searchText } = req.query;
-  // console.log("yessur ", searchText);
   const cursor = req.query?.cursor;
   const limit = 10;
 
@@ -380,8 +385,6 @@ export const searchVideo = AsyncTryCatch(async (req, res, next) => {
     { $limit: limit },
   ]);
 
-  // console.log("results", results.length);
-
   return res.status(200).json({ results });
 });
 
@@ -447,30 +450,75 @@ export const autoComplete = AsyncTryCatch(async (req, res, next) => {
   res.status(200).json({ results: limitedResults });
 });
 
-export const getAllVideos = AsyncTryCatch(async (req, res, next) => {
-  // TODO: what the fuck is this for???
-  const videos = await Video.aggregate([
-    {
-      $lookup: {
-        from: "channels",
-        localField: "channel",
-        foreignField: "_id",
-        as: "channel",
-      },
-    },
-    {
-      $unwind: "$channel",
-    },
-    {
-      $project: {
-        title: 1,
-        description: 1,
-        duration: 1,
-        category: 1,
-        channel: "$channel.channelName", // Makes channel a string instead of an object
-      },
-    },
-  ]);
+// export const getAllVideos = AsyncTryCatch(async (req, res, next) => {
+//   // TODO: what the fuck is this for???
+//   const videos = await Video.aggregate([
+//     {
+//       $lookup: {
+//         from: "channels",
+//         localField: "channel",
+//         foreignField: "_id",
+//         as: "channel",
+//       },
+//     },
+//     {
+//       $unwind: "$channel",
+//     },
+//     {
+//       $project: {
+//         title: 1,
+//         description: 1,
+//         duration: 1,
+//         category: 1,
+//         channel: "$channel.channelName", // Makes channel a string instead of an object
+//       },
+//     },
+//   ]);
 
-  return res.status(200).json({ videos });
-});
+//   return res.status(200).json({ videos });
+// });
+
+
+
+// deleting comment *******************************************************************
+export const deleteComment = AsyncTryCatch(async (req, res, next) => {
+  const { commentId } = req.body;
+  const channelIdDeletingComment = req.channelId;
+
+  const comment = await Comment.findById(commentId).populate("videoId");
+  if (!comment) return next(new ErrorHandler(400, "Comment not found"));
+
+  const commenter = comment.channel;
+  const videoOwner = comment.videoId.channel;
+
+  if (channelIdDeletingComment === commenter || channelIdDeletingComment === videoOwner) {
+    await comment.deleteOne();
+    return res.status(200).json({ message: "Comment Deleted Successfully" })
+  }
+
+  return next(new ErrorHandler(400, "Unauthorized request"));
+})
+
+
+
+// delete video *********************************************************************************
+
+export const deleteVideo = AsyncTryCatch(async (req, res, next) => {
+  const { videoId } = req.body;
+  const channelDeletingVideo = req.channelId;
+
+  const video = await Video.findById(videoId)
+
+  if (!video) {
+    return next(new ErrorHandler(404, "Video not found"));
+  }
+  if (video.channel.toString() !== channelDeletingVideo) {
+    return next(new ErrorHandler(400, "Unauthorized request"));
+  }
+
+  //delete thumbnail from cloudinary
+  deleteImageFromCloudinary(video.thumbnail);
+  deleteVideoFromCloudinary(video.videoUrl);
+  await Comment.deleteMany({ videoId: videoId });
+  await video.deleteOne();
+})

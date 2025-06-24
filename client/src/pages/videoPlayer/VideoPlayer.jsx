@@ -115,7 +115,6 @@ const VideoPlayer = () => {
         setLoggedIn(channelInfo != undefined && channelInfo != null)
         setLikes(response.data.video.likes);
         console.log(response.data);
-        console.log("login ", response.data.loggedIn);
         console.log("liked ", response.data.isLiked);
         console.log("subsribed ", response.data.isSubscribed);
         console.log("bell ", response.data.isBell);

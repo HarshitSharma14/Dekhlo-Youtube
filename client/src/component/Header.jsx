@@ -108,7 +108,9 @@ const Header = ({ isDisabled }) => {
   useEffect(() => {
     const fetchNoti = async () => {
       try {
+        console.log('inside fetch noti')
         const response = await axios.get(GET_NOTIFICATIONS, { withCredentials: true })
+        console.log('inside fetch noti', response.data)
         console.log(response.data)
         if (response.data[response.data.length - 1].isRead) {
           setNotificationsPending(false)

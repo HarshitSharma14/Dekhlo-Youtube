@@ -6,7 +6,6 @@ import {
   getComments,
   putComment,
   getWatchNext,
-  getAllVideos,
   searchVideo,
   autoComplete,
 } from "../controllers/video.controller.js";
@@ -15,15 +14,14 @@ import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
 
 const app = Router();
 
-app.get("/get-all-videos", getAllVideos);
 app.get("/search-video", searchVideo)
 app.get("/autocomplete", autoComplete);
 app.get("/video-details/:videoId", getVideoDetails);
 app.get("/get-video/:videoId", getVideo);
 app.get("/get-comments/:videoId", getComments);
 app.get("/get-watch-next/:videoId", getWatchNext);
-app.use(isUserLoggedIn);
 
+app.use(isUserLoggedIn);
 app.post("/put-comment/:videoId", putComment);
 app.patch("/like-unlike/:videoId", likeUnlikeVideo);
 

@@ -6,7 +6,9 @@ import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
 
 export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
-  // console.log("in ");
+
+  return res.status(200);
+
   const token = req.cookies.jwt;
   let channelId;
   try {
@@ -15,12 +17,9 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
   } catch (error) {
     channelId = null;
   }
-  // let seenIds = [];
-  // seenIds = req.body;
-  // console.log(seenIds);
-  // console.log(req.body);
+
   const { seenIds = [] } = req.body;
-  // console.log("seen video ids ", seenIds);
+
   const limit = 20;
   let totalVideoCount = 0;
   totalVideoCount = await Video.countDocuments({
@@ -40,8 +39,7 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
         $in: false,
       },
     });
-    // console.log(totalVideoCount);
-    //console.log("user loggdd in");
+
     const user = await Channel.findById(channelId)
       .populate("following", "creator")
       .populate("likedVideos")
@@ -69,7 +67,6 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
         "title thumbnailUrl _id  duration channel videoUrl views createdAt"
       );
 
-    // +console.log("followed channel vids", followedChannelVideosNotWatched);
 
     const likedChannelVideosNotWatched = await Video.find({
       channel: {

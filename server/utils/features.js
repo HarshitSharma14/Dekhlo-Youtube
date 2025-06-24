@@ -1,5 +1,14 @@
 import { v2 as cloudinary } from "cloudinary";
 import streamifier from 'streamifier';
+import cron from 'node-cron';
+import fs from 'fs';
+import path from 'path';
+import Subscription from "../models/subscription.model";
+import Setting from "../models/setting.model";
+import Channel from "../models/channel.model";
+import Playlist from "../models/playlist.model";
+import PlaylistVideos from "../models/playlistVideos";
+import Video from "../models/video.model";
 
 export const UploadSinglePhotoToCloudinary = async (req) => {
   try {
@@ -31,6 +40,82 @@ export const UploadSinglePhotoToCloudinary = async (req) => {
     throw error; // Propagate the error to the calling function
   }
 };
+
+function getPublicIdFromUrl(url) {
+  const regex = /\/upload\/(?:v\d+\/)?(.+?)(?:\.\w+)?$/;
+  const match = url.match(regex);
+
+  return match ? match[1] : null;
+}
+
+function getManyPublicIdsFromUrls(urls) {
+  const regex = /\/upload\/(?:v\d+\/)?(.+?)(?:\.\w+)?$/;
+
+  return urls.map(url => {
+    const match = url.match(regex);
+    return match ? match[1] : null;
+  }).filter(Boolean); // removes nulls
+}
+
+
+const deleteVideo = async (publicId) => {
+  try {
+    cloudinary.uploader.destroy('your_video_public_id', { resource_type: 'video' }, function (error, result) {
+      console.log(result, error);
+    });
+
+  } catch (error) {
+    console.log('didnt delete the video')
+  }
+}
+
+const deleteManyVideos = async (urls) => {
+  try {
+    const publicIds = getManyPublicIdsFromUrls(urls);
+    await cloudinary.api.delete_resources(
+      publicIds,
+      { resource_type: 'video' }
+    );
+  } catch (error) {
+    console.log('Error deleting videos:', error);
+  }
+}
+
+const deleteManyThumbnails = async (urls) => {
+  try {
+    const publicIds = getManyPublicIdsFromUrls(urls);
+    await cloudinary.api.delete_resources(
+      publicIds,
+      { resource_type: 'image' }
+    );
+  } catch (error) {
+    console.log('Error deleting thumbnails:', error);
+  }
+}
+
+
+
+const deleteImage = async (publicId) => {
+  try {
+    const result = await cloudinary.uploader.destroy(publicId);
+    console.log("Image deleted successfully:", result);
+  } catch (error) {
+    console.error("Error deleting image:", error);
+  }
+};
+
+export function deleteVideoFromCloudinary(url) {
+  const publicId = getPublicIdFromUrl(url);
+  deleteVideo(publicId);
+}
+
+export function deleteImageFromCloudinary(url) {
+  const publicId = getPublicIdFromUrl(url);
+  deleteImage(publicId);
+}
+
+
+
 
 export const UpdateThumbnail = async (req) => {
   console.log("in uploading space");
@@ -115,3 +200,68 @@ export const UploadVideoAndThumbnail = async (req) => {
     throw error;
   }
 };
+
+
+const cron = require('node-cron');
+const fs = require('fs');
+const path = require('path');
+
+cron.schedule('0 1 * * *', async () => {
+  console.log("🔁 Running midnight cleanup...");
+
+  const filePath = path.join(__dirname, '..', 'pendingDeletions.json');
+  if (!fs.existsSync(filePath)) return;
+
+  const data = fs.readFileSync(filePath, 'utf-8');
+  const channelIds = JSON.parse(data);
+
+  for (const channelId of channelIds) {
+    try {
+      // Delete channel-level references
+      await Setting.deleteOne({ channel: channelId });
+      await Subscription.deleteMany({ creator: channelId });
+      await Notification.deleteMany({ channel: channelId });
+
+      // Find subscriptions where this user is a subscriber (they follow others)
+      const subscriptions = await Subscription.find({ subscriber: channelId });
+      const creatorIds = subscriptions.map(s => s.creator);
+
+      // Remove their subscriptions
+      await Subscription.deleteMany({ subscriber: channelId });
+
+      // Decrement subscriber counts of followed channels
+      if (creatorIds.length > 0) {
+        await Channel.updateMany(
+          { _id: { $in: creatorIds } },
+          { $inc: { subscriberCount: -1 } }
+        );
+      }
+
+      // Delete playlists and related videos
+      const playlists = await Playlist.find({ channel: channelId });
+      const playlistIds = playlists.map(p => p._id);
+
+      await Playlist.deleteMany({ channel: channelId });
+      await PlaylistVideos.deleteMany({ playlistId: { $in: playlistIds } });
+
+      // Delete videos and related media
+      const videos = await Video.find({ channel: channelId });
+      const videoIds = videos.map(v => v._id);
+      const videoUrls = videos.map(v => v.videoUrl);
+      const thumbnailUrls = videos.map(v => v.thumbnailUrl);
+
+      await deleteManyVideos(videoUrls);
+      await deleteManyThumbnails(thumbnailUrls);
+
+      await Comment.deleteMany({ video: { $in: videoIds } });
+      await Video.deleteMany({ channel: channelId });
+
+      console.log(`✅ Successfully cleaned up channel ${channelId}`);
+    } catch (err) {
+      console.error(`❌ Error deleting channel ${channelId}:`, err);
+    }
+  }
+
+  // Clear file after all deletions
+  fs.writeFileSync(filePath, JSON.stringify([], null, 2), 'utf-8');
+});

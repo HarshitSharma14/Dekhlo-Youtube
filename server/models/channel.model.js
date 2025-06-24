@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { Schema, model } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 
 const channelSchema = new Schema(
   {
@@ -9,6 +9,7 @@ const channelSchema = new Schema(
     email: {
       type: String,
       required: [true, "Email is Required."],
+      index: true,
       unique: true,
     },
     password: {
@@ -20,14 +21,13 @@ const channelSchema = new Schema(
     bio: {
       type: String,
     },
-
-    permanentPlaylist: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "Playlist",
-      },
-    ],
-
+    permanentPlaylist: {
+      type: Map,
+      of: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Playlist"
+      }
+    },
     settings: {
       type: Schema.Types.ObjectId,
       ref: "Settings",

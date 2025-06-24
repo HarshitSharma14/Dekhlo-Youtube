@@ -424,6 +424,7 @@ const ChannelLayout = () => {
             >
               {buttonsForSorting.map((title, index) => (
                 <ButtonForSorting
+                  key={index}
                   isActive={index === sortNo}
                   sortNo={index}
                   title={title}

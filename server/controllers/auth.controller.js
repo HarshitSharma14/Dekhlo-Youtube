@@ -5,11 +5,14 @@ import { JWT_SECRET } from "../utils/constants.js";
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
 import { ErrorHandler } from "../utils/utility.js";
 import Playlist from "../models/playlist.model.js";
+import Setting from "../models/setting.model.js";
 
 // constants ******************************************************
 const clientURL = process.env.CLIENT_URL;
 const maxAge = 24 * 60 * 60 * 1000;
 
+
+// ✅✅
 export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
   try {
     const email = profile.emails[0]?.value; // Extract email from Google profile
@@ -21,7 +24,7 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
     }
     let profileAlreadyExist = true;
     // Check if a channel with this email already exists
-    let channel = await Channel.findOne({ email }); // TODO: index channel with email toooo...
+    let channel = await Channel.findOne({ email });
 
     if (!channel) {
       // If no channel exists, create a new one
@@ -31,6 +34,11 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
         profilePhoto: profile.photos[0]?.value || "", // Google profile picture
       });
 
+      channel.permanentPlaylist = new Map();
+      const settings = new Setting()
+      await settings.save()
+      channel.settings = settings._id;
+
       const watchLater = await Playlist.create({
         name: "Watch later",
         channel: channel._id,
@@ -38,27 +46,24 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
         private: true,
       });
 
-      channel.permanentPlaylist.push(watchLater._id);
-
+      channel.permanentPlaylist.set("watchLater", watchLater._id);
       const watchHistory = await Playlist.create({
         name: "Watch History",
         channel: channel._id,
         videoCount: 0,
         private: true,
       });
-      // channel.watchHistory = watchHistory._id;
-      channel.permanentPlaylist.push(watchHistory._id); //TODO: make this a map which has field value pair, to get the playlist id by name not by index, would be more readable
-
+      channel.permanentPlaylist.set("watchHistory", watchHistory._id);
       const likedVideos = await Playlist.create({
         name: "Liked Videos",
         channel: channel._id,
         videoCount: 0,
         private: true,
       });
-      channel.permanentPlaylist.push(likedVideos._id);
-
+      channel.permanentPlaylist.set("likedVideos", likedVideos._id);
       await channel.save();
 
+      console.log("channel info: ", channel);
       profileAlreadyExist = false;
     }
 

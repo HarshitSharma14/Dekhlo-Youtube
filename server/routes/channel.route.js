@@ -11,8 +11,6 @@ import {
   getPlaylistVideos,
   getSelfChannelInfo,
   getSubscribedChannel,
-  getSubscribedChannelVideos,
-  getWatchHistory,
   subscribeChannel,
   toggleBell,
   unSubscribeChannel,
@@ -47,8 +45,8 @@ app.post("/subscribe", subscribeChannel);
 app.delete("/unsubscribe", unSubscribeChannel);
 app.get("/change-isread", changeIsread);
 app.patch("/toggle-bell", toggleBell);
-app.get("/subscription/videos", getSubscribedChannelVideos);
-app.get("/watch-history", getWatchHistory);
+// app.get("/subscription/videos", getSubscribedChannelVideos);
+// app.get("/watch-history", getWatchHistory);
 app.get("/get-notifications", getNotifications);
 app.post(
   "/update-videoinfo",

@@ -25,6 +25,7 @@ const HomeContent = () => {
     if (pageNumber >= totalPages) {
       return;
     }
+    console.log("ing et video");
     try {
       setisLoading(true);
       const res = await axios.post(
@@ -37,13 +38,16 @@ const HomeContent = () => {
           },
         }
       );
+      console.log("here");
       setTotalPages(res.data?.totalPages);
-      setVideos((e) => [...e, ...res.data?.videos]);
+
+      // setVideos((e) => [...e, ...res.data?.videos]);
     } catch (error) {
-      console.log("err", error);
+      console.log("err in get video", error);
     } finally {
       setisLoading(false);
     }
+    console.log("at last");
   };
 
   //                   <<--- Handels the scroll behaviour for the infinete scrolling *****************************
@@ -73,12 +77,12 @@ const HomeContent = () => {
   }, []);
 
   //                  <<--- to detect the scroll bar for infinite scrolling **************************
-  useEffect(() => {
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [isLoading]);
+  // useEffect(() => {
+  //   window.addEventListener("scroll", handleScroll);
+  //   return () => {
+  //     window.removeEventListener("scroll", handleScroll);
+  //   };
+  // }, [isLoading]);
 
   return (
     <>

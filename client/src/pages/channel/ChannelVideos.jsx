@@ -10,67 +10,62 @@ const ChannelVideos = () => {
   //useStates *******************************************************
   const [videos, setVideos] = useState([]);
   const [isLoading, setisLoading] = useState(false);
-  const [totalPages, setTotalPages] = useState(1);
 
   // constants ****************************************************
+  const isFetching = useRef(false);
+  const cursor = useRef(null);
+  const hasMore = useRef(true);
   const params = useParams();
   const { channelId } = params;
-  const videosRef = useRef(videos);
   const { sort, isOwner } = useOutletContext();
-  useEffect(() => {
-    videosRef.current = videos;
-  }, [videos.length]);
+  console.log("in ch videos ", sort);
 
   // fucntion *******************************************************
-  const getVideos = async (sorts) => {
-    if (isLoading) return;
+  const getVideos = async () => {
+    if (!hasMore.current || isFetching.current) return;
+    isFetching.current = true;
     setisLoading(true);
-    const pageNumber = Math.ceil(videosRef.current.length / 20) || 0;
-
-    if (pageNumber >= totalPages) {
-      console.log("all videos fetched");
-      setisLoading(false);
-      return;
-    }
     try {
-      console.log("in try", sorts);
+      // cursor, limit = 20, sortField = "_id", sortOrder = 1
       const { data } = await axios.get(
-        `${GET_CHANNEL_VIDEOS}/${channelId}?page=${pageNumber}&sort=${sorts}`,
+        `${GET_CHANNEL_VIDEOS}/${channelId}?cursor=${JSON.stringify(
+          cursor?.current
+        )}&sortField=${sort.sf}&sortOrder=${sort.so}`,
         {
           withCredentials: true,
         }
       );
-      setTotalPages(data.totalPages);
+      hasMore.current = data.hasMore;
+      cursor.current = data.nextCursor;
       setVideos((pre) => [...pre, ...data.videos]);
+      // setCursor(data.nextCursor);
     } catch (error) {
       console.log("something went wrong", error);
     } finally {
       setisLoading(false);
+      isFetching.current = false;
     }
   };
   // useEffect *******************************************************
   const scrollingTimeoutRef = useRef(null);
   useEffect(() => {
     const handleScroll = () => {
-      const pageNumber = Math.ceil(videosRef.current.length / 20) || 0;
+      if (!hasMore.current || isFetching.current) return;
 
-      if (pageNumber >= totalPages) {
-        return;
-      }
       const bottom =
         window.innerHeight + window.scrollY >=
         document.documentElement.scrollHeight - 20;
 
       if (bottom) {
         // Throttle execution
-        if (scrollingTimeoutRef.current) {
-          clearTimeout(scrollingTimeoutRef.current); // Clear any previous timeout
-        }
+        getVideos();
+        // if (scrollingTimeoutRef.current) {
+        //   clearTimeout(scrollingTimeoutRef.current); // Clear any previous timeout
+        // }
 
-        scrollingTimeoutRef.current = setTimeout(() => {
-          console.log("at bottom");
-          getVideos(sort);
-        }, 300); // Execute after 300ms (adjust as needed)
+        // scrollingTimeoutRef.current = setTimeout(() => {
+        //   getVideos(sort);
+        // }, 300); // Execute after 300ms (adjust as needed)
       }
     };
     window.addEventListener("scroll", handleScroll);
@@ -80,9 +75,10 @@ const ChannelVideos = () => {
 
   useEffect(() => {
     setVideos([]);
-    videosRef.current = [];
-
-    getVideos(sort);
+    cursor.current = null;
+    hasMore.current = true;
+    isFetching.current = false;
+    getVideos();
   }, [sort]);
 
   return (

@@ -30,7 +30,12 @@ const videoUrl =
 //   description:
 //     "Take a breathtaking virtual tour through the streets of New York City, exploring famous landmarks and hidden gems in stunning 4K quality.",
 // };
-const LongVideoCard = ({ video, playlist = null, remove }) => {
+const LongVideoCard = ({
+  video,
+  playlist = null,
+  remove,
+  setPlaylistVideos,
+}) => {
   const boxRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
   const videoRef = useRef(null);
@@ -267,6 +272,8 @@ const LongVideoCard = ({ video, playlist = null, remove }) => {
         isInView={isInView}
         channelInfo={channelInfo}
         videoId={video._id}
+        playlistId={playlist}
+        setPlaylistVideos={setPlaylistVideos}
       />
     </Box>
   );

@@ -12,7 +12,13 @@ import {
   SubscriptionsOutlined,
 } from "@mui/icons-material";
 import { Box, Button } from "@mui/material";
-import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  Outlet,
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import Header from "../../component/Header";
 import Siderbar from "../../component/Siderbar";
 import { useAppStore } from "../../store";
@@ -27,12 +33,15 @@ const HomeLayout = () => {
 
   // constants *************************************************************************
   const location = useLocation();
+  const [query] = useSearchParams();
+  const playlistId = query.get("playlistId");
+
   const sidebarRef = useRef(null);
-  const { isSidebarOpen, toggelSidebar, channelInfo } = useAppStore();
+  const { isSidebarOpen, toggelSidebar, setSidebarActivity, channelInfo } =
+    useAppStore();
   const params = useParams();
   const { videoId } = params;
-  // const location = useLocation();
-  const { setSidebarActivity } = useAppStore();
+
   const activeOn = {
     isHome: "isHome",
     isSubscriptionVideos: "isSubscriptionVideos",
@@ -48,28 +57,38 @@ const HomeLayout = () => {
   //useEffect **********************************************************************
   //                <<--- Set the sidebar icon to active according to the url page
   useEffect(() => {
-    console.log("in home effecct");
+    console.log("in home layout ", playlistId);
     if (location.pathname == "/") setSidebarActivity(activeOn.isHome);
     else if (location.pathname == "/subs")
       setSidebarActivity(activeOn.isSubscriptionVideos);
-    else if (location.pathname == "/history")
+    else if (location.pathname == "/settings")
+      setSidebarActivity(activeOn.isSettings);
+    else if (location.pathname == `/channel/${channelInfo?._id}`)
+      setSidebarActivity(activeOn.isProfile);
+    else if (location.pathname == `/channel/${channelInfo?._id}/playlist`)
+      setSidebarActivity(activeOn.isPlaylist);
+    else if (
+      playlistId?.toString() ===
+      channelInfo?.permanentPlaylist?.watchHistory?.toString()
+    )
       setSidebarActivity(activeOn.isWatchHistory);
     else if (
-      location.pathname == `/channel/${channelInfo?._id}` ||
-      location.pathname == `/channel/${channelInfo?._id}/playlist`
+      playlistId?.toString() ===
+      channelInfo?.permanentPlaylist?.watchLater?.toString()
     )
-      setSidebarActivity(activeOn.isProfile);
+      setSidebarActivity(activeOn.isWatchLater);
+    else if (
+      playlistId?.toString() ===
+      channelInfo?.permanentPlaylist?.likedVideos?.toString()
+    )
+      setSidebarActivity(activeOn.isLikedVideos);
     else setSidebarActivity(null);
-  }, [location.pathname]);
+  }, [location.pathname, playlistId]);
 
   //              <<-- checking for the home route to drill prop in sidebar
   useEffect(() => {
     if (location.pathname == `/video-player/${videoId}`) setIsVideoPlayer(true);
     else setIsVideoPlayer(false);
-
-    // return () => {
-    //   setIsVideoPlayer(false);
-    // };
   }, [location.pathname]);
 
   //                 <<-- using the window size to predite whether the permanent sidebar should be disappearing or not
@@ -92,8 +111,6 @@ const HomeLayout = () => {
   }, []);
 
   // Empty dependency array ensures it runs only once on mount
-
-
 
   //                    <<--- (using gpt) ignoring the scroll input in the sidebar after its complition (at top and bottom) so that it doesnt interfear with main page's scroll bar
   useEffect(() => {
@@ -261,7 +278,7 @@ const PermanentSideBar = () => {
         isFilled={sidebarActivity.isWatchHistory}
         filledIcon={<HistoryIcon />}
         outlineIcon={<HistoryOutlined />}
-        navigateLink={"/history"}
+        navigateLink={`/playlist?playlistId=${channelInfo?.permanentPlaylist?.watchHistory}`}
         name={"History"}
         activeOn={activeOn.isWatchHistory}
       />
@@ -314,8 +331,8 @@ const SidebarNavigatioButtons = ({
     >
       {isFilled
         ? React.cloneElement(filledIcon, {
-          sx: { ...iconStyle, color: "white" },
-        })
+            sx: { ...iconStyle, color: "white" },
+          })
         : React.cloneElement(outlineIcon, { sx: iconStyle })}
       <p
         style={{

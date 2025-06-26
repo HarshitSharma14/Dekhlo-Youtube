@@ -35,7 +35,11 @@ import {
 import { useAppStore } from "../../store/index.js";
 import axios from "axios";
 import toast from "react-hot-toast";
-import { ADD_VIDEO_TO_PLAYLISTS } from "../../utils/constants.js";
+import {
+  ADD_VIDEO_TO_PLAYLISTS,
+  GET_MY_PLAYLISTS,
+  REMOVE_VIDEO_FROM_PLAYLISTS,
+} from "../../utils/constants.js";
 
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return "00:00";
@@ -132,8 +136,9 @@ const VideoCard = ({
         style={{
           height: "70%",
         }}
-        className={`video-card-thumbnail ${isHovered ? "thumbnail-transition" : ""
-          }`}
+        className={`video-card-thumbnail ${
+          isHovered ? "thumbnail-transition" : ""
+        }`}
       >
         {isInView && (
           <div
@@ -306,17 +311,24 @@ export const MoreIconButton = ({
   channelInfo,
   isInView,
   isOwner = false,
-  videoId,
+  videoId = null,
   removeFrom = "",
+  playlistId = null,
+  setPlaylistVideos,
 }) => {
   const [anchorEl, setAnchorEl] = React.useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [availablePlaylists, setAvailablePlaylists] = useState([]);
+  const [schedulePlaylistAdd, setSchedulePlaylistAdd] = useState([]);
+  const [schedulePlaylistRemove, setSchedulePlaylistRemove] = useState([]);
+  const [alreadyPresentPlaylist, setAlreadyPresentPlaylist] = useState([]);
   const [playlists, setPlaylists] = useState([]);
   const [createNewPlaylist, setCreateNewPlaylist] = useState(false);
   const [name, setName] = useState("");
   const [isPrivate, setIsPrivate] = useState(true);
 
   const open = Boolean(anchorEl);
+  const navigate = useNavigate();
 
   const handleMenuOpen = (e) => {
     e.stopPropagation();
@@ -326,9 +338,35 @@ export const MoreIconButton = ({
     e.stopPropagation();
     setAnchorEl(null);
   };
+  const openModal = async (e) => {
+    e.stopPropagation();
+    setAnchorEl(null);
+    setModalOpen(true);
+    try {
+      const { data } = await axios.get(`${GET_MY_PLAYLISTS}/${videoId}`, {
+        withCredentials: true,
+      });
+      console.log("playlist data", data);
+
+      setAvailablePlaylists(
+        data.playlists.filter(
+          (p) =>
+            p._id !== channelInfo?.permanentPlaylist.likedVideos &&
+            p._id !== channelInfo?.permanentPlaylist.watchHistory
+        )
+      );
+
+      const pl = data.playlists.filter((p) => p.isPresent).map((p) => p._id);
+      setAlreadyPresentPlaylist(pl);
+    } catch (error) {
+      toast.error("Error fetching playlists");
+    } finally {
+    }
+  };
   const closeModal = () => {
     setCreateNewPlaylist(false);
-    setPlaylists([]);
+    setAvailablePlaylists([]);
+    setAlreadyPresentPlaylist([]);
     setModalOpen(false);
     setAnchorEl(null);
   };
@@ -361,7 +399,8 @@ export const MoreIconButton = ({
 
   const addVideoToPlaylists = async () => {
     closeModal();
-    let playlistIds = playlists;
+    let playlistIds = schedulePlaylistAdd;
+
     if (!playlistIds.length) {
       playlistIds.push(channelInfo?.watchLater);
     }
@@ -375,14 +414,73 @@ export const MoreIconButton = ({
       });
       console.log("suee");
       toast.success("Video added.", { id: toastId });
+      setAlreadyPresentPlaylist((pre) => [...pre, ...schedulePlaylistAdd]);
     } catch (err) {
       console.log("error in adding videos to playlists");
       toast.error(err.response?.data?.message || "Something went wrong", {
         id: toastId,
       });
     } finally {
-      setPlaylists([]);
+      setSchedulePlaylistAdd([]);
     }
+  };
+
+  const removeVideoFromPlyalist = async () => {
+    closeModal();
+    let playlistIds = schedulePlaylistRemove;
+
+    if (playlistId) playlistIds.push(playlistId);
+
+    const data = { playlistIds, videoId };
+
+    try {
+      await axios.delete(REMOVE_VIDEO_FROM_PLAYLISTS, {
+        data,
+        withCredentials: true,
+      });
+
+      if (playlistId && setPlaylistVideos)
+        setPlaylistVideos((pre) => {
+          let temp = [...pre];
+          console.log("pre temp ", temp);
+          temp = temp.filter((t) => t._id !== videoId);
+          console.log("after temp", temp);
+          return temp;
+        });
+      setAlreadyPresentPlaylist((prev) =>
+        prev.filter((p) => !schedulePlaylistRemove.includes(p))
+      );
+      toast.success("Video removed.");
+    } catch (err) {
+      console.log("error in removing videos to playlists");
+      toast.error(err.response?.data?.message || "Something went wrong");
+    } finally {
+      setSchedulePlaylistRemove([]);
+    }
+    console.log("out");
+  };
+
+  const handleCheckClick = (id) => {
+    const alreadyPresent = alreadyPresentPlaylist.includes(id);
+    if (alreadyPresent) {
+      setSchedulePlaylistRemove((prev) => {
+        if (prev.includes(id)) {
+          return prev.filter((p) => p !== id);
+        } else {
+          return [...prev, id];
+        }
+      });
+    } else {
+      setSchedulePlaylistAdd((prev) => {
+        if (prev.includes(id)) return prev.filter((p) => p !== id);
+        else return [...prev, id];
+      });
+    }
+  };
+
+  const handleConfirm = async () => {
+    if (schedulePlaylistAdd.length) addVideoToPlaylists();
+    if (schedulePlaylistRemove.length) removeVideoFromPlyalist();
   };
 
   return (
@@ -422,9 +520,7 @@ export const MoreIconButton = ({
       >
         <MenuItem
           onClick={(e) => {
-            e.stopPropagation();
-            setAnchorEl(null);
-            setModalOpen(true);
+            openModal(e);
           }}
           sx={{
             display: "flex",
@@ -434,28 +530,29 @@ export const MoreIconButton = ({
           <BookmarkAddOutlined />
           Add to Playlist
         </MenuItem>
-        <MenuItem
-          onClick={(e) => {
-            e.stopPropagation();
-            addVideoToPlaylists();
-          }}
-          sx={{
-            display: "flex",
-            gap: "10px",
-          }}
-        >
-          {removeFrom.length ? (
-            <>
-              <DeleteOutline />
-              {removeFrom}
-            </>
-          ) : (
-            <>
-              <WatchLaterOutlined />
-              "Save to Watch Later"{" "}
-            </>
-          )}
-        </MenuItem>
+
+        {removeFrom.length ? (
+          <MenuItem
+            onClick={(e) => {
+              e.stopPropagation();
+              // if (removeFrom.length)
+              removeVideoFromPlyalist();
+              //   else
+              //     addVideoToPlaylists(channelInfo?.permanentPlaylist?.watchLater);
+            }}
+            sx={{
+              display: "flex",
+              gap: "10px",
+            }}
+          >
+            {/* here was that piece of shit */}
+
+            <DeleteOutline />
+            {removeFrom}
+          </MenuItem>
+        ) : (
+          <></>
+        )}
         {isOwner && (
           <MenuItem
             onClick={(e) => {
@@ -586,9 +683,9 @@ export const MoreIconButton = ({
                   overflow: "auto",
                 }}
               >
-                {/* {channelInfo?.playlists.map((playlist, index) => (
+                {availablePlaylists.map((playlist) => (
                   <ListItem
-                    key={index}
+                    key={playlist._id}
                     button
                     sx={{
                       cursor: "pointer",
@@ -597,16 +694,18 @@ export const MoreIconButton = ({
                     }}
                     onClick={(e) => {
                       console.log("clicked");
-                      setPlaylists(
-                        (prev) =>
-                          prev.includes(playlist._id)
-                            ? prev.filter((id) => id !== playlist._id) // Remove if already selected
-                            : [...prev, playlist._id] // Add if not selected
-                      );
+                      handleCheckClick(playlist._id);
                     }}
                   >
                     <ListItemIcon>
-                      <Checkbox checked={playlists.includes(playlist._id)} />
+                      <Checkbox
+                        checked={
+                          alreadyPresentPlaylist
+                            .filter((p) => !schedulePlaylistRemove.includes(p))
+                            .includes(playlist._id) ||
+                          schedulePlaylistAdd.includes(playlist._id)
+                        }
+                      />
                     </ListItemIcon>
                     <Typography
                       noWrap
@@ -619,13 +718,13 @@ export const MoreIconButton = ({
                     >
                       {playlist.name}
                     </Typography>
-                    {playlist.private ? (
+                    {playlist.isPrivate ? (
                       <LockIcon fontSize="small" />
                     ) : (
                       <PublicIcon fontSize="small" />
                     )}
                   </ListItem>
-                ))} */}
+                ))}
               </List>
               <Divider />
               <Box
@@ -641,20 +740,33 @@ export const MoreIconButton = ({
                 {/* Confirm Button */}
                 <Button
                   fullWidth
-                  onClick={addVideoToPlaylists}
-                  disabled={!playlists.length}
+                  onClick={handleConfirm}
+                  disabled={
+                    !schedulePlaylistAdd.length &&
+                    !schedulePlaylistRemove.length
+                  }
                   sx={{
-                    bgcolor: playlists.length ? "#16a34a" : "#4b5563", // Green when active, Gray when disabled
+                    bgcolor:
+                      schedulePlaylistAdd.length ||
+                      schedulePlaylistRemove.length
+                        ? "#16a34a"
+                        : "#4b5563", // Green when active, Gray when disabled
                     color: "white",
                     fontWeight: "bold",
                     borderRadius: "12px",
                     py: 1.5,
-                    boxShadow: playlists.length
-                      ? "0px 4px 10px rgba(0,0,0,0.2)"
-                      : "none",
+                    boxShadow:
+                      schedulePlaylistAdd.length ||
+                      schedulePlaylistRemove.length
+                        ? "0px 4px 10px rgba(0,0,0,0.2)"
+                        : "none",
                     transition: "all 0.3s ease",
                     "&:hover": {
-                      bgcolor: playlists.length ? "#15803d" : undefined,
+                      bgcolor:
+                        schedulePlaylistAdd.length ||
+                        schedulePlaylistRemove.length
+                          ? "#15803d"
+                          : undefined,
                     },
                     "&:disabled": {
                       opacity: 0.6,

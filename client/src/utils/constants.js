@@ -29,7 +29,9 @@ export const GET_MY_PLAYLISTS = `${CHANNEL_ROUTE}/myplaylist`;
 export const SUBSCRIBE_CHANNEL = `${CHANNEL_ROUTE}/subscribe`;
 export const CHANNEL_WATCH_HISTORY = `${CHANNEL_ROUTE}/watch-history`;
 export const PLAYLIST_VIDEOS = `${CHANNEL_ROUTE}/playlist`;
+export const DELETE_PLAYLIST = `${CHANNEL_ROUTE}/delete-playlist`;
 export const ADD_VIDEO_TO_PLAYLISTS = `${CHANNEL_ROUTE}/add-to-playlist`;
+export const REMOVE_VIDEO_FROM_PLAYLISTS = `${CHANNEL_ROUTE}/remove-from-playlist`;
 export const UNSUBSCRIBE_CHANNEL = `${CHANNEL_ROUTE}/unsubscribe`;
 export const TOGGLE_BELL = `${CHANNEL_ROUTE}/toggle-bell`;
 export const UPDATE_VIDEO_INFO = `${CHANNEL_ROUTE}/update-videoinfo`;
@@ -38,7 +40,6 @@ export const GET_NOTIFICATIONS = `${CHANNEL_ROUTE}/get-notifications`;
 export const CHANGE_ISREAD = `${CHANNEL_ROUTE}/change-isread`;
 
 export const VIDEO_ROUTE = `${server}/video`;
-
 export const GET_VIDEO_DETAILS = `${VIDEO_ROUTE}/video-details`;
 export const GET_VIDEO = `${VIDEO_ROUTE}/get-video`;
 export const LIKE_UNLIKE = `${VIDEO_ROUTE}/like-unlike`;

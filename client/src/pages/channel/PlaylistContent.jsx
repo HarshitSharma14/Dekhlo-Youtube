@@ -4,54 +4,79 @@ import LongVideoCard from "../../component/cards/LongVideoCard";
 import axios from "axios";
 import { CHANNEL_WATCH_HISTORY, PLAYLIST_VIDEOS } from "../../utils/constants";
 import PlaylistSideArea from "../../component/PlaylistSideArea";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import pic from "/assets/emptyPlaylist.png";
+import toast from "react-hot-toast";
+import { useAppStore } from "../../store";
 
 const PlaylistContent = () => {
   // useState ********************************************************************************************
   const [playlistVideos, setPlaylistVideos] = useState([]);
+  const { channelInfo } = useAppStore();
   const [playlist, setPlaylist] = useState({
     title: "",
     thumbnail: "temp",
     videos: "temp",
   });
-  const [totalPages, setTotalPages] = useState(10);
-  const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(false);
 
   // useRef **********************************************************************************************
-  const isFetching = useRef(null); // I am using this for my infinte scrolling, as its .current values changes instantly as i change them but it does not cause a rerender, also it persists throughout every render
+  const isFetching = useRef(false); // I am using this for my infinte scrolling, as its .current values changes instantly as i change them but it does not cause a rerender, also it persists throughout every render
+  const hasMore = useRef(true);
+  const cursor = useRef(null);
 
   // constants *********************************************************************************************
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const playlistId = params.get("playlistId");
-  if (!playlistId || playlistId.length == 0) navigate("/");
+  let playlistId = params.get("playlistId");
+
+  if (playlistId.toString() === "history") {
+    playlistId = channelInfo?.permanentPlaylist?.watchHistory;
+  }
+  if (
+    playlistId.toString() === "undefined" ||
+    playlistId.toString() === "null"
+  ) {
+    toast.error("Something went wrong");
+    return <Navigate to="/" replace />;
+  }
+  if (!playlistId || playlistId?.length == 0) navigate("/");
 
   // functions ***********************************************************************************************
   const getPlaylistVideos = async () => {
-    if (currentPage > totalPages) return;
-    setLoading(true);
+    if (!hasMore.current || isFetching.current) return;
     isFetching.current = true;
+    setLoading(true);
     try {
       const { data } = await axios.get(
-        `${PLAYLIST_VIDEOS}?playlistId=${playlistId}&page=${currentPage}&limit=20`,
+        //  playlistId, cursor, limit = 20
+        `${PLAYLIST_VIDEOS}?playlistId=${playlistId}&cursor=${JSON.stringify(
+          cursor.current
+        )}&limit=20`,
         {
           withCredentials: true,
         }
       );
-      setCurrentPage(currentPage + 1);
       console.log("data in pl contend ", data);
-      setTotalPages(data?.totalPages);
-      if (!playlist.title)
+      hasMore.current = data.hasMore;
+      cursor.current = data.nextCursor;
+
+      if (cursor.current === null) {
+        let plyalistThumbnail;
+        if (data.videos?.length)
+          plyalistThumbnail = data.videos[0]?.thumbnailUrl;
+        else plyalistThumbnail = pic;
+
         setPlaylist((pre) => ({
-          ...pre, // Spread previous state to retain other properties
+          ...pre,
           title: data.playlist?.name,
-          thumbnail: data.playlist?.videos[0]?.thumbnailUrl,
+          thumbnail: plyalistThumbnail,
           videos: data.playlist?.videosCount,
-          videoId: data.playlist?.videos[0]._id,
+          videoId: data.videos[0]?._id,
           playlistId: data.playlist?._id,
         }));
-      setPlaylistVideos((pre) => [...pre, ...data.playlist?.videos]);
+      }
+      setPlaylistVideos((pre) => [...pre, ...data.videos]);
     } catch (err) {
       console.log("erro in history");
       console.log(err);
@@ -64,12 +89,12 @@ const PlaylistContent = () => {
   // useEffects ***********************************************************************************************************
   useEffect(() => {
     const handleScroll = () => {
+      if (isFetching.current || !hasMore.current) return;
       const bottom =
         window.innerHeight + window.scrollY >=
         document.documentElement.scrollHeight - 100;
 
-      if (!isFetching.current && bottom) {
-        console.log("in condition");
+      if (bottom) {
         getPlaylistVideos();
       }
     };
@@ -77,14 +102,45 @@ const PlaylistContent = () => {
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [currentPage]);
+  }, [cursor]);
 
   useEffect(() => {
     getPlaylistVideos();
     return () => {
+      hasMore.current = true;
+      cursor.current = null;
+      isFetching.current = false;
+
+      setPlaylist({
+        title: "",
+        thumbnail: "temp",
+        videos: "temp",
+      });
       setPlaylistVideos([]);
     };
   }, [playlistId]);
+
+  useEffect(() => {
+    return () => {
+      if (playlistVideos?.length) {
+        setPlaylist((pre) => {
+          let pree = { ...pre };
+          pree.videos = pree.videos - 1;
+          let thumbnail = pic;
+          if (playlistVideos[1]?.thumbnailUrl)
+            thumbnail = playlistVideos[1].thumbnailUrl;
+          let videoId = null;
+          if (playlistVideos[0]?._id) videoId = playlistVideos[0]?._id;
+
+          return {
+            ...pree,
+            thumbnail,
+            videoId,
+          };
+        });
+      }
+    };
+  }, [playlistVideos]);
 
   return (
     <Box
@@ -104,7 +160,7 @@ const PlaylistContent = () => {
           },
         }}
       >
-        <PlaylistSideArea playlist={playlist} />
+        <PlaylistSideArea playlistVideos={playlistVideos} playlist={playlist} />
       </Box>
       <Box
         sx={{
@@ -122,9 +178,9 @@ const PlaylistContent = () => {
         >
           {playlist?.title}
         </Typography>
-        {loading && !playlistVideos.length && "Loading ..."}
+        {loading && !playlistVideos?.length && "Loading ..."}
 
-        {playlistVideos.length ? (
+        {playlistVideos?.length ? (
           <>
             {playlistVideos?.map((video, index) => {
               return (
@@ -133,6 +189,7 @@ const PlaylistContent = () => {
                   remove={`Remove from ${playlist?.title}`}
                   video={video}
                   playlist={playlistId}
+                  setPlaylistVideos={setPlaylistVideos}
                 />
               );
             })}

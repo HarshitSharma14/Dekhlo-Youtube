@@ -1,9 +1,6 @@
-import React, { useEffect, useState } from "react";
 import {
   AttachMoneyOutlined,
   Close as CloseIcon,
-  KeyboardArrowDownOutlined,
-  NotificationAddOutlined,
   Notifications,
   NotificationsOff,
   People,
@@ -18,10 +15,11 @@ import {
   IconButton,
   Modal,
   Popover,
-  Switch,
   Typography,
 } from "@mui/material";
 import axios from "axios";
+import { useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   GET_CHANNEL_DETAILS,
@@ -29,7 +27,6 @@ import {
   TOGGLE_BELL,
   UNSUBSCRIBE_CHANNEL,
 } from "../../utils/constants";
-import toast from "react-hot-toast";
 
 const ChannelLayout = () => {
   // useState **********************************************************************************
@@ -37,16 +34,17 @@ const ChannelLayout = () => {
   const [hoveredTab, setHoveredTab] = useState(activeTab);
   const [isLoading, setIsLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
-  const [isDisabled, setIsDisabled] = useState(false);
   const [channel, setChannel] = useState(null);
   const [sortNo, setSortNo] = useState(0);
-  const [isBellEnabled, setIsBellEnabled] = useState(true);
-  const [anchorEl, setAnchorEl] = useState(null);
-
   // constant **********************************************************************************
   const navigate = useNavigate();
   const buttonsForSorting = ["Latest", "Popular", "Oldest"];
-  const sortingFields = ["createdAt_desc", "views_desc", "createdAt_acs"];
+
+  const sortingFields = [
+    { sf: "_id", so: -1 },
+    { sf: "views", so: -1 },
+    { sf: "_id", so: 1 },
+  ];
   const location = useLocation();
   const params = useParams();
   const { channelId } = params;
@@ -86,40 +84,15 @@ const ChannelLayout = () => {
     }
   };
 
-  const handleSubscribe = async (e) => {
-    if (isSubscribed) {
-      setAnchorEl(e.currentTarget);
-      return;
-    }
-    setIsDisabled(true);
-    try {
-      await axios.post(
-        SUBSCRIBE_CHANNEL,
-        { creatorId: channelId },
-        {
-          withCredentials: true,
-        }
-      );
-      setIsSubscribed(true);
-    } catch (err) {
-      setIsSubscribed(false);
-      console.log("not subs ", err);
-      toast.error(err?.response?.data?.message || "Something went wrong ");
-    } finally {
-      setIsDisabled(false);
-    }
-  };
-
-  const handleUnsubscribe = () => {
-    setIsSubscribed(false);
-    setAnchorEl(null); // Close the dropdown
-  };
-
-  const toggleBell = () => {
-    setIsBellEnabled(!isBellEnabled);
-  };
-
   // useEffect **********************************************************************************
+  const contextValue = useMemo(
+    () => ({
+      sort: sortingFields[sortNo],
+      isOwner: channel?.isOwner,
+    }),
+    [sortNo, channel?.isOwner]
+  );
+
   useEffect(() => {
     if (
       location.pathname.split("/")[location.pathname.split("/").length - 1] ===
@@ -434,12 +407,7 @@ const ChannelLayout = () => {
             </Box>
           )}
           <Box>
-            <Outlet
-              context={{
-                sort: sortingFields[sortNo],
-                isOwner: channel.isOwner,
-              }}
-            />
+            <Outlet context={contextValue} />
           </Box>
         </Box>
       )}

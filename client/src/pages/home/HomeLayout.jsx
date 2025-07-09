@@ -13,6 +13,7 @@ import {
 } from "@mui/icons-material";
 import { Box, Button } from "@mui/material";
 import {
+  Link,
   Outlet,
   useLocation,
   useNavigate,
@@ -313,36 +314,34 @@ const SidebarNavigatioButtons = ({
   };
 
   return (
-    <Button
-      onClick={() => {
-        navigate(navigateLink);
-        // setSidebarActivity(activeOn);
-      }}
-      sx={{
-        color: "#b3b3b3",
-        display: "flex",
-        flexDirection: "column",
-        borderRadius: "10px",
-        height: "75px",
-        width: "100%",
-        m: "0 4px",
-        mb: "4px",
-      }}
-    >
-      {isFilled
-        ? React.cloneElement(filledIcon, {
-            sx: { ...iconStyle, color: "white" },
-          })
-        : React.cloneElement(outlineIcon, { sx: iconStyle })}
-      <p
-        style={{
-          fontSize: "9px",
-          fontWeight: "lighter",
-          color: isFilled ? "white" : "#b3b3b3",
+    <Link to={navigateLink}>
+      <Button
+        sx={{
+          color: "#b3b3b3",
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: "10px",
+          height: "75px",
+          width: "100%",
+          m: "0 4px",
+          mb: "4px",
         }}
       >
-        {name}
-      </p>
-    </Button>
+        {isFilled
+          ? React.cloneElement(filledIcon, {
+              sx: { ...iconStyle, color: "white" },
+            })
+          : React.cloneElement(outlineIcon, { sx: iconStyle })}
+        <p
+          style={{
+            fontSize: "9px",
+            fontWeight: "lighter",
+            color: isFilled ? "white" : "#b3b3b3",
+          }}
+        >
+          {name}
+        </p>
+      </Button>
+    </Link>
   );
 };

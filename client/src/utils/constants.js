@@ -48,3 +48,4 @@ export const PUT_COMMENT = `${VIDEO_ROUTE}/put-comment`;
 export const GET_WATCH_NEXT = `${VIDEO_ROUTE}/get-watch-next`;
 export const SEARCH_VIDEO_ROUTE = `${VIDEO_ROUTE}/search-video`;
 export const AUTOCOMPLETE_ROUTE = `${VIDEO_ROUTE}/autocomplete`;
+export const DELETE_VIDEO = `${VIDEO_ROUTE}/delete`;

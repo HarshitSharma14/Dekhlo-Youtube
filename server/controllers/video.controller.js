@@ -520,6 +520,7 @@ export const deleteComment = AsyncTryCatch(async (req, res, next) => {
 export const deleteVideo = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.body;
   const channelDeletingVideo = req.channelId;
+  console.log("deleting video", videoId, channelDeletingVideo);
 
   const video = await Video.findById(videoId);
 
@@ -531,8 +532,10 @@ export const deleteVideo = AsyncTryCatch(async (req, res, next) => {
   }
 
   //delete thumbnail from cloudinary
-  deleteImageFromCloudinary(video.thumbnail);
-  deleteVideoFromCloudinary(video.videoUrl);
+  await deleteImageFromCloudinary(video.thumbnailUrl);
+  await deleteVideoFromCloudinary(video.videoUrl);
   await Comment.deleteMany({ videoId: videoId });
   await video.deleteOne();
+
+  return res.status(200).json({ success: true });
 });

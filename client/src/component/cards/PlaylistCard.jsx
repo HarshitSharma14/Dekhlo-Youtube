@@ -3,7 +3,8 @@ import { Box, Typography, IconButton } from "@mui/material";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import { useNavigate } from "react-router-dom";
 import { VideoLibrary } from "@mui/icons-material";
-import pic from "/assets/emptyPlaylist.jpg";
+import pic from "/assets/emptyPlaylist.png";
+import explorePlaylist from "/assets/explorePlaylist.png";
 
 const PlaylistCard = ({
   playlistId,
@@ -50,7 +51,9 @@ const PlaylistCard = ({
       >
         <Box
           component="img"
-          src={mainThumbnail ? mainThumbnail : pic}
+          src={
+            mainThumbnail ? mainThumbnail : videoCount ? explorePlaylist : pic
+          }
           alt={title}
           sx={{
             width: "100%",
@@ -124,8 +127,8 @@ const PlaylistCard = ({
             bottom: "-10px", // Slightly below the main thumbnail
             right: "10px",
             display: "flex",
-            width: "20%",
-            height: "20%",
+            width: "30%",
+            height: "30%",
             gap: "4px",
             zIndex: 2,
           }}
@@ -138,8 +141,9 @@ const PlaylistCard = ({
                 height: "100%",
                 borderRadius: "5px",
                 overflow: "hidden",
-                transform: `translateY(${(index + 1) * -10}px) translateX(${-index * 10
-                  }px)`,
+                transform: `translateY(${(index + 1) * -10}px) translateX(${
+                  -index * 10
+                }px)`,
                 position: "absolute",
                 right: "0",
                 bottom: "10px",

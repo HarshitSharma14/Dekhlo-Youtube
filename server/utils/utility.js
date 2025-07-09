@@ -1,5 +1,5 @@
-import { JWT_SECRET } from "./constants";
 import jwt from "jsonwebtoken";
+import { JWT_SECRET } from "./constants.js";
 
 export class ErrorHandler extends Error {
   constructor(statusCode, message) {
@@ -24,7 +24,6 @@ export const LogedInChannel = (token) => {
     const decodedData = jwt.verify(token, JWT_SECRET);
     const channelIdVisiting = decodedData.channelId;
     return channelIdVisiting;
-    
   } catch (error) {
     console.log("User not logged in");
     return null;

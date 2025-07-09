@@ -146,7 +146,7 @@ const Sidebar = ({ isVideoPlayer }) => {
               isFilled={sidebarActivity.isWatchHistory}
               filledIcon={<HistoryIcon />}
               outlineIcon={<HistoryOutlined />}
-              navigateLink={"/history"}
+              navigateLink={`/playlist?playlistId=${channelInfo?.permanentPlaylist?.watchHistory}`}
               name={"History"}
               drawerVariant={drawerVariant}
             />
@@ -154,7 +154,7 @@ const Sidebar = ({ isVideoPlayer }) => {
               isFilled={sidebarActivity.isPlaylist}
               filledIcon={<PlaylistPlayIcon />}
               outlineIcon={<PlaylistPlayOutlined />}
-              navigateLink={"/playlist"}
+              navigateLink={`/channel/${channelInfo?._id}/playlist`}
               name={"Playlist"}
               drawerVariant={drawerVariant}
             />
@@ -162,7 +162,7 @@ const Sidebar = ({ isVideoPlayer }) => {
               isFilled={sidebarActivity.isWatchLater}
               filledIcon={<WatchLaterIcon />}
               outlineIcon={<WatchLaterOutlined />}
-              navigateLink={"/watch-later"}
+              navigateLink={`/playlist?playlistId=${channelInfo?.permanentPlaylist?.watchLater}`}
               name={"Watch Later"}
               drawerVariant={drawerVariant}
             />
@@ -170,7 +170,7 @@ const Sidebar = ({ isVideoPlayer }) => {
               isFilled={sidebarActivity.isLikedVideos}
               filledIcon={<ThumbUpIcon />}
               outlineIcon={<ThumbUpOutlined />}
-              navigateLink={"/watch-later"}
+              navigateLink={`/playlist?playlistId=${channelInfo?.permanentPlaylist?.likedVideos}`}
               name={"Liked Videos"}
               drawerVariant={drawerVariant}
             />
@@ -195,7 +195,7 @@ const Sidebar = ({ isVideoPlayer }) => {
               isFilled={sidebarActivity.isSettings}
               filledIcon={<Settings />}
               outlineIcon={<Settings />}
-              navigateLink={"/history"}
+              navigateLink={"/settings"}
               name={"Settings"}
               drawerVariant={drawerVariant}
             />
@@ -263,8 +263,8 @@ const SidebarNavigatioButtons = ({
     >
       {isFilled
         ? React.cloneElement(filledIcon, {
-          sx: sidebarIconsStyleConfig,
-        })
+            sx: sidebarIconsStyleConfig,
+          })
         : React.cloneElement(outlineIcon, { sx: sidebarIconsStyleConfig })}
       <p style={sidebarButtonNamesStyleConfig}>{name}</p>
     </Button>

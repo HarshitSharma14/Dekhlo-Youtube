@@ -57,7 +57,7 @@ const ChannelPlaylist = () => {
                     playlistId={playlist?._id}
                     videoId={playlist.videos[0]?._id}
                     title={playlist?.name}
-                    videoCount={playlist?.videoCount}
+                    videoCount={playlist?.videosCount}
                     mainThumbnail={playlist?.videos[0]?.thumbnailUrl}
                     secondaryThumbnails={playlist?.videos}
                   />

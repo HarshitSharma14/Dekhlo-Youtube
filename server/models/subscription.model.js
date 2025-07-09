@@ -7,6 +7,7 @@ const subscriptionSchema = new Schema({
   },
   creator: {
     type: Schema.Types.ObjectId,
+    index: true,
     ref: "Channel",
   },
   bell: {
@@ -14,6 +15,9 @@ const subscriptionSchema = new Schema({
     default: true,
   },
 });
+
+subscriptionSchema.index({ subscriber: 1, creator: 1 });
+subscriptionSchema.index({ creator: 1, bell: 1 });
 
 const Subscription = model("Subscription", subscriptionSchema);
 

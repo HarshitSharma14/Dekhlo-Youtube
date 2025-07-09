@@ -14,14 +14,14 @@ import {
   SUBSCRIBE_CHANNEL,
   UNSUBSCRIBE_CHANNEL,
 } from "../../utils/constants";
-import RepeatIcon from '@mui/icons-material/Repeat';
-import CloseIcon from '@mui/icons-material/Close';
+import RepeatIcon from "@mui/icons-material/Repeat";
+import CloseIcon from "@mui/icons-material/Close";
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import { BsThreeDots } from "react-icons/bs";
 import Description from "../../component/Description";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
-import ShuffleIcon from '@mui/icons-material/Shuffle';
+import ShuffleIcon from "@mui/icons-material/Shuffle";
 import Comments from "../../component/Comments";
 import toast from "react-hot-toast";
 import { TextField } from "@mui/material";
@@ -37,15 +37,15 @@ import LongVideoCard from "../../component/cards/LongVideoCard";
 import { useSearchParams } from "react-router-dom";
 import PlayingPlaylistComp from "../../component/PlayingPlaylistComp";
 import { useNavigate } from "react-router-dom";
-import { Global } from '@emotion/react';
-import { styled } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { grey } from '@mui/material/colors';
+import { Global } from "@emotion/react";
+import { styled } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import { grey } from "@mui/material/colors";
 // import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
-import Skeleton from '@mui/material/Skeleton';
-import Typography from '@mui/material/Typography';
-import SwipeableDrawer from '@mui/material/SwipeableDrawer';
+import Box from "@mui/material/Box";
+import Skeleton from "@mui/material/Skeleton";
+import Typography from "@mui/material/Typography";
+import SwipeableDrawer from "@mui/material/SwipeableDrawer";
 import { ButtonForCreatorSupport } from "../channel/ChannelLayout";
 import { MoreIconButton } from "../../component/cards/VideoCard";
 
@@ -56,7 +56,6 @@ const VideoPlayer = () => {
 
   // states and refs
 
-
   const { videoId } = useParams();
   const [videoDetails, setVideoDetails] = useState({});
 
@@ -64,22 +63,22 @@ const VideoPlayer = () => {
   const [loggedIn, setLoggedIn] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
   const [likes, setLikes] = useState(0);
-  const [watchNext, setWatchNext] = useState([])
-  const [cursor, setCursor] = useState(null)
-  const [watchNextLoading, setWatchNextLoading] = useState(false)
-  const [watchNextHasMore, setWatchNextHasMore] = useState(true)
+  const [watchNext, setWatchNext] = useState([]);
+  const [cursor, setCursor] = useState(null);
+  const [watchNextLoading, setWatchNextLoading] = useState(false);
+  const [watchNextHasMore, setWatchNextHasMore] = useState(true);
   const lastElementRef = useRef(null);
-  const [playingPlaylist, setPlayingPlaylist] = useState(false)
-  const [playlist, setPlaylist] = useState([])
+  const [playingPlaylist, setPlayingPlaylist] = useState(false);
+  const [playlist, setPlaylist] = useState([]);
   const plyrInstance = useRef(null); // Ref for Plyr instance
   const [copied, setCopied] = useState(false);
 
   const [searchParams] = useSearchParams();
   const queryValue = searchParams.get("playlist"); // Get query param 'q'
-  const playlistId = queryValue
+  const playlistId = queryValue;
   const [subscribed, setSubscribed] = useState(false);
-  const [bell, setBell] = useState(false)
-  const [loading, setLoading] = useState(false)
+  const [bell, setBell] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
@@ -93,7 +92,7 @@ const VideoPlayer = () => {
 
   useEffect(() => {
     const handlePopState = () => {
-      window.location.reload();  // 🔥 Reload on back/forward navigation
+      window.location.reload(); // 🔥 Reload on back/forward navigation
     };
 
     window.addEventListener("popstate", handlePopState);
@@ -105,56 +104,53 @@ const VideoPlayer = () => {
 
   // getting video data
   useEffect(() => {
-
     const getVideoData = async () => {
       try {
         const response = await axios.get(`${GET_VIDEO}/${videoId}`, {
           withCredentials: true,
         });
         // setLoggedIn(response.data.loggedIn);
-        setLoggedIn(channelInfo != undefined && channelInfo != null)
+        setLoggedIn(channelInfo != undefined && channelInfo != null);
         setLikes(response.data.video.likes);
         console.log(response.data);
-        console.log("login ", response.data.loggedIn);
         console.log("liked ", response.data.isLiked);
         console.log("subsribed ", response.data.isSubscribed);
         console.log("bell ", response.data.isBell);
 
-        setSubscribed(response.data.isSubscribed)
-        setBell(response.data.isBell)
+        setSubscribed(response.data.isSubscribed);
+        setBell(response.data.isBell);
 
         setIsLiked(response.data.isLiked);
         setVideoDetails(response.data.video);
         // console.log(channelInfo)
-
-
       } catch (error) {
         toast.error("Error fetching video data");
-        navigate("/")
+        navigate("/");
         console.error("Error fetching video data:", error);
       }
     };
     getVideoData();
   }, [videoId]);
 
-
-
-
   useEffect(() => {
     if (queryValue) {
-      console.log("playlist", queryValue)
+      console.log("playlist", queryValue);
 
       setPlayingPlaylist(true);
 
       const getPlaylistVideos = async () => {
         try {
-          const response = await axios.get(`${GET_PLAYLIST_VIDEOS}?playlistId=${playlistId}`, { withCredentials: true })
-          console.log(response.data)
-          if (response.data.playlist.videos.some((video) => video._id === videoId)) {
-            setPlaylist(response.data.playlist)
-          }
-          else {
-            navigate(`/video-player/${videoId}`)
+          const response = await axios.get(
+            `${GET_PLAYLIST_VIDEOS}?playlistId=${playlistId}`,
+            { withCredentials: true }
+          );
+          console.log(response.data);
+          if (
+            response.data.playlist.videos.some((video) => video._id === videoId)
+          ) {
+            setPlaylist(response.data.playlist);
+          } else {
+            navigate(`/video-player/${videoId}`);
             setTimeout(() => {
               navigate(0); // Force page reload (not recommended but works)
             }, 0);
@@ -163,19 +159,15 @@ const VideoPlayer = () => {
           console.error("Error fetching video data:", error);
           toast.error("Not a valid playlist");
           setPlayingPlaylist(false);
-          navigate(`/video-player/${videoId}`)
+          navigate(`/video-player/${videoId}`);
         }
-      }
+      };
 
-      getPlaylistVideos()
+      getPlaylistVideos();
     }
   }, [queryValue, playlistId]);
 
-  const toggleBell = async () => {
-
-  }
-
-
+  const toggleBell = async () => {};
 
   // use effects
   const share = async () => {
@@ -188,24 +180,28 @@ const VideoPlayer = () => {
       toast.error("Failed to copy link");
       console.error("Failed to copy:", err);
     }
-
   };
 
   const getWatchNext = async () => {
-    if (watchNextLoading || !watchNextHasMore) return
+    if (watchNextLoading || !watchNextHasMore) return;
 
-    setWatchNextLoading(true)
+    setWatchNextLoading(true);
 
     try {
-      const response = await axios.get(`${GET_WATCH_NEXT}/${videoId}?cursor=${cursor}`);
+      const response = await axios.get(
+        `${GET_WATCH_NEXT}/${videoId}?cursor=${cursor}`
+      );
       if (response.data.watchNext.length === 0) {
-        setWatchNextHasMore(false)
-      }
-      else {
+        setWatchNextHasMore(false);
+      } else {
         setWatchNext((watchNext) => [...watchNext, ...response.data.watchNext]);
-        console.log(response)
-        setCursor(response.data.watchNext[response.data.watchNext.length - 1]?._id);
-        console.log(response.data.watchNext[response.data.watchNext.length - 1].title)
+        console.log(response);
+        setCursor(
+          response.data.watchNext[response.data.watchNext.length - 1]?._id
+        );
+        console.log(
+          response.data.watchNext[response.data.watchNext.length - 1].title
+        );
       }
       setWatchNextLoading(false);
     } catch (error) {
@@ -216,7 +212,7 @@ const VideoPlayer = () => {
   useEffect(() => {
     const fetchInitialVideos = async () => {
       const res = await axios.get(`${GET_WATCH_NEXT}/${videoId}`);
-      console.log(res)
+      console.log(res);
       setWatchNext(res.data.watchNext);
       setCursor(res.data.watchNext[res.data.watchNext.length - 1]._id);
     };
@@ -226,10 +222,10 @@ const VideoPlayer = () => {
 
   // Use Intersection Observer to detect when the last item is visible
   useEffect(() => {
-    const observer = new IntersectionObserver(entries => {
+    const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
         getWatchNext(); // Fetch more data when last item appears
-        console.log('innnn')
+        console.log("innnn");
       }
     });
 
@@ -237,17 +233,15 @@ const VideoPlayer = () => {
     return () => observer.disconnect();
   }, [watchNext]); // Re-run when videos change
 
-
-
-
   const player = new Plyr(playerRef.current, {
-    autoplay: true, quality: {
+    autoplay: true,
+    quality: {
       default: 1080,
       options: [1080, 720, 480],
       forced: true,
       onend: true,
     },
-    settings: ['quality', 'speed'],
+    settings: ["quality", "speed"],
     fullscreen: {
       enabled: true,
       fallback: true, // Ensures a fallback for unsupported browsers
@@ -258,55 +252,61 @@ const VideoPlayer = () => {
   const subscribeToggle = async () => {
     if (loading) return;
 
-    console.log('inside subs')
+    console.log("inside subs");
 
-    setLoading(true)
+    setLoading(true);
 
     if (!subscribed) {
-      const toastId = toast.loading('Subscribing...')
+      const toastId = toast.loading("Subscribing...");
       try {
-        const response = await axios.post(SUBSCRIBE_CHANNEL, { creatorId: videoDetails.channel._id }, { withCredentials: true })
-        console.log(response)
-        setSubscribed(true)
-        setBell(true)
-        videoDetails.channel.subscribersCount += 1
-        toast.success(`${videoDetails.channel.channelName}+' subscribed'`, { id: toastId })
+        const response = await axios.post(
+          SUBSCRIBE_CHANNEL,
+          { creatorId: videoDetails.channel._id },
+          { withCredentials: true }
+        );
+        console.log(response);
+        setSubscribed(true);
+        setBell(true);
+        videoDetails.channel.subscribersCount += 1;
+        toast.success(`${videoDetails.channel.channelName}+' subscribed'`, {
+          id: toastId,
+        });
+      } catch (error) {
+        console.log(error);
+        toast.error("Error subscribing", { id: toastId });
       }
-      catch (error) {
-        console.log(error)
-        toast.error('Error subscribing', { id: toastId })
+    } else {
+      const toastId = toast.loading("Unsubscribing...");
+      try {
+        const response = await axios.delete(UNSUBSCRIBE_CHANNEL, {
+          data: { creatorId: videoDetails.channel._id },
+          withCredentials: true,
+        });
+        console.log(response);
+        closeSubscribeMenu();
+        setSubscribed(false);
+        setBell(false);
+        videoDetails.channel.subscribersCount -= 1;
+        toast.success(`${videoDetails.channel.channelName}+' unsubscribed'`, {
+          id: toastId,
+        });
+      } catch (error) {
+        console.log(error);
+        toast.error("Error unsubscribing", { id: toastId });
       }
     }
-    else {
-      const toastId = toast.loading('Unsubscribing...')
-      try {
 
-        const response = await axios.delete(UNSUBSCRIBE_CHANNEL, { data: { creatorId: videoDetails.channel._id }, withCredentials: true })
-        console.log(response)
-        closeSubscribeMenu()
-        setSubscribed(false)
-        setBell(false)
-        videoDetails.channel.subscribersCount -= 1
-        toast.success(`${videoDetails.channel.channelName}+' unsubscribed'`, { id: toastId })
-      }
-      catch (error) {
-        console.log(error)
-        toast.error('Error unsubscribing', { id: toastId })
-      }
-    }
-
-    setLoading(false)
-  }
+    setLoading(false);
+  };
 
   const navigateToVideo = (videoIdNew) => {
-    console.log('navingatinggggggggggggggggggggg')
-    navigate(`/video-player/${videoIdNew}`)
+    console.log("navingatinggggggggggggggggggggg");
+    navigate(`/video-player/${videoIdNew}`);
     setTimeout(() => {
       navigate(0); // Force page reload (not recommended but works)
     }, 0);
-    return
-  }
-
+    return;
+  };
 
   useEffect(() => {
     if (playerRef.current && videoDetails.videoUrl) {
@@ -314,9 +314,9 @@ const VideoPlayer = () => {
       plyrInstance.current = new Plyr(playerRef.current, {
         autoplay: true,
         controls: [
-          "play-large",          // Large play button in the center
-          "rewind",              // Rewind button
-          "fast-forward",        // Fast forward button
+          "play-large", // Large play button in the center
+          "rewind", // Rewind button
+          "fast-forward", // Fast forward button
           "play",
           "progress",
           "current-time",
@@ -324,11 +324,11 @@ const VideoPlayer = () => {
           "mute",
           "volume",
           "settings",
-          "pip",                  // Picture-in-picture mode
-          "airplay",              // Airplay for Apple devices
-          "fullscreen"
+          "pip", // Picture-in-picture mode
+          "airplay", // Airplay for Apple devices
+          "fullscreen",
         ],
-        settings: ['speed'],
+        settings: ["speed"],
         fullscreen: { enabled: true, fallback: true, iosNative: true },
         loop: { active: false },
         keyboard: { focused: true, global: false },
@@ -365,13 +365,13 @@ const VideoPlayer = () => {
   // functions
 
   const handleLike = async () => {
-    if (loading) return
+    if (loading) return;
 
-    setLoading(true)
+    setLoading(true);
     console.log(loggedIn);
     if (!loggedIn) {
       toast.error("Please login to like the video");
-      setLoading(false)
+      setLoading(false);
       return;
     }
     try {
@@ -388,7 +388,7 @@ const VideoPlayer = () => {
       console.error("Error liking video:", error);
     }
 
-    setLoading(false)
+    setLoading(false);
   };
 
   dayjs.extend(relativeTime);
@@ -405,7 +405,6 @@ const VideoPlayer = () => {
 
   return (
     <>
-
       <div
         style={{
           paddingLeft: screenWidth > 500 ? "clamp(0.1rem, 5vw, 8.25rem)" : "0",
@@ -421,7 +420,6 @@ const VideoPlayer = () => {
             {videoDetails.videoUrl ? (
               <video
                 className="plyr-video w-full h-full max-h-[100vh] object-contain rounded-2xl"
-
                 ref={playerRef}
                 controls
                 // allowFullScreen="true"
@@ -435,7 +433,11 @@ const VideoPlayer = () => {
             )}
           </div>
 
-          <div className={`border-2 lg:hidden rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${playingPlaylist ? "block" : "hidden"} h-auto`}>
+          <div
+            className={`border-2 lg:hidden rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${
+              playingPlaylist ? "block" : "hidden"
+            } h-auto`}
+          >
             <PlayingPlaylistComp playlist={playlist} videoId={videoId} />
           </div>
 
@@ -473,8 +475,12 @@ const VideoPlayer = () => {
 
                       {/* Subscribe button */}
 
-                      <div className={`h-[36px] mr-2  w-auto rounded-3xl overflow-hidden text-sm flex-none flex ml-auto items-center box-border`} >
-                        <ButtonForCreatorSupport button={1} isSubscribedInitially={subscribed}
+                      <div
+                        className={`h-[36px] mr-2  w-auto rounded-3xl overflow-hidden text-sm flex-none flex ml-auto items-center box-border`}
+                      >
+                        <ButtonForCreatorSupport
+                          button={1}
+                          isSubscribedInitially={subscribed}
                           config={{
                             justifyContent: "space-around",
                             m: "0px",
@@ -484,10 +490,10 @@ const VideoPlayer = () => {
                               display: "flex",
                             },
                           }}
-                          isBellInitially={bell} channelId={videoDetails.channel._id} />
+                          isBellInitially={bell}
+                          channelId={videoDetails.channel._id}
+                        />
                       </div>
-
-
                     </div>
                   ) : (
                     <p>Loading channel details...</p>
@@ -540,22 +546,33 @@ const VideoPlayer = () => {
 
             {watchNext?.map((video, index) => {
               return (
-                <div className="overflow-x-hidden w-auto  " key={index} onClick={() => navigateToVideo(video._id)}>
-                  <LongVideoCard
-                    remove={"Remove from Watch histor"}
-                    video={video}
-                  />
+                <div
+                  className="overflow-x-hidden w-auto  "
+                  key={index}
+                  onClick={() => navigateToVideo(video._id)}
+                >
+                  <LongVideoCard video={video} />
                 </div>
               );
             })}
           </div>
-          <div className="py-4" >
-            <button hidden={!watchNextHasMore} className={`lg:hidden w-[100%] h-10 rounded-full border-gray-500 border-2 text-blue-400`} onClick={getWatchNext}>Show more</button>
+          <div className="py-4">
+            <button
+              hidden={!watchNextHasMore}
+              className={`lg:hidden w-[100%] h-10 rounded-full border-gray-500 border-2 text-blue-400`}
+              onClick={getWatchNext}
+            >
+              Show more
+            </button>
           </div>
 
           {/* comments */}
           {videoDetails.canComment ? (
-            <Comments videoDetails={videoDetails} setVideoDetails={setVideoDetails} loggedIn={loggedIn} />
+            <Comments
+              videoDetails={videoDetails}
+              setVideoDetails={setVideoDetails}
+              loggedIn={loggedIn}
+            />
           ) : (
             <div className="flex mx-auto mt-4">
               Comments are disabled for this video
@@ -564,28 +581,32 @@ const VideoPlayer = () => {
         </div>
 
         {/* Right Side */}
-        <div className={`hidden lg:flex flex-col lg:w-[35%] pt-3 w-full h-auto box-border lg:mx-6`}>
+        <div
+          className={`hidden lg:flex flex-col lg:w-[35%] pt-3 w-full h-auto box-border lg:mx-6`}
+        >
           {/* Right side content */}
           {/* {console.log(watchNext)} */}
-          <div className={`border-2 rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${playingPlaylist ? "block" : "hidden"} h-auto`}>
+          <div
+            className={`border-2 rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${
+              playingPlaylist ? "block" : "hidden"
+            } h-auto`}
+          >
             <PlayingPlaylistComp playlist={playlist} playingVideoId={videoId} />
           </div>
           {watchNext?.map((video, index) => {
             // console.log(video)
             return (
-              <div key={index} onClick={() => navigateToVideo(video._id)} ref={index === watchNext.length - 1 ? lastElementRef : null}>
-                <LongVideoCard
-                  remove={"Remove from Watch histor"}
-                  video={video}
-                />
+              <div
+                key={index}
+                onClick={() => navigateToVideo(video._id)}
+                ref={index === watchNext.length - 1 ? lastElementRef : null}
+              >
+                <LongVideoCard video={video} />
               </div>
-
             );
           })}
         </div>
       </div>
-
-
     </>
   );
 };

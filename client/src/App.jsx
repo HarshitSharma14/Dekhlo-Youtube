@@ -66,24 +66,10 @@ const router = createBrowserRouter([
         ),
       },
       {
-        path: "/history",
-        element: (
-          <ProtectedRoute>
-            <Suspense
-              fallback={<div>Getting the WatchHistory Page ready...</div>}
-            >
-              <WatchHistory />
-            </Suspense>
-          </ProtectedRoute>
-        ),
-      },
-      {
         path: "/settings",
         element: (
           <ProtectedRoute>
-            <Suspense
-              fallback={<div>Getting the settings Page ready...</div>}
-            >
+            <Suspense fallback={<div>Getting the settings Page ready...</div>}>
               <Settings />
             </Suspense>
           </ProtectedRoute>
@@ -101,9 +87,7 @@ const router = createBrowserRouter([
       {
         path: "/video-player/:videoId",
         element: (
-          <Suspense
-            fallback={<div>Getting the VideoPlayer Page ready...</div>}
-          >
+          <Suspense fallback={<div>Getting the VideoPlayer Page ready...</div>}>
             <VideoPlayer key={window.location.href} />
           </Suspense>
         ),
@@ -111,9 +95,7 @@ const router = createBrowserRouter([
       {
         path: "/search",
         element: (
-          <Suspense
-            fallback={<div>Getting the videos ready...</div>}
-          >
+          <Suspense fallback={<div>Getting the videos ready...</div>}>
             <SearchPage key={window.location.href} />
           </Suspense>
         ),

@@ -108,7 +108,9 @@ const Header = ({ isDisabled }) => {
   useEffect(() => {
     const fetchNoti = async () => {
       try {
+        console.log('inside fetch noti')
         const response = await axios.get(GET_NOTIFICATIONS, { withCredentials: true })
+        console.log('inside fetch noti', response.data)
         console.log(response.data)
         if (response.data[response.data.length - 1].isRead) {
           setNotificationsPending(false)
@@ -339,18 +341,18 @@ const Header = ({ isDisabled }) => {
           {anchorEl && (
             <div
               className="absolute top-[70px] bg-white rounded shadow-lg py-2"
-              onClick={handleAvatarClose}
             >
               <button
                 disabled={isDisabled}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100"
+                onClick={() => { handleAvatarClose(); navigate("/profile") }}
               >
                 Profile
               </button>
               <button
                 disabled={isDisabled}
                 className={`px-4 py-2 text-gray-700 hover:bg-gray-100 ${channelInfo === null ? "hidden" : ""}`}
-                onClick={logout}
+                onClick={() => { handleAvatarClose(); logout() }}
               >
                 Logout
               </button>

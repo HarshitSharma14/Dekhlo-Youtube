@@ -11,13 +11,13 @@ import {
   getPlaylistVideos,
   getSelfChannelInfo,
   getSubscribedChannel,
-  getSubscribedChannelVideos,
-  getWatchHistory,
   subscribeChannel,
   toggleBell,
   unSubscribeChannel,
   updateProfile,
   updateVideo,
+  removeVideoFromPlaylist,
+  deletePlaylist,
 } from "../controllers/channel.controller.js";
 import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
 
@@ -39,16 +39,18 @@ app.get("/playlist", getPlaylistVideos);
 
 // login required routes ****************************************
 app.use(isUserLoggedIn);
-app.get("/myplaylist", getMyPlaylists);
+app.get("/myplaylist/:videoId", getMyPlaylists);
 app.get("/get-subscribedchannels", getSubscribedChannel);
 app.post("/add-to-playlist", addVideosToPlaylist);
+app.delete("/remove-from-playlist", removeVideoFromPlaylist);
+app.delete("/delete-playlist", deletePlaylist);
 app.post("/update-profile", upload.single("profilePhotoFile"), updateProfile);
 app.post("/subscribe", subscribeChannel);
 app.delete("/unsubscribe", unSubscribeChannel);
 app.get("/change-isread", changeIsread);
 app.patch("/toggle-bell", toggleBell);
-app.get("/subscription/videos", getSubscribedChannelVideos);
-app.get("/watch-history", getWatchHistory);
+// app.get("/subscription/videos", getSubscribedChannelVideos);
+// app.get("/watch-history", getWatchHistory);
 app.get("/get-notifications", getNotifications);
 app.post(
   "/update-videoinfo",
@@ -57,4 +59,3 @@ app.post(
 );
 
 export default app;
-// upload.fields([{ name: 'video' }, { name: 'thumbnail' }]),

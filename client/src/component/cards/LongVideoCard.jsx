@@ -34,7 +34,7 @@ const LongVideoCard = ({
   video,
   playlist = null,
   remove,
-  videoHeight = true,
+  setPlaylistVideos,
 }) => {
   const boxRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
@@ -98,7 +98,8 @@ const LongVideoCard = ({
         padding: "0 6px",
         position: "relative",
         cursor: "pointer",
-        height: videoHeight ? "120px" : "auto",
+        // height: height ? "120px" : "auto",
+        height: "auto",
       }}
       onMouseEnter={() => {
         if (boxRef.current) {
@@ -260,7 +261,7 @@ const LongVideoCard = ({
             WebkitLineClamp: 2,
             overflow: "hidden",
             textOverflow: "ellipsis",
-            display: videoHeight && "none",
+            display: height && "none",
 
             "@media (max-width:530px)": {
               display: "none",
@@ -276,6 +277,8 @@ const LongVideoCard = ({
         isInView={isInView}
         channelInfo={channelInfo}
         videoId={video._id}
+        playlistId={playlist}
+        setPlaylistVideos={setPlaylistVideos}
       />
     </Box>
   );

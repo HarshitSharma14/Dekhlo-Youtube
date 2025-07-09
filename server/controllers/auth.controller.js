@@ -5,11 +5,14 @@ import { JWT_SECRET } from "../utils/constants.js";
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
 import { ErrorHandler } from "../utils/utility.js";
 import Playlist from "../models/playlist.model.js";
+import Setting from "../models/setting.model.js";
 
 // constants ******************************************************
 const clientURL = process.env.CLIENT_URL;
 const maxAge = 24 * 60 * 60 * 1000;
 
+
+// ✅✅
 export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
   try {
     const email = profile.emails[0]?.value; // Extract email from Google profile
@@ -31,17 +34,36 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
         profilePhoto: profile.photos[0]?.value || "", // Google profile picture
       });
 
-      const newPlaylist = await Playlist.create({
+      channel.permanentPlaylist = new Map();
+      const settings = new Setting()
+      await settings.save()
+      channel.settings = settings._id;
+
+      const watchLater = await Playlist.create({
         name: "Watch later",
         channel: channel._id,
-        videos: [],
         videoCount: 0,
         private: true,
       });
 
-      channel.playlists.push(newPlaylist._id);
-
+      channel.permanentPlaylist.set("watchLater", watchLater._id);
+      const watchHistory = await Playlist.create({
+        name: "Watch History",
+        channel: channel._id,
+        videoCount: 0,
+        private: true,
+      });
+      channel.permanentPlaylist.set("watchHistory", watchHistory._id);
+      const likedVideos = await Playlist.create({
+        name: "Liked Videos",
+        channel: channel._id,
+        videoCount: 0,
+        private: true,
+      });
+      channel.permanentPlaylist.set("likedVideos", likedVideos._id);
       await channel.save();
+
+      console.log("channel info: ", channel);
       profileAlreadyExist = false;
     }
 
@@ -66,7 +88,7 @@ export const oauth2_redirect = (req, res) => {
   const token = req.user.token;
   const profileAlreadyExist = req.user.profileAlreadyExist;
 
-  console.log('in the func')
+  console.log("in the func");
 
   // Set the token as an HTTP-only cookie
   res.cookie("jwt", token, {
@@ -88,7 +110,6 @@ export const logout = (req, res) => {
   console.log("LOGOUT");
   res.status(200).json({ message: "Logged out successfully." });
 };
-
 
 export const login = AsyncTryCatch(async (req, res, next) => {
   const { email, password } = req.body;
@@ -127,7 +148,7 @@ export const login = AsyncTryCatch(async (req, res, next) => {
   const token = jwt.sign({ channelId: channel._id }, JWT_SECRET, {
     expiresIn: maxAge,
   });
-  console.log(token)
+  console.log(token);
   console.log("bohot zyada hi andr hu uske");
 
   res.cookie("jwt", token, {

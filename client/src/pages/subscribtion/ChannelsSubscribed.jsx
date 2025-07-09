@@ -13,7 +13,6 @@ const ChannelsSubscribed = () => {
       const { data } = await axios.get(GET_SUBSCRIBED_CHANNEL, {
         withCredentials: true,
       });
-      console.log("subs", data);
       setFollowings(data.following);
     } catch (err) {
       console.log("error", err);

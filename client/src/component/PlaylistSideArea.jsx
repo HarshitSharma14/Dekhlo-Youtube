@@ -37,6 +37,8 @@ const PlaylistSideArea = ({
 }) => {
   console.log("playlisst side area ", playlist.playlistId);
   const [playlistToShow, setPlaylistToShow] = useState(playlist);
+  // const playlistToShow = playlist;
+  // playlistToShow = playlistToShow?.thumbnail || samplePlaylist.thumbnail;
   const [open, setOpen] = useState(false);
   console.log(playlistVideos);
   const [bgColor, setBgColor] = useState("#1e1e1e");

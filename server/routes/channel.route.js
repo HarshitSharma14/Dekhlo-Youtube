@@ -16,6 +16,8 @@ import {
   unSubscribeChannel,
   updateProfile,
   updateVideo,
+  removeVideoFromPlaylist,
+  deletePlaylist,
 } from "../controllers/channel.controller.js";
 import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
 
@@ -37,9 +39,11 @@ app.get("/playlist", getPlaylistVideos);
 
 // login required routes ****************************************
 app.use(isUserLoggedIn);
-app.get("/myplaylist", getMyPlaylists);
+app.get("/myplaylist/:videoId", getMyPlaylists);
 app.get("/get-subscribedchannels", getSubscribedChannel);
 app.post("/add-to-playlist", addVideosToPlaylist);
+app.delete("/remove-from-playlist", removeVideoFromPlaylist);
+app.delete("/delete-playlist", deletePlaylist);
 app.post("/update-profile", upload.single("profilePhotoFile"), updateProfile);
 app.post("/subscribe", subscribeChannel);
 app.delete("/unsubscribe", unSubscribeChannel);
@@ -55,4 +59,3 @@ app.post(
 );
 
 export default app;
-// upload.fields([{ name: 'video' }, { name: 'thumbnail' }]),

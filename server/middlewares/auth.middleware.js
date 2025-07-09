@@ -6,7 +6,6 @@ import jwt from "jsonwebtoken";
 
 export const isUserLoggedIn = AsyncTryCatch(async (req, res, next) => {
   const token = req.cookies.jwt;
-  console.log("token ", token);
   if (!token)
     return next(new ErrorHandler(401, "Please Login to access this resource"));
 
@@ -16,6 +15,5 @@ export const isUserLoggedIn = AsyncTryCatch(async (req, res, next) => {
     return next(new ErrorHandler(404, "User not found"));
   }
   req.channelId = decodedData.channelId;
-  console.log("User is logged in");
   next();
 });

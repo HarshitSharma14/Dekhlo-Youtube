@@ -1,5 +1,5 @@
 import { v2 as cloudinary } from "cloudinary";
-import mongoose from "mongoose";
+import mongoose, { mongo } from "mongoose";
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
 import Channel from "../models/channel.model.js";
 import Notification from "../models/notification.model.js";
@@ -26,7 +26,6 @@ export const getSelfChannelInfo = AsyncTryCatch(async (req, res, next) => {
     .lean();
   // .populate("playlists", "name private");    // change the fronted get the playlist when it is needed do get it in the start
 
-  console.log("channel in getseflchannelInfo", channel)
   const dataToSend = {
     _id: channel._id,
     channelName: channel.channelName,
@@ -81,7 +80,6 @@ export const getChannelInfo = AsyncTryCatch(async (req, res, next) => {
     isSubscribed: !!isSubscribed,
     isBell: isSubscribed?.bell,
   };
-  console.log("here ", dataToSend);
   res
     .status(200)
     .json({ message: "Channel Info fetched ", channel: dataToSend });
@@ -95,7 +93,7 @@ export const updateProfile = AsyncTryCatch(async (req, res, next) => {
   if (req.file) {
     profilePhoto = await UploadSinglePhotoToCloudinary(req);
   }
-  let channel = null
+  let channel = null;
   try {
     channel = await Channel.findByIdAndUpdate(
       req.channelId,
@@ -109,7 +107,7 @@ export const updateProfile = AsyncTryCatch(async (req, res, next) => {
     );
   } catch (error) {
     if (req.file) {
-      deleteImageFromCloudinary(profilePhoto)
+      deleteImageFromCloudinary(profilePhoto);
     }
   }
 
@@ -152,15 +150,17 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
 
   console.log("settingsId ", channelToBeSubscribed.settings);
 
-
-
   const creatorSettings = await Setting.findById(
     channelToBeSubscribed.settings
   ).lean();
 
-  console.log("creator setting", creatorSettings, creatorSettings?.newFollowerNotification)
+  console.log(
+    "creator setting",
+    creatorSettings,
+    creatorSettings?.newFollowerNotification
+  );
   if (creatorSettings && creatorSettings.newFollowerNotification) {
-    console.log("in side")
+    console.log("in side");
     const notification = new Notification({
       channel: creatorId,
       message: `<span style="color: #1DA1F2; font-weight: bold;">${channelName}</span> 
@@ -316,7 +316,6 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
     videoIfAvailable = await Video.findById(videoId);
   }
   if (videoIfAvailable) {
-
     if (channelId !== videoIfAvailable.channel.toString()) {
       return next(
         new ErrorHandler(400, "Video does not belong to this channel")
@@ -346,9 +345,7 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
       runValidators: true, // Apply schema validation
     });
 
-    return res
-      .status(201)
-      .json({ message: "Video updated successfully" });
+    return res.status(201).json({ message: "Video updated successfully" });
   }
 
   if (!req.files.thumbnail || !req.files.video || !title || !channelId) {
@@ -383,7 +380,7 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   // for (const { subscriber } of subscibersId) {
   //   const notification = new Notification({
   //     channel: subscriber,
-  //     message: `<span style="color: #1DA1F2; font-weight: bold;">${channel.channelName}</span> 
+  //     message: `<span style="color: #1DA1F2; font-weight: bold;">${channel.channelName}</span>
   //     has posted a new video:
   //     <span style="color: #FFD700; font-weight: bold;">${videonew.title}</span>`,
   //     isRead: false,
@@ -398,55 +395,55 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   //   });
   // }
 
-  return res
-    .status(201)
-    .json({ message: "Video uploaded successfully" });
+  return res.status(201).json({ message: "Video uploaded successfully" });
 });
 
-
 //send new video notifications
-export const sendNewVideoNotification = AsyncTryCatch(async (req, res, next) => {
-  const channelId = req.body?.channelId;
-  const subscibersId = await Subscription.find({
-    creator: channelId,
-    bell: true,
-  }).select("subscriber");
+export const sendNewVideoNotification = AsyncTryCatch(
+  async (req, res, next) => {
+    const channelId = req.body?.channelId;
+    const subscibersId = await Subscription.find({
+      creator: channelId,
+      bell: true,
+    }).select("subscriber");
 
-  const channel = await Channel.findById(channelId).select("channelName");
+    const channel = await Channel.findById(channelId).select("channelName");
 
-  const notificationDocs = subscibersId.map(({ subscriber }) => ({
-    channel: subscriber,
-    message: `<span style="color: #1DA1F2; font-weight: bold;">${channel.channelName}</span> 
+    const notificationDocs = subscibersId.map(({ subscriber }) => ({
+      channel: subscriber,
+      message: `<span style="color: #1DA1F2; font-weight: bold;">${channel.channelName}</span> 
     has posted a new video:
     <span style="color: #FFD700; font-weight: bold;">${videonew.title}</span>`,
-    isRead: false,
-  }));
-
-  // ✅ Save all notifications in one DB call
-  const notifications = await Notification.insertMany(notificationDocs);
-
-  // ✅ Emit notifications in parallel (no DB ops here)
-  notifications.forEach((notif) => {
-    emitNotification(notif.channel.toString(), {
-      message: notif.message,
-      channel: notif.channel,
       isRead: false,
-      createdAt: notif.createdAt,
+    }));
+
+    // ✅ Save all notifications in one DB call
+    const notifications = await Notification.insertMany(notificationDocs);
+
+    // ✅ Emit notifications in parallel (no DB ops here)
+    notifications.forEach((notif) => {
+      emitNotification(notif.channel.toString(), {
+        message: notif.message,
+        channel: notif.channel,
+        isRead: false,
+        createdAt: notif.createdAt,
+      });
     });
-  });
 
-  return res.status(200).json({
-    message: "Notifications sent successfully",
-    count: notifications.length,
-  });
-
-})
+    return res.status(200).json({
+      message: "Notifications sent successfully",
+      count: notifications.length,
+    });
+  }
+);
 
 //✅ get Channel Videoss *********************************************************************************
 export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
-  const channelIdForVideos = req.params.channelId;
-  const { cursor, limit = 20, sortField = "_id", sortOrder = 1 } = req.query;
+  const channelIdForVideos = req.params?.channelId;
+  let { cursor, limit = 20, sortField = "_id", sortOrder = 1 } = req.query;
 
+  sortOrder = parseInt(sortOrder);
+  cursor = JSON.parse(cursor);
   // Validate sortField
   const ALLOWED_SORT_FIELDS = ["_id", "views"];
   if (!ALLOWED_SORT_FIELDS.includes(sortField)) {
@@ -484,9 +481,7 @@ export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
     }
 
     const cursorValue = parsedCursor.value;
-    const cursorId = new mongoose.Types.ObjectId.createFromHexString(
-      parsedCursor._id.toString()
-    );
+    const cursorId = new mongoose.Types.ObjectId(parsedCursor._id.toString());
 
     if (sortField === "_id") {
       query._id = { [sortOrder === 1 ? "$gt" : "$lt"]: cursorId };
@@ -506,9 +501,9 @@ export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
     sortField === "_id"
       ? { _id: Number(sortOrder) }
       : {
-        [sortField]: Number(sortOrder),
-        _id: Number(sortOrder),
-      };
+          [sortField]: Number(sortOrder),
+          _id: Number(sortOrder),
+        };
 
   // Fetch videos
   const unfilteredVideos = await Video.find(query)
@@ -539,7 +534,6 @@ export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
   });
 });
 
-
 //✅✅ toggle bell *********************************************************************************
 export const toggleBell = AsyncTryCatch(async (req, res, next) => {
   const { creatorId } = req.body;
@@ -562,9 +556,7 @@ export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
   const subs = await Subscription.aggregate([
     {
       $match: {
-        subscriber: new mongoose.Types.ObjectId.createFromHexString(
-          req.channelId
-        ),
+        subscriber: new mongoose.Types.ObjectId(req.channelId),
       },
     },
     {
@@ -572,6 +564,18 @@ export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
         from: "channels",
         localField: "creator",
         foreignField: "_id",
+        pipeline: [
+          {
+            $project: {
+              _id: 1,
+              channelName: 1,
+              bio: 1,
+              profilePhoto: 1,
+              subscribersCount: 1,
+              email: 1,
+            },
+          },
+        ],
         as: "creator",
       },
     },
@@ -590,6 +594,7 @@ export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
         "creator.profilePhoto": 1,
         "creator.subscribersCount": 1,
         "creator.email": 1,
+        bell: 1,
       },
     },
   ]);
@@ -602,26 +607,28 @@ export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
   if (invalidSubIds.length > 0) {
     await Subscription.deleteMany({ _id: { $in: invalidSubIds } });
   }
-
-  const following = subs.filter((sub) => sub.creator).map((sub) => sub.creator);
-  console.log("folo ", following)
-  res.status(200).json({ following });
+  console.log(subs[0]);
+  res.status(200).json({ following: subs });
 });
 
 //✅ get any channels playlist **********************************************************************************
 export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
-  const channelId = req.params.channelId;
+  const channelId = req.params?.channelId;
+  // console.log("in get channel playlists ", channelId);
 
   let canSendPrivatePlaylist = false;
   const channelIdVisiting = LogedInChannel(req.cookies?.jwt);
+  // console.log("channeld Id visiting ", channelIdVisiting);
   if (channelIdVisiting)
     canSendPrivatePlaylist =
       channelIdVisiting.toString() === channelId.toString();
 
+  console.log("can send private playlists ", canSendPrivatePlaylist);
+
   const matchQuery = {
-    channelId: new mongoose.Types.ObjectId.createFromHexString(channelId),
+    channel: new mongoose.Types.ObjectId(channelId),
   };
-  if (canSendPrivatePlaylist) matchQuery.isPrivate = false;
+  if (!canSendPrivatePlaylist) matchQuery.isPrivate = false;
 
   const playlists = await Playlist.aggregate([
     {
@@ -674,12 +681,26 @@ export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
 
 //✅ get my channels playlist **********************************************************************************
 export const getMyPlaylists = AsyncTryCatch(async (req, res, next) => {
+  const { videoId } = req.params;
   const channelId = req.channelId;
-  const playlists = await Playlist.find({ channel: channelId }).select(
-    "name isPrivate"
-  );
+  const playlists = await Playlist.find({ channel: channelId })
+    .select("name isPrivate")
+    .lean();
 
-  res.status(200).json({ playlists });
+  const pv = (
+    await PlaylistVideos.find({
+      playlistId: { $in: playlists },
+      videoId,
+    }).lean()
+  ).map((p) => String(p.playlistId));
+
+  const dataToSend = playlists.map((pl) => ({
+    ...pl,
+    isPresent: pv.includes(String(pl._id)),
+  }));
+  console.log(dataToSend);
+
+  res.status(200).json({ playlists: dataToSend });
 });
 
 // Add to Playlist *************************************************************************
@@ -709,6 +730,7 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
 
   try {
     // Create video documents for each playlist
+
     const videosToInsert = playlistIds.map((id) => ({
       videoId,
       playlistId: id,
@@ -737,26 +759,34 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
 
 //✅ get videso of playlist *****************************************************************
 export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
-  const { playlistId, cursor, limit = 20 } = req.query;
-
+  console.log("in get playlist");
+  let { playlistId, cursor, limit = 20 } = req.query;
+  console.log(playlistId, cursor, limit);
+  cursor = JSON.parse(cursor);
   const parsedLimit = parseInt(limit);
 
-  const query = { playlistId };
+  const query = { playlistId: new mongoose.Types.ObjectId(playlistId) };
 
   const playlist = await Playlist.findById(playlistId);
   if (!playlist) return next(new ErrorHandler(400, "Missing playlistId"));
-
+  console.log("playlist found", playlist);
   if (playlist.isPrivate) {
     const channelIdVisiting = LogedInChannel(req.cookies?.jwt);
-    if (!channelIdVisiting || channelIdVisiting.toString() !== playlist.channel) return next(new ErrorHandler(400, "Unauthorized request"));
+    console.log("user ", channelIdVisiting);
+    if (
+      !channelIdVisiting ||
+      channelIdVisiting.toString() !== playlist.channel.toString()
+    )
+      return next(new ErrorHandler(400, "Unauthorized request"));
   }
+  console.log("moving forward");
 
   if (cursor) {
     query._id = {
-      $lt: new mongoose.Types.ObjectId.createFromHexString(cursor),
+      $lt: new mongoose.Types.ObjectId(cursor),
     };
   }
-
+  console.log("query ", query);
   const playlistVideos = await PlaylistVideos.aggregate([
     { $match: query },
     { $sort: { _id: -1 } },
@@ -764,8 +794,8 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
     {
       $lookup: {
         from: "videos",
-        localField: "videoId",
         foreignField: "_id",
+        localField: "videoId",
         as: "video",
       },
     },
@@ -776,7 +806,7 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
       },
     },
   ]);
-
+  console.log(playlistVideos.length);
   const videos = [];
   const idsToDelete = [];
   for (const entry of playlistVideos) {
@@ -800,59 +830,103 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
     ? playlistVideos[playlistVideos.length - 1]._id
     : null;
 
-  res.status(200).json({ videos, hasMore, nextCursor });
+  res.status(200).json({ playlist, videos, hasMore, nextCursor });
 });
-
 
 // remove single video from playlist *************************************************************
 export const removeVideoFromPlaylist = AsyncTryCatch(async (req, res, next) => {
-  const { videoId, playlistId } = req.body;
-
+  const { videoId, playlistIds = [] } = req.body;
+  console.log("in removing playlsit ", videoId, playlistIds);
   const videoRemoverId = req.channelId;
 
-  const playlistVideo = await PlaylistVideos.findOne({
-    playlistId,
-    videoId
-  }).populate("playlistId");
+  const playlists = playlistIds.map((p) => new mongoose.Types.ObjectId(p));
 
-  if (!playlistVideo) {
-    return new ErrorHandler(400, "Video not found in playlist");
+  const playlistVideo = await PlaylistVideos.aggregate([
+    {
+      $match: {
+        playlistId: { $in: playlists },
+        videoId: new mongoose.Types.ObjectId(videoId),
+      },
+    },
+    {
+      $lookup: {
+        from: "playlists",
+        foreignField: "_id",
+        localField: "playlistId",
+        as: "playlists",
+      },
+    },
+    {
+      $unwind: "$playlists",
+    },
+  ]);
+
+  if (!playlistVideo.length) {
+    return next(new ErrorHandler(400, "Video not found in playlist"));
   }
-  const playlistOwner = playlistVideo.playlistId.channel;
+  // console.log(playlistVideo);
+  const accessablePlaylistsVideos = [];
 
-  if (videoRemoverId === playlistOwner) {
-    await playlistVideo.deleteOne()
-    return res.status(200);
+  playlistVideo.forEach((pv) => {
+    if (videoRemoverId.toString() === pv.playlists.channel.toString())
+      accessablePlaylistsVideos.push(pv._id);
+  });
+
+  // console.log(accessablePlaylistsVideos);
+  await PlaylistVideos.deleteMany({ _id: { $in: accessablePlaylistsVideos } });
+  decearseCountInPlaylist(videoRemoverId, playlists);
+  return res.status(200).json({ success: true });
+});
+
+const decearseCountInPlaylist = async (videoRemoverId, playlists) => {
+  try {
+    await Playlist.updateMany(
+      { _id: { $in: playlists }, channel: videoRemoverId },
+      { $inc: { videosCount: -1 } }
+    );
+  } catch (error) {
+    console.error("Failed to decrement playlist video count:", err);
   }
-
-  return new ErrorHandler(400, "Authorization Denied");
-
-})
-
+};
 export const deletePlaylist = AsyncTryCatch(async (req, res, next) => {
   const { playlistId } = req.body;
-
+  console.log("in here deleting playlsit", playlistId);
   const playlistDeleterId = req.channelId;
+
+  const playlistDeleter = await Channel.findById(playlistDeleterId);
+
+  if (!playlistDeleter)
+    return next(new ErrorHandler(400, "Authorization Denied"));
+
+  let canDeletePlaylist = true;
+  if (
+    playlistDeleter.permanentPlaylist.get("watchHistory").toString() ===
+      playlistId ||
+    playlistDeleter.permanentPlaylist.get("likedVideos").toString() ===
+      playlistId ||
+    playlistDeleter.permanentPlaylist.get("watchLater").toString() ===
+      playlistId
+  )
+    canDeletePlaylist = false;
 
   const playlist = await Playlist.findById(playlistId);
 
-  if (!playlist)
-    return new ErrorHandler(400, "Playlist not found");
+  if (!playlist) return next(new ErrorHandler(400, "Playlist not found"));
 
-  if (playlistDeleterId !== playlist.channel) {
-    return new ErrorHandler(400, "Authorization Denied")
+  if (playlistDeleterId !== playlist.channel.toString()) {
+    return next(new ErrorHandler(400, "Authorization Denied"));
   }
 
-  await PlaylistVideos.deleteMany({ playlistId })
-  playlist.deleteOne();
+  await PlaylistVideos.deleteMany({ playlistId });
 
-  return res.status(200);
+  console.log("cna delte playlist ", canDeletePlaylist);
+  if (canDeletePlaylist) await Playlist.deleteOne({ _id: playlistId });
+  else await Playlist.updateOne({ _id: playlistId }, { videosCount: 0 });
 
-
-})
+  return res.status(200).json({ success: true });
+});
 
 //deleteing channel ******************************************************************************
 export const deleteChannle = AsyncTryCatch(async (req, res, next) => {
   // TODO: to delete, all videos, playlists, playlistvideos, subs, setttings, notifications ,
-
-})
+});

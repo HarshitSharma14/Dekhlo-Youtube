@@ -25,12 +25,12 @@ const channelSchema = new Schema(
       type: Map,
       of: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Playlist"
-      }
+        ref: "Playlist",
+      },
     },
     settings: {
       type: Schema.Types.ObjectId,
-      ref: "Settings",
+      ref: "Setting",
     },
     coverImage: {
       type: String,

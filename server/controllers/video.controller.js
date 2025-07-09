@@ -11,7 +11,11 @@ import Notification from "../models/notification.model.js";
 import { emitNotification } from "../socket.js";
 import Setting from "../models/setting.model.js";
 import PlaylistVideos from "../models/playlistVideos.js";
-import { deleteImageFromCloudinary, deleteVideoFromCloudinary } from "../utils/features.js";
+import {
+  deleteImageFromCloudinary,
+  deleteVideoFromCloudinary,
+} from "../utils/features.js";
+import Playlist from "../models/playlist.model.js";
 
 // view video *************************************************************
 export const getVideo = AsyncTryCatch(async (req, res, next) => {
@@ -37,25 +41,36 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
   const channelIdVisiting = LogedInChannel(req.cookies?.jwt);
 
   if (channelIdVisiting) {
-    const channelVisiting = await Channel.findById(channelIdVisiting).populate("settings");
+    const channelVisiting = await Channel.findById(channelIdVisiting).populate(
+      "settings"
+    );
 
     if (channelVisiting.settings.watchHistoryOn) {
-      const watchHistoryPlaylistId = channelVisiting.permanentPlaylist.watchHistory;
-      const newPlaylist = new PlaylistVideos({
-        playlistId: watchHistoryPlaylistId,
-        videoId: videoId
-      })
+      const watchHistoryPlaylistId =
+        channelVisiting.permanentPlaylist.get("watchHistory");
 
-      await newPlaylist.save();
+      const result = await PlaylistVideos.deleteOne({
+        playlistId: watchHistoryPlaylistId,
+        videoId: videoId,
+      });
+
+      const newPlaylistVideo = new PlaylistVideos({
+        playlistId: watchHistoryPlaylistId,
+        videoId: videoId,
+      });
+
+      await newPlaylistVideo.save();
+      await Playlist.findByIdAndUpdate(watchHistoryPlaylistId, {
+        $inc: { videosCount: !result.deletedCount },
+      });
     }
     // Check if the video is liked by the visiting channel
     const likedVideoPlaylistId = channelVisiting.permanentPlaylist.likedVideos;
 
     isLiked = !!(await PlaylistVideos.find({
       playlistId: likedVideoPlaylistId,
-      videoId: videoId
-    }))
-
+      videoId: videoId,
+    }));
   }
 
   return res.status(200).json({
@@ -151,7 +166,7 @@ export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
         as: "channel",
       },
     },
-    { $unwind: "channel" },
+    { $unwind: "$channel" },
   ]);
 
   return res.status(200).json({ watchNext });
@@ -175,7 +190,7 @@ export const putComment = AsyncTryCatch(async (req, res, next) => {
 
   await newComment.populate("channel", "channelName profilePhoto _id settings");
 
-  const settings = await Setting.findById(newComment.channel.settings)
+  const settings = await Setting.findById(newComment.channel.settings);
 
   if (settings.commentNotification === false) {
     return res.status(201).json({ success: true, comment: newComment });
@@ -205,7 +220,6 @@ export const putComment = AsyncTryCatch(async (req, res, next) => {
 });
 
 export const likeUnlikeVideo = AsyncTryCatch(async (req, res, next) => {
-
   const { videoId } = req.params;
   const { isLiked } = req.body;
 
@@ -213,26 +227,27 @@ export const likeUnlikeVideo = AsyncTryCatch(async (req, res, next) => {
 
   if (!video) next(new ErrorHandler(404, "Video not found"));
 
-  const channelId = req.channelId
+  const channelId = req.channelId;
 
   const channel = await Channel.findById(channelId).select("permanentPlaylist");
   const likedVideosPlaylistId = channel.permanentPlaylist.likedVideos;
 
   const videoToggle = await PlaylistVideos.find({
     playlistId: likedVideosPlaylistId,
-    videoId: videoId
+    videoId: videoId,
   });
 
   if (videoToggle) {
     await videoToggle.deleteOne();
     await Video.findByIdAndUpdate(videoId, { $inc: { likes: -1 } });
-    return res.status(200).json({ message: "Video unliked", likes: video.likes });
-  }
-  else {
+    return res
+      .status(200)
+      .json({ message: "Video unliked", likes: video.likes });
+  } else {
     const playlistVideo = new PlaylistVideos({
       playlistId: likedVideosPlaylistId,
-      videoId: videoId
-    })
+      videoId: videoId,
+    });
     await playlistVideo.save();
 
     const notification = new Notification({
@@ -478,8 +493,6 @@ export const autoComplete = AsyncTryCatch(async (req, res, next) => {
 //   return res.status(200).json({ videos });
 // });
 
-
-
 // deleting comment *******************************************************************
 export const deleteComment = AsyncTryCatch(async (req, res, next) => {
   const { commentId } = req.body;
@@ -491,15 +504,16 @@ export const deleteComment = AsyncTryCatch(async (req, res, next) => {
   const commenter = comment.channel;
   const videoOwner = comment.videoId.channel;
 
-  if (channelIdDeletingComment === commenter || channelIdDeletingComment === videoOwner) {
+  if (
+    channelIdDeletingComment === commenter ||
+    channelIdDeletingComment === videoOwner
+  ) {
     await comment.deleteOne();
-    return res.status(200).json({ message: "Comment Deleted Successfully" })
+    return res.status(200).json({ message: "Comment Deleted Successfully" });
   }
 
   return next(new ErrorHandler(400, "Unauthorized request"));
-})
-
-
+});
 
 // delete video *********************************************************************************
 
@@ -507,7 +521,7 @@ export const deleteVideo = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.body;
   const channelDeletingVideo = req.channelId;
 
-  const video = await Video.findById(videoId)
+  const video = await Video.findById(videoId);
 
   if (!video) {
     return next(new ErrorHandler(404, "Video not found"));
@@ -521,4 +535,4 @@ export const deleteVideo = AsyncTryCatch(async (req, res, next) => {
   deleteVideoFromCloudinary(video.videoUrl);
   await Comment.deleteMany({ videoId: videoId });
   await video.deleteOne();
-})
+});

@@ -3,6 +3,7 @@ import { ThemeProvider, createTheme } from "@mui/material/styles";
 import { createRoot } from "react-dom/client";
 import App from "./App.jsx";
 import "./index.css";
+import { SocketProvider } from "./context/SocketContext.jsx";
 
 const darkTheme = createTheme({
   palette: {
@@ -25,8 +26,10 @@ const darkTheme = createTheme({
 });
 
 createRoot(document.getElementById("root")).render(
-  <ThemeProvider theme={darkTheme}>
-    <CssBaseline />
-    <App />
-  </ThemeProvider>
+  <SocketProvider>
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <App />
+    </ThemeProvider>
+  </SocketProvider>
 );

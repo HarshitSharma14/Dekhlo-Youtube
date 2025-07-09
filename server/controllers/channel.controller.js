@@ -13,6 +13,9 @@ import Video from "../models/video.model.js";
 import Playlist from "../models/playlist.model.js";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
+import { emitNotification, io } from "../socket.js";
+import Setting from "../models/setting.model.js";
+import Notification from "../models/notification.model.js";
 
 // const JWT_SECRET = process.env.JWT_SECRET || "default-secret";
 // console.log(JWT_SECRET);
@@ -273,9 +276,9 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   // console.log(req.files.video)
   // console.log(req.files.thumbnail)
   let videoIfAvailable = null;
-  console.log(videoId?.length);
+  // console.log(videoId?.length);
   if (videoId && videoId.toString() !== "null") {
-    console.log("in");
+    // console.log("in");
     videoIfAvailable = await Video.findById(videoId);
   }
   if (videoIfAvailable) {
@@ -352,7 +355,7 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   // console.log("inside2")
 
   const { videoUrlNew, thumbnailUrlNew } = await UploadVideoAndThumbnail(req);
-  console.log("inside3");
+  // console.log("inside3");
 
   const videonew = new Video({
     title,

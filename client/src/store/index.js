@@ -8,3 +8,7 @@ export const useAppStore = create()((...a) => ({
   ...createChannelSlice(...a),
   ...createMiscSlice(...a),
 }));
+
+
+
+window.store = useAppStore

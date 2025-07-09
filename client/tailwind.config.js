@@ -13,6 +13,7 @@ export default {
       screens: {
         xs: '650px', // Custom breakpoint
         xxs: '430px',
+        xxs2: '430px'
       },
     },
   },

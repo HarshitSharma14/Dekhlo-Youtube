@@ -68,6 +68,7 @@ const PlayingPlaylistComp = ({ playlist, playingVideoId }) => {
                             <LongVideoCard
                                 remove={"Remove from Watch histor"}
                                 video={video}
+                                videoHeight={true}
                             />
                         </div>
                     )

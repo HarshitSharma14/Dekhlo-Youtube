@@ -6,7 +6,6 @@ import { PiShareFatLight } from "react-icons/pi";
 import axios from "axios";
 import {
   GET_COMMENTS,
-  GET_PLAY_NEXT,
   GET_PLAYLIST_VIDEOS,
   GET_VIDEO,
   GET_WATCH_NEXT,
@@ -92,9 +91,21 @@ const VideoPlayer = () => {
     setAnchorEl(null);
   };
 
+  useEffect(() => {
+    const handlePopState = () => {
+      window.location.reload();  // 🔥 Reload on back/forward navigation
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
+  }, []);
 
   // getting video data
   useEffect(() => {
+
     const getVideoData = async () => {
       try {
         const response = await axios.get(`${GET_VIDEO}/${videoId}`, {
@@ -163,6 +174,8 @@ const VideoPlayer = () => {
   const toggleBell = async () => {
 
   }
+
+
 
   // use effects
   const share = async () => {
@@ -294,15 +307,6 @@ const VideoPlayer = () => {
     return
   }
 
-  useEffect(() => {
-    const getPlayNext = async () => {
-      try {
-        const response = await axios.get(`${GET_PLAY_NEXT}/${videoId}`);
-      } catch (error) {
-        console.error("Error fetching video data:", error);
-      }
-    };
-  }, []);
 
   useEffect(() => {
     if (playerRef.current && videoDetails.videoUrl) {
@@ -350,7 +354,7 @@ const VideoPlayer = () => {
 
   // functions
 
-  const openDiscription = () => { };
+  // const openDiscription = () => { };
 
   //         return () => {
   //             player.destroy();  // Clean up when the component is unmounted

@@ -6,6 +6,9 @@ import { ErrorHandler } from "../utils/utility.js";
 import jwt from "jsonwebtoken";
 import Comment from "../models/comment.model.js";
 import Subscription from "../models/subscription.model.js";
+import mongoose from "mongoose";
+import Notification from "../models/notification.model.js";
+import { emitNotification } from "../socket.js";
 // view video *************************************************************
 export const getVideo = AsyncTryCatch(async (req, res, next) => {
   // console.log("in");
@@ -61,9 +64,9 @@ export const getComments = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.params;
   const { limit = 2, skip = 0 } = req.query; // Default limit is 20, skip is 0
 
-  //console.log("bla bla bla");
+  // console.log("bla bla bla");
 
-  //console.log("skip", skip);
+  // console.log("skip", skip);
 
   const video = await Video.findById(videoId);
   if (video.canComment === false)
@@ -107,11 +110,9 @@ export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
     query._id = { $gt: cursor, $ne: videoId }; // Fetch videos with _id > cursor (next batch)
   }
 
-  const watchNext = await Video.find(query)
-    .populate("channel", "profilePhoto channelName")
-    .limit(limit);
-  console.log("watchnext");
-  console.log(watchNext);
+  const watchNext = await Video.find(query).populate("channel", "profilePhoto channelName").limit(limit);
+  // console.log('watchnext')
+  // console.log(watchNext)
   return res.status(200).json({ watchNext });
 });
 
@@ -139,6 +140,29 @@ export const putComment = AsyncTryCatch(async (req, res, next) => {
   console.log("here 3");
   await newComment.populate("channel", "channelName profilePhoto _id");
   console.log("here 4");
+
+  const video = await Video.findById(videoId).select("channel title")
+
+  console.log(video.channel)
+
+  const notification = new Notification({
+    channel: video.channel,
+    message: `<span style="color: #1DA1F2; font-weight: bold;">${newComment.channel.channelName}</span> 
+              commented on your video:
+              <span style="color: #FFD700; font-weight: bold;">${video.title}</span><br />
+              <i>"${text}"</i>`,
+    isRead: false
+  })
+
+  await notification.save()
+
+  emitNotification(video.channel.toString(), {
+    message: notification.message,
+    channel: notification.channel,
+    isRead: false,
+    createdAt: notification.createdAt,
+  })
+
 
   return res.status(201).json({ success: true, comment: newComment });
 });
@@ -168,6 +192,25 @@ export const likeUnlikeVideo = AsyncTryCatch(async (req, res, next) => {
     // const channel = await Channel.findByIdAndUpdate(decodedData.channelId, {
     //   $push: { likedVideos: videoId },
     // });
+
+
+    const notification = new Notification({
+      channel: video.channel,
+      message: `<span style="color: #1DA1F2; font-weight: bold;">${channel.channelName}</span> 
+              has liked your video: 
+              <span style="color: #FFD700; font-weight: bold;">${video.title}</span>`,
+      isRead: false,
+    })
+
+    await notification.save()
+    console.log('liking')
+    console.log(video.channel)
+    emitNotification(video.channel.toString(), {
+      message: notification.message,
+      channel: video.channel,
+      isRead: false,
+      createdAt: notification.createdAt,
+    })
 
     console.log("third");
     return res.status(200).json({ message: "Video liked", likes: video.likes });
@@ -208,6 +251,175 @@ export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
   return res.status(200).json({ videoDetails });
 });
 
+export const searchVideo = AsyncTryCatch(async (req, res, next) => {
+  const { searchText } = req.query;
+  // console.log("yessur ", searchText);
+  const cursor = req.query?.cursor;
+  const limit = 10;
+
+  const results = await Video.aggregate([
+    {
+      $search: {                                  // 🔥 Atlas Search with Fuzzy Matching
+        index: "search",
+        compound: {
+          should: [
+            {                                      // ✅ High weight for channel name
+              text: {
+                query: searchText,
+                path: "channelName",
+                fuzzy: { maxEdits: 2 },
+                score: { boost: { value: 3 } }
+              }
+            },
+            {                                      // ✅ Medium weight for title and category
+              text: {
+                query: searchText,
+                path: ["title", "category"],
+                fuzzy: { maxEdits: 2 },
+                score: { boost: { value: 10 } }
+              }
+            },
+            {                                      // ✅ Low weight for description
+              text: {
+                query: searchText,
+                path: ["description"],
+                fuzzy: { maxEdits: 2 },
+                score: { boost: { value: 2 } }
+              }
+            }
+          ],
+          minimumShouldMatch: 1
+        }
+      }
+    },
+    // ✅ Cursor filter applied early for efficiency
+    ...(cursor ? [{ $match: { _id: { $gt: new mongoose.Types.ObjectId(cursor) } } }] : []),
+    {
+      $lookup: {
+        from: "channels",                  // ✅ Correct collection name
+        localField: "channel",             // ✅ Reference field in `videos`
+        foreignField: "_id",               // ✅ `_id` field in `channels`
+        as: "channel"
+      }
+    },
+    {
+      $unwind: {
+        path: "$channel",
+        preserveNullAndEmptyArrays: true   // ✅ Avoid breaking if no match is found
+      }
+    },
+    {
+      $addFields: {                                // ✅ Add relevance score
+        searchScore: { $meta: "searchScore" }
+      }
+    },
+    {
+      $facet: {                                     // ✅ Parallel pipelines
+        metadata: [
+          {
+            $group: {                              // ✅ Min/Max values for normalization
+              _id: null,
+              maxViews: { $max: "$views" },
+              minViews: { $min: "$views" },
+              maxScore: { $max: "$searchScore" },
+              minScore: { $min: "$searchScore" }
+            }
+          }
+        ],
+        results: [
+          { $limit: 50 }                          // ✅ Fetch initial batch
+        ]
+      }
+    },
+    { $unwind: "$metadata" },
+    { $unwind: "$results" },
+
+    // ✅ Deduplicate by grouping on _id
+    {
+      $group: {
+        _id: "$results._id",
+        doc: { $first: "$results" },              // Keep only one instance
+        combinedScore: { $first: "$combinedScore" }
+      }
+    },
+
+    // ✅ Flatten the grouped structure
+    { $replaceRoot: { newRoot: { $mergeObjects: ["$doc", { combinedScore: "$combinedScore" }] } } },
+
+    // ✅ Sort by combined score
+    { $sort: { combinedScore: -1, _id: 1 } },
+
+    // ✅ Limit results
+    { $limit: limit }
+  ]);
+
+  // console.log("results", results.length);
+
+  return res.status(200).json({ results });
+});
+
+
+export const autoComplete = AsyncTryCatch(async (req, res, next) => {
+  const { searchText } = req.query;
+  // console.log("AutoComplete Query:", searchText);
+
+  // 🔥 Separate Search for Title
+  const titleResults = await Video.aggregate([
+    {
+      $search: {
+        index: "autocomplete",
+        autocomplete: {
+          query: searchText,
+          path: "title",
+          fuzzy: { maxEdits: 2, prefixLength: 1 }
+        }
+      }
+    },
+    { $addFields: { searchScore: { $meta: "searchScore" } } },
+    { $match: { searchScore: { $gte: 2 } } },                  // ✅ Threshold Filter
+    { $project: { _id: 0, text: "$title", score: "$searchScore" } }
+  ]);
+
+  // 🔥 Separate Search for ChannelName
+  const channelResults = await Video.aggregate([
+    {
+      $search: {
+        index: "autocomplete",
+        autocomplete: {
+          query: searchText,
+          path: "channelName",
+          fuzzy: { maxEdits: 2, prefixLength: 1 }
+        }
+      }
+    },
+    { $addFields: { searchScore: { $meta: "searchScore" } } },
+    { $match: { searchScore: { $gte: 2 } } },                  // ✅ Threshold Filter
+    { $project: { _id: 0, text: "$channelName", score: "$searchScore" } }
+  ]);
+
+  // ✅ Remove Duplicates Separately
+  const uniqueTitles = Array.from(new Map(titleResults.map(res => [res.text, res])).values());
+  const uniqueChannels = Array.from(new Map(channelResults.map(res => [res.text, res])).values());
+
+  // ✅ Combine Results into a Single Array
+  const combinedResults = [
+    ...uniqueTitles.map(res => ({ text: res.text, score: res.score })),
+    ...uniqueChannels.map(res => ({ text: res.text, score: res.score }))
+  ];
+
+  // ✅ Sort by Score in Descending Order
+  combinedResults.sort((a, b) => b.score - a.score);
+
+  // ✅ Apply Limit of 10
+  const limitedResults = combinedResults.slice(0, 5).map(res => res.text);
+
+  // console.log("Autocomplete Results:", limitedResults);
+  res.status(200).json({ results: limitedResults });
+});
+
+
+
+
 export const getAllVideos = AsyncTryCatch(async (req, res, next) => {
   const videos = await Video.aggregate([
     {
@@ -235,23 +447,7 @@ export const getAllVideos = AsyncTryCatch(async (req, res, next) => {
   return res.status(200).json({ videos });
 });
 
-export const getPlayNext = AsyncTryCatch(async (req, res, next) => {
-  const { videoId } = req.params;
-  const cursor = req.query.cursor;
-  const limit = 10;
-  const video = await Video.findById(videoId);
-  if (!video) {
-    return next(new ErrorHandler(404, "Video not found"));
-  }
 
-  let query = { channel: video.channel, _id: { $ne: videoId } };
 
-  if (cursor) {
-    query._id = { $gt: cursor, $ne: videoId }; // Fetch videos with _id > cursor (next batch)
-  }
 
-  const watchNext = await Video.find(query).populate("channel").limit(limit);
-  console.log("watchnext");
-  console.log(watchNext);
-  return res.status(200).json({ watchNext });
-});
+

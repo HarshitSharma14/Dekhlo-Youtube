@@ -1,7 +1,7 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import mongoose, { Schema, model } from "mongoose";
 
 const settingSchema = new Schema({
-  commentLikedNotification: {
+  commentNotification: {
     type: Boolean,
     default: true,
   },
@@ -24,6 +24,6 @@ const settingSchema = new Schema({
   },
 });
 
-const Setting = models.Setting || model("Setting", settingSchema);
+const Setting = model("Setting", settingSchema);
 
 export default Setting;

@@ -32,6 +32,7 @@ const videoSchema = new Schema(
       type: Number,
       default: 0,
     },
+    channelName: { type: String },
     duration: {
       type: Number, //in seconds
       required: true,

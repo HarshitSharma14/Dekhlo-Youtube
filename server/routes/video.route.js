@@ -1,13 +1,14 @@
 import { Router } from "express";
 import {
   getVideo,
-  getPlayNext,
   getVideoDetails,
   likeUnlikeVideo,
   getComments,
   putComment,
   getWatchNext,
   getAllVideos,
+  searchVideo,
+  autoComplete,
 } from "../controllers/video.controller.js";
 import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
 //liking video , commenting , view count , update video info
@@ -15,10 +16,10 @@ import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
 const app = Router();
 
 app.get("/get-all-videos", getAllVideos);
-
+app.get("/search-video", searchVideo)
+app.get("/autocomplete", autoComplete);
 app.get("/video-details/:videoId", getVideoDetails);
 app.get("/get-video/:videoId", getVideo);
-app.get("/get-play-next/:videoId", getPlayNext);
 app.get("/get-comments/:videoId", getComments);
 app.get("/get-watch-next/:videoId", getWatchNext);
 app.use(isUserLoggedIn);

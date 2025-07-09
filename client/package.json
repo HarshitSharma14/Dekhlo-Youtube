@@ -19,6 +19,7 @@
     "colorthief": "^2.6.0",
     "date-fns": "^4.1.0",
     "dayjs": "^1.11.13",
+    "framer-motion": "^12.6.3",
     "lodash": "^4.17.21",
     "mdb-react-ui-kit": "^9.0.0",
     "plyr": "^3.7.8",
@@ -30,6 +31,8 @@
     "react-intersection-observer": "^9.16.0",
     "react-router-dom": "^7.1.1",
     "relative-time": "^1.0.0",
+    "socket.io-client": "^4.8.1",
+    "zukeeper": "^1.0.2",
     "zustand": "^5.0.3"
   },
   "devDependencies": {

@@ -34,13 +34,16 @@ export const UNSUBSCRIBE_CHANNEL = `${CHANNEL_ROUTE}/unsubscribe`;
 export const TOGGLE_BELL = `${CHANNEL_ROUTE}/toggle-bell`;
 export const UPDATE_VIDEO_INFO = `${CHANNEL_ROUTE}/update-videoinfo`;
 export const GET_PLAYLIST_VIDEOS = `${CHANNEL_ROUTE}/playlist`;
+export const GET_NOTIFICATIONS = `${CHANNEL_ROUTE}/get-notifications`;
+export const CHANGE_ISREAD = `${CHANNEL_ROUTE}/change-isread`;
 
 export const VIDEO_ROUTE = `${server}/video`;
 
 export const GET_VIDEO_DETAILS = `${VIDEO_ROUTE}/video-details`;
 export const GET_VIDEO = `${VIDEO_ROUTE}/get-video`;
-export const GET_PLAY_NEXT = `${VIDEO_ROUTE}/get-play-next`;
 export const LIKE_UNLIKE = `${VIDEO_ROUTE}/like-unlike`;
 export const GET_COMMENTS = `${VIDEO_ROUTE}/get-comments`;
 export const PUT_COMMENT = `${VIDEO_ROUTE}/put-comment`;
 export const GET_WATCH_NEXT = `${VIDEO_ROUTE}/get-watch-next`;
+export const SEARCH_VIDEO_ROUTE = `${VIDEO_ROUTE}/search-video`;
+export const AUTOCOMPLETE_ROUTE = `${VIDEO_ROUTE}/autocomplete`;

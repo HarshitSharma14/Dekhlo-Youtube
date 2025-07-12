@@ -261,7 +261,6 @@ const LongVideoCard = ({
             WebkitLineClamp: 2,
             overflow: "hidden",
             textOverflow: "ellipsis",
-            display: height && "none",
 
             "@media (max-width:530px)": {
               display: "none",

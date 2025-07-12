@@ -62,13 +62,14 @@ function getManyPublicIdsFromUrls(urls) {
 
 const deleteVideo = async (publicId) => {
   try {
-    cloudinary.uploader.destroy(
+    await cloudinary.uploader.destroy(
       "your_video_public_id",
       { resource_type: "video" },
       function (error, result) {
         console.log(result, error);
       }
     );
+    console.log("video deleted successfully");
   } catch (error) {
     console.log("didnt delete the video");
   }
@@ -105,14 +106,14 @@ const deleteImage = async (publicId) => {
   }
 };
 
-export function deleteVideoFromCloudinary(url) {
+export async function deleteVideoFromCloudinary(url) {
   const publicId = getPublicIdFromUrl(url);
-  deleteVideo(publicId);
+  await deleteVideo(publicId);
 }
 
-export function deleteImageFromCloudinary(url) {
+export async function deleteImageFromCloudinary(url) {
   const publicId = getPublicIdFromUrl(url);
-  deleteImage(publicId);
+  await deleteImage(publicId);
 }
 
 export const UpdateThumbnail = async (req) => {

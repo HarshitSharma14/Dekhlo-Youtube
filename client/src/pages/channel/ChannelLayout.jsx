@@ -456,7 +456,7 @@ const DiscriptionDialogBox = ({ isBig = false, channel }) => {
         alignItems: "center",
         width: "auto",
         color: "#767676",
-        // bgcolor: "yellow",
+        maxWidth: isBig ? "700px" : "auto",
         wordBreak: "break-word",
         overflow: "hidden",
         display: "inline-block",

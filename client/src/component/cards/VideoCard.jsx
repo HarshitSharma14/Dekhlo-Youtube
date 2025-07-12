@@ -31,12 +31,14 @@ import {
   Add as AddIcon,
   Close,
   DeleteOutline,
+  DeleteOutlined,
 } from "@mui/icons-material";
 import { useAppStore } from "../../store/index.js";
 import axios from "axios";
 import toast from "react-hot-toast";
 import {
   ADD_VIDEO_TO_PLAYLISTS,
+  DELETE_VIDEO,
   GET_MY_PLAYLISTS,
   REMOVE_VIDEO_FROM_PLAYLISTS,
 } from "../../utils/constants.js";
@@ -322,7 +324,7 @@ export const MoreIconButton = ({
   const [schedulePlaylistAdd, setSchedulePlaylistAdd] = useState([]);
   const [schedulePlaylistRemove, setSchedulePlaylistRemove] = useState([]);
   const [alreadyPresentPlaylist, setAlreadyPresentPlaylist] = useState([]);
-  const [playlists, setPlaylists] = useState([]);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
   const [createNewPlaylist, setCreateNewPlaylist] = useState(false);
   const [name, setName] = useState("");
   const [isPrivate, setIsPrivate] = useState(true);
@@ -368,6 +370,7 @@ export const MoreIconButton = ({
     setAvailablePlaylists([]);
     setAlreadyPresentPlaylist([]);
     setModalOpen(false);
+    setDeleteModalOpen(false);
     setAnchorEl(null);
   };
   const createPlaylist = async () => {
@@ -422,6 +425,22 @@ export const MoreIconButton = ({
       });
     } finally {
       setSchedulePlaylistAdd([]);
+    }
+  };
+
+  const deleteVideo = async (videoId) => {
+    const toastId = toast.loading("Deleting Video...");
+    closeModal();
+    try {
+      await axios.delete(DELETE_VIDEO, {
+        data: { videoId },
+        withCredentials: true,
+      });
+      toast.success("Video Deleted Successfully", { id: toastId });
+    } catch (err) {
+      toast.error(err.response.data?.message || "Something went wrong", {
+        id: toastId,
+      });
     }
   };
 
@@ -535,38 +554,50 @@ export const MoreIconButton = ({
           <MenuItem
             onClick={(e) => {
               e.stopPropagation();
-              // if (removeFrom.length)
               removeVideoFromPlyalist();
-              //   else
-              //     addVideoToPlaylists(channelInfo?.permanentPlaylist?.watchLater);
             }}
             sx={{
               display: "flex",
               gap: "10px",
             }}
           >
-            {/* here was that piece of shit */}
-
             <DeleteOutline />
             {removeFrom}
           </MenuItem>
         ) : (
           <></>
         )}
+
         {isOwner && (
-          <MenuItem
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/update-video?videoId=${videoId}`);
-            }}
-            sx={{
-              display: "flex",
-              gap: "10px",
-            }}
-          >
-            <EditOutlined />
-            Edit Video Details
-          </MenuItem>
+          <>
+            <MenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/update-video?videoId=${videoId}`);
+              }}
+              sx={{
+                display: "flex",
+                gap: "10px",
+              }}
+            >
+              <EditOutlined />
+              Edit Video Details
+            </MenuItem>
+            <MenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                setDeleteModalOpen(true);
+              }}
+              sx={{
+                display: "flex",
+                gap: "10px",
+                color: "red",
+              }}
+            >
+              <DeleteOutlined />
+              Delete Video
+            </MenuItem>
+          </>
         )}
       </Menu>
 
@@ -802,6 +833,70 @@ export const MoreIconButton = ({
               </Box>{" "}
             </>
           )}
+        </Box>
+      </Modal>
+
+      <Modal
+        open={deleteModalOpen}
+        onClick={(e) => e.stopPropagation()}
+        onClose={() => {
+          setDeleteModalOpen(false);
+        }}
+        slotProps={{
+          backdrop: { style: { backgroundColor: "transparent" } },
+        }}
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: 340,
+            bgcolor: "background.paper",
+            boxShadow: 24,
+            borderRadius: 2,
+            p: 2,
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              px: 2,
+              pb: 1,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              fontSize: "16px",
+            }}
+          >
+            Delete the Video? <br /> This action cannot be undone.
+          </Typography>
+
+          <Divider />
+          <Box
+            sx={{
+              mt: "15px",
+              display: "flex",
+              justifyContent: "end",
+              gap: "6px",
+            }}
+          >
+            <Button
+              onClick={() => {
+                closeModal();
+              }}
+            >
+              Cancle
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              onClick={() => deleteVideo(videoId)}
+            >
+              Delete
+            </Button>
+          </Box>
         </Box>
       </Modal>
     </>

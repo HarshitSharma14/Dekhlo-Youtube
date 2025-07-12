@@ -109,13 +109,10 @@ const VideoPlayer = () => {
         const response = await axios.get(`${GET_VIDEO}/${videoId}`, {
           withCredentials: true,
         });
+        console.log(response.data);
         // setLoggedIn(response.data.loggedIn);
         setLoggedIn(channelInfo != undefined && channelInfo != null);
         setLikes(response.data.video.likes);
-        console.log(response.data);
-        console.log("liked ", response.data.isLiked);
-        console.log("subsribed ", response.data.isSubscribed);
-        console.log("bell ", response.data.isBell);
 
         setSubscribed(response.data.isSubscribed);
         setBell(response.data.isBell);
@@ -167,7 +164,7 @@ const VideoPlayer = () => {
     }
   }, [queryValue, playlistId]);
 
-  const toggleBell = async () => {};
+  const toggleBell = async () => { };
 
   // use effects
   const share = async () => {
@@ -186,23 +183,17 @@ const VideoPlayer = () => {
     if (watchNextLoading || !watchNextHasMore) return;
 
     setWatchNextLoading(true);
-
+    console.log('recheck')
     try {
       const response = await axios.get(
         `${GET_WATCH_NEXT}/${videoId}?cursor=${cursor}`
       );
-      if (response.data.watchNext.length === 0) {
-        setWatchNextHasMore(false);
-      } else {
-        setWatchNext((watchNext) => [...watchNext, ...response.data.watchNext]);
-        console.log(response);
-        setCursor(
-          response.data.watchNext[response.data.watchNext.length - 1]?._id
-        );
-        console.log(
-          response.data.watchNext[response.data.watchNext.length - 1].title
-        );
-      }
+      setWatchNextHasMore(response.data.hasMore);
+      setWatchNext((watchNext) => [...watchNext, ...response.data.watchNext]);
+      setCursor(
+        response.data.nextCursor
+      );
+      console.log(response.data)
       setWatchNextLoading(false);
     } catch (error) {
       console.error("Error fetching video data:", error);
@@ -211,10 +202,13 @@ const VideoPlayer = () => {
 
   useEffect(() => {
     const fetchInitialVideos = async () => {
-      const res = await axios.get(`${GET_WATCH_NEXT}/${videoId}`);
-      console.log(res);
-      setWatchNext(res.data.watchNext);
-      setCursor(res.data.watchNext[res.data.watchNext.length - 1]._id);
+      const response = await axios.get(`${GET_WATCH_NEXT}/${videoId}`);
+      // console.log(res);
+      setWatchNextHasMore(response.data.hasMore);
+      setWatchNext([...response.data.watchNext]);
+      setCursor(
+        response.data.nextCursor
+      );
     };
 
     fetchInitialVideos(); // Fetch first batch when component mounts
@@ -434,9 +428,8 @@ const VideoPlayer = () => {
           </div>
 
           <div
-            className={`border-2 lg:hidden rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${
-              playingPlaylist ? "block" : "hidden"
-            } h-auto`}
+            className={`border-2 lg:hidden rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${playingPlaylist ? "block" : "hidden"
+              } h-auto`}
           >
             <PlayingPlaylistComp playlist={playlist} videoId={videoId} />
           </div>
@@ -521,7 +514,7 @@ const VideoPlayer = () => {
                       <PiShareFatLight onClick={share} />
                     </div>
 
-                    <div className="w-[40px] relative h-[36px] rounded-3xl flex flex-row justify-evenly hover:bg-[#635f5f] ml-3 items-center bg-[#2e302f] box-border overflow-hidden">
+                    <div className={`w-[40px] relative h-[36px] rounded-3xl flex flex-row justify-evenly hover:bg-[#635f5f] ml-3 items-center bg-[#2e302f] box-border overflow-hidden ${channelInfo ? "" : "hidden"}`}>
                       {/* <BsThreeDots /> */}
                       <MoreIconButton
                         isInView={true}
@@ -587,9 +580,8 @@ const VideoPlayer = () => {
           {/* Right side content */}
           {/* {console.log(watchNext)} */}
           <div
-            className={`border-2 rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${
-              playingPlaylist ? "block" : "hidden"
-            } h-auto`}
+            className={`border-2 rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${playingPlaylist ? "block" : "hidden"
+              } h-auto`}
           >
             <PlayingPlaylistComp playlist={playlist} playingVideoId={videoId} />
           </div>

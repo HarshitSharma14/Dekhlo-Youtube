@@ -26,6 +26,7 @@ import { AUTOCOMPLETE_ROUTE, GET_NOTIFICATIONS, CHANGE_ISREAD, LOGOUT_ROUTE, SEA
 import { useAppStore } from "../store";
 import { Autocomplete, TextField } from "@mui/material";
 import Notifications from "./Notifications";
+import { useRef } from "react";
 
 const Header = ({ isDisabled }) => {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -39,12 +40,30 @@ const Header = ({ isDisabled }) => {
   const [suggestions, setSuggestions] = useState([])
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   // Toggle the menu (avatar options)
+  const dialogRef = useRef(null)
   const handleAvatarClick = (event) => {
-    setAnchorEl(event.currentTarget);
+    console.log(anchorEl)
+    if (anchorEl === null) { setAnchorEl(event.currentTarget); }
+    else { setAnchorEl(null); }
   };
   const handleAvatarClose = () => {
     setAnchorEl(null);
   };
+  const handleClickOutside = (event) => {
+    if (dialogRef.current && !dialogRef.current.contains(event.target)) {
+      setAnchorEl(null);
+    }
+  };
+  useEffect(() => {
+    if (anchorEl) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [anchorEl]);
 
   const toggleNotifications = async () => {
     if (notificationsOpen) {
@@ -55,7 +74,6 @@ const Header = ({ isDisabled }) => {
       try {
         await axios.get(`${CHANGE_ISREAD}?t=${notifications[0].createdAt}`, { withCredentials: true })
         setNotificationsPending(false)
-        console.log("isread done")
       }
       catch (e) {
         console.log(e)
@@ -66,8 +84,6 @@ const Header = ({ isDisabled }) => {
 
 
   const searchVideo = async (value) => {
-    console.log("searchText")
-    console.log(searchText)
     if (value) {
       sessionStorage.setItem("searchText", value);
     }
@@ -82,7 +98,6 @@ const Header = ({ isDisabled }) => {
   const fetchAutocomplete = async (text) => {
     try {
       const response = await axios.get(AUTOCOMPLETE_ROUTE, { params: { searchText: text } })
-      console.log(response.data)
       setSuggestions(response.data.results)
     }
     catch (error) {
@@ -94,7 +109,6 @@ const Header = ({ isDisabled }) => {
     setSearchText(value);
 
     if (value.length > 1) {
-      console.log("autocomplete")
       fetchAutocomplete(value)
     }
     else {
@@ -108,10 +122,8 @@ const Header = ({ isDisabled }) => {
   useEffect(() => {
     const fetchNoti = async () => {
       try {
-        console.log('inside fetch noti')
         const response = await axios.get(GET_NOTIFICATIONS, { withCredentials: true })
-        console.log('inside fetch noti', response.data)
-        console.log(response.data)
+
         if (response.data[response.data.length - 1].isRead) {
           setNotificationsPending(false)
         }
@@ -218,8 +230,6 @@ const Header = ({ isDisabled }) => {
             options={suggestions}
             onChange={(e, value) => {                            // For selection
               if (value) {
-                console.log("in")
-                console.log(value)
                 setSearchText(() => value);
                 searchVideo(value)
                 // Trigger search only on selection
@@ -336,16 +346,16 @@ const Header = ({ isDisabled }) => {
             onClick={handleAvatarClick}
             className="text-white hover:bg-gray-700 p-2 rounded-full"
           >
-            <div className="w-8 h-8 bg-gray-500 rounded-full" />
+            {channelInfo?.profilePhoto ? <img className='rounded-full w-10 h-10' src={channelInfo?.profilePhoto}></img> : <div className="w-10 h-10 bg-gray-500 rounded-full" />}
           </button>
-          {anchorEl && (
-            <div
+          {anchorEl !== null && (
+            <div ref={dialogRef}
               className="absolute top-[70px] bg-white rounded shadow-lg py-2"
             >
               <button
                 disabled={isDisabled}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={() => { handleAvatarClose(); navigate("/profile") }}
+                onClick={() => { handleAvatarClose(); if (channelInfo) navigate("/profile"); else navigate("/signup") }}
               >
                 Profile
               </button>

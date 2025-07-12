@@ -135,9 +135,9 @@ export const UpdateThumbnail = async (req) => {
     // Upload the photo
     const photoResult = req.files?.thumbnail
       ? await uploadFile(req.files.thumbnail[0], {
-          resource_type: "image",
-          folder: "Thumbnails", // Store photos in 'Photos' folder
-        })
+        resource_type: "image",
+        folder: "Thumbnails", // Store photos in 'Photos' folder
+      })
       : null;
     console.log("photo uploaded");
     return {
@@ -170,17 +170,17 @@ export const UploadVideoAndThumbnail = async (req) => {
     // Upload the photo
     const photoResult = req.files?.thumbnail
       ? await uploadFile(req.files.thumbnail[0], {
-          resource_type: "image",
-          folder: "Thumbnails", // Store photos in 'Photos' folder
-        })
+        resource_type: "image",
+        folder: "Thumbnails", // Store photos in 'Photos' folder
+      })
       : null;
     console.log("photo uploaded");
     // Upload the video
     const videoResult = req.files?.video
       ? await uploadFile(req.files.video[0], {
-          resource_type: "video",
-          folder: "Videos", // Store videos in 'Videos' folder
-        })
+        resource_type: "video",
+        folder: "Videos", // Store videos in 'Videos' folder
+      })
       : null;
     console.log("video uplaoded");
     // Response with the uploaded file details

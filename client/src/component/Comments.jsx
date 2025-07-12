@@ -29,9 +29,6 @@ import ClearIcon from '@mui/icons-material/Clear';
 
 const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
     const { channelInfo } = useAppStore();
-
-
-
     const [open, setOpen] = useState(false);
     const toggleDrawer = (state) => (event) => {
         if (event && event.type === "keydown" && (event.key === "Tab" || event.key === "Shift")) return;
@@ -40,7 +37,7 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
 
     const [comments, setComments] = useState([]);
     const [commentText, setCommentText] = useState("");
-    const [skip, setSkip] = useState(0);
+    const [cursor, setCursor] = useState(null);
     const [hasMore, setHasMore] = useState(true);
     const [anchorEl, setAnchorEl] = useState(null);
     const openBool = Boolean(anchorEl);
@@ -54,7 +51,6 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
     const putComment = async () => {
         const toastId = toast.loading("Commenting...");
 
-        console.log(commentText);
         if (commentText.length === 0) {
             return;
         }
@@ -75,20 +71,18 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
 
             setComments((prevComments) => [response.data.comment, ...prevComments]);
             setSkip(skip + 1);
-            console.log(response.data);
             setCommentText("");
         } catch (error) {
-            console.error("Error posting comment:", error);
         }
     };
 
 
     const fetchComments = async () => {
         const response = await axios.get(
-            `${GET_COMMENTS}/${videoId}?limit=2&skip=0`
+            `${GET_COMMENTS}/${videoId}?limit=2&cursor=${cursor}`
         );
-        console.log(response);
         setComments(response.data.comments);
+        setCursor(response.data.nextCursor);
         setHasMore(response.data.hasMore);
     };
     useEffect(() => {
@@ -99,7 +93,6 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
         const observer = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting) {
                 loadMoreComments(); // Fetch more data when last item appears
-                console.log('innnn')
             }
         });
 
@@ -111,7 +104,6 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
         const observer = new IntersectionObserver(entries => {
             if (entries[0].isIntersecting) {
                 loadMoreComments(); // Fetch more data when last item appears
-                console.log('innnn')
             }
         });
 
@@ -122,26 +114,18 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
 
 
     const loadMoreComments = async () => {
-        const newSkip = skip + 2;
-        console.log("init 2");
+        if (!hasMore) return
         const response = await axios.get(
-            `${GET_COMMENTS}/${videoId}?limit=2&skip=${newSkip}`
+            `${GET_COMMENTS}/${videoId}?limit=2&cursor=${cursor}`
         );
-        console.log(response);
-        console.log("init 3");
         if (response.data.comments?.length > 0) {
-            console.log("yes len is more");
             setComments((prevComments) => {
-                console.log("in cnt", response.data.comments.length);
                 return [...prevComments, ...response.data.comments];
             });
-            setSkip(newSkip);
+            setCursor(response.data.nextCursor);
         }
         setHasMore(response.data.hasMore ?? false); // Default to false if undefined
 
-        console.log(comments);
-        console.log(response.data.hasMore);
-        console.log(newSkip);
     };
 
 
@@ -180,6 +164,7 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
 
     const drawerBleeding = 56;
 
+
     return (
         <>
             <div className="w-full hidden lg:block  h-auto max-w-[100vw] overflow-hidden box-border">
@@ -191,7 +176,7 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
                         <div className="flex flex-row mt-5">
                             <div className="rounded-full h-[50px] w-[50px]">
                                 <img
-                                    className="object-contain w-full h-full rounded-full"
+                                    className="w-full h-full rounded-full"
                                     src={videoDetails.channel?.profilePhoto}
                                 />
                             </div>
@@ -227,7 +212,6 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
                         </div>
                         <div className="overflow-hidden">
                             {comments.map((comment, index) => {
-                                // console.log("in comment map", comments.length);
                                 return (
                                     <div className="flex flex-row my-5" key={comment?._id} ref={index === comments.length - 1 ? lastCommentRefBig : null}>
                                         <div className="flex w-[40px] h-[40px] rounded-full mr-2">
@@ -297,8 +281,11 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
                 <div onClick={toggleDrawer(true)} className="bg-[#292828] cursor-pointer w-full mt-1 font-roboto font-semibold rounded-xl min-h-[80px] flex flex-col px-3 py-3">
                     <div> Comments {formatViews(videoDetails.commentCount)}</div>
                     <div className='flex flex-row h-[42px] relative overflow-hidden w-[82vw]'>
-                        <div className='absolute top-0 left-0 w-[40px] h-[40px] flex items-center mr-2'><img className="rounded-full w-[40px] h-[40px] " src={comments[0]?.channel?.profilePhoto} /></div>
-                        <div className='truncate overflow-hidden  pl-[45px] '>{comments[0]?.commentData}</div>
+                        {comments[0] ? (<>
+                            <div className='absolute top-0 left-0 w-[40px] h-[40px] flex items-center mr-2'>
+                                <img className="rounded-full w-[40px] h-[40px] " src={comments[0]?.channel?.profilePhoto} /></div>
+                            <div className='truncate overflow-hidden  pl-[45px] '>{comments[0]?.commentData}</div></>) :
+                            (<div className='flex justify-center mx-auto'>No comments</div>)}
                     </div>
                 </div>
                 <SwipeableDrawer
@@ -381,7 +368,6 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
                         </div>
                         <div className="overflow-y-auto">
                             {comments.map((comment, index) => {
-                                // console.log("in comment map", comments.length);
                                 return (
                                     <div className="flex flex-row my-5" key={comment?._id} ref={index === comments.length - 1 ? lastCommentRef : null}>
                                         <div className="flex w-[40px] h-[40px] rounded-full mr-2">

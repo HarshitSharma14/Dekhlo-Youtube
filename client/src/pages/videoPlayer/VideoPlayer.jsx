@@ -566,6 +566,7 @@ const VideoPlayer = () => {
               setVideoDetails={setVideoDetails}
               loggedIn={loggedIn}
             />
+
           ) : (
             <div className="flex mx-auto mt-4">
               Comments are disabled for this video

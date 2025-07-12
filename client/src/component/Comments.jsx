@@ -145,7 +145,8 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
     }));
 
     const StyledBox = styled(Box)(({ theme }) => ({
-        backgroundColor: "#121212",
+        backgroundColor: "#888888",
+        display: 'none',
         borderTopLeftRadius: 16,
         borderTopRightRadius: 16,
         padding: "12px 16px",

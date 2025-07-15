@@ -1,5 +1,5 @@
-import { Box, Button, Drawer, Menu } from "@mui/material";
-import React, { useEffect, useRef, useState } from "react";
+import { Box, Button, Drawer } from "@mui/material";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../store";
 import "./Sidebar.css";
@@ -7,8 +7,6 @@ import "./Sidebar.css";
 import {
   AccountCircle,
   AccountCircleOutlined,
-  FormatListBulleted as FormatListBulletedIcon,
-  FormatListBulletedOutlined,
   History as HistoryIcon,
   HistoryOutlined,
   HomeRounded as HomeIcon,
@@ -23,84 +21,22 @@ import {
   WatchLater as WatchLaterIcon,
   WatchLaterOutlined,
 } from "@mui/icons-material";
-const Sidebar = ({ isVideoPlayer }) => {
-  //                                 <<-- open and func are temp, will be removed by redux
+import { useSidebarMode } from "../hooks/sidebarState";
 
-  // useState *******************************************************************************
-  const [drawerVariant, setDrawerVariant] = useState("persistent");
-
-  // constants *******************************************************************************
-  const sidebarRef = useRef(null);
+const Sidebar = () => {
   const { isSidebarOpen, toggelSidebar, sidebarActivity, channelInfo } =
     useAppStore();
-  // useEffects ********************************************************************************
 
-  //                  <<-- Always render the Sidebar to avoid the flash effect seeming a component mount time taken not neccessory after use of zustang
-  // useEffect(() => {
-  //   setIsDrawerOpen(open);
-  // }, [isSidebarOpen]);
+  const { drawerVariant } = useSidebarMode();
 
-  //                   <<-- Checking widnow size to show suitabel side bar
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1000 && !isVideoPlayer) {
-        setDrawerVariant("persistent");
-      } else {
-        setDrawerVariant("temporary");
-      }
-    };
-    // Set initial variant based on window size
-    handleResize();
-    // Attach the resize event listener
-    window.addEventListener("resize", handleResize);
-
-    // Cleanup the event listener on unmount
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
-  }, [isSidebarOpen]);
-
-  //                      <<--- (using gpt) ignoring the scroll input in the sidebar after its complition (at top and bottom) so that it doesnt interfear with main page's scroll bar
-  useEffect(() => {
-    const sidebar = sidebarRef.current;
-
-    const preventScrollPropagation = (e) => {
-      const { scrollTop, scrollHeight, clientHeight } = sidebar;
-      const atTop = scrollTop === 0;
-      const atBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight;
-
-      if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-        e.preventDefault();
-      } else {
-        // Allow normal scrolling within the sidebar
-        sidebar.scrollTop += e.deltaY;
-      }
-    };
-
-    if (sidebar) {
-      sidebar.addEventListener("wheel", preventScrollPropagation, {
-        passive: false,
-      });
-    }
-
-    return () => {
-      if (sidebar) {
-        sidebar.removeEventListener("wheel", preventScrollPropagation);
-      }
-    };
-  }, []);
-  console.log("sidebar ", drawerVariant);
   return (
     <>
       <Drawer
         variant={drawerVariant}
         open={isSidebarOpen}
-        onClose={() => {
-          toggelSidebar();
-        }}
+        onClose={toggelSidebar}
         sx={{
           display: drawerVariant === "persistent" && !isSidebarOpen && "none",
-          // display: isSidebarOpen ? "block" : "none",
           width: "250px",
           height: "calc(100vh - 70px)",
           top: "70px",
@@ -114,7 +50,6 @@ const Sidebar = ({ isVideoPlayer }) => {
         }}
       >
         <Box
-          ref={sidebarRef}
           sx={{
             p: 2,
             color: "white",
@@ -200,11 +135,6 @@ const Sidebar = ({ isVideoPlayer }) => {
               drawerVariant={drawerVariant}
             />
           </div>
-          {/* <div className="section setting-section" style={{ border: "none" }}>
-         
-        </div> */}
-          {/* <div></div>
-        <div></div> */}
         </Box>
       </Drawer>
     </>

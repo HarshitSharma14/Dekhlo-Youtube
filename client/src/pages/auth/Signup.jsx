@@ -10,12 +10,12 @@ import {
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import FormControlLabel from "@mui/material/FormControlLabel";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { GOOGLE_LOGIN_URL, LOGIN_ROUTE } from "../../utils/constants";
 
 import axios from "axios";
 import toast from "react-hot-toast";
-import { redirect, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../../store";
 
 export const Signup = () => {
@@ -27,7 +27,7 @@ export const Signup = () => {
 
   const [email, setEmail] = useState("");
 
-  const { setIsLoggedIn, isLoggedIn, channelInfo } = useAppStore()
+  const { setIsLoggedIn, isLoggedIn, channelInfo } = useAppStore();
 
   const [formErrors, setFormErrors] = useState({
     password: "",
@@ -40,12 +40,12 @@ export const Signup = () => {
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
   useEffect(() => {
-    console.log(isLoggedIn)
-    console.log(channelInfo)
+    console.log(isLoggedIn);
+    console.log(channelInfo);
     if (isLoggedIn === true || channelInfo !== null) {
       navigate("/");
     }
-  }, [])
+  }, []);
 
   const handleChange = (e) => {
     if (e.target.name === "email") {
@@ -84,7 +84,7 @@ export const Signup = () => {
 
       console.log(response.cookie);
       toast.success("User logged in successfully", { id: toastId });
-      setIsLoggedIn(true)
+      setIsLoggedIn(true);
       navigate("/");
     } catch (e) {
       toast.error(e.response?.data?.message || "Something went wrong", {

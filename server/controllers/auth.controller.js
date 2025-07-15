@@ -11,7 +11,6 @@ import Setting from "../models/setting.model.js";
 const clientURL = process.env.CLIENT_URL;
 const maxAge = 24 * 60 * 60 * 1000;
 
-
 // ✅✅
 export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
   try {
@@ -35,8 +34,8 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
       });
 
       channel.permanentPlaylist = new Map();
-      const settings = new Setting()
-      await settings.save()
+      const settings = new Setting();
+      await settings.save();
       channel.settings = settings._id;
 
       const watchLater = await Playlist.create({
@@ -73,7 +72,7 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
       JWT_SECRET,
       { expiresIn: maxAge } // Token expires in 1 hour
     );
-
+    console.log("token created ", token);
     // console.log(token);
     return cb(null, { token, profileAlreadyExist });
   } catch (err) {

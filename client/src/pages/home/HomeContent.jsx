@@ -1,11 +1,9 @@
 import { Box, CircularProgress } from "@mui/material";
 import axios from "axios";
-import { memo, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { memo, useEffect, useRef, useState } from "react";
 import VideoCard from "../../component/cards/VideoCard";
 import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
 import { GET_HOME_VIDEOS_ROUTE } from "../../utils/constants";
-import { useRef } from "react";
 
 const HomeContent = () => {
   //constants *******************************
@@ -46,17 +44,6 @@ const HomeContent = () => {
     }
   };
 
-  //                   <<--- Handels the scroll behaviour for the infinete scrolling *****************************
-  const handleScroll = () => {
-    const bottom =
-      window.innerHeight + window.scrollY >=
-      document.documentElement.scrollHeight - 100;
-
-    if (bottom && !isFetching.current && hasMore.current) {
-      getVideos();
-    }
-  };
-
   // use effect **********************************************************************************
   //                   <<----- Fetch data for the first time
   useEffect(() => {
@@ -65,79 +52,94 @@ const HomeContent = () => {
 
   //                  <<--- to detect the scroll bar for infinite scrolling **************************
   useEffect(() => {
+    const handleScroll = () => {
+      const bottom =
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 100;
+
+      if (bottom && !isFetching.current && hasMore.current) {
+        getVideos();
+      }
+    };
     window.addEventListener("scroll", handleScroll);
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, [isFetching]);
 
+  if (!videos.length && isLoading) return <VideoCardLoading />;
+  if (!videos.length && !isLoading) return <EmptyHome />;
+
   return (
     <>
-      {!videos.length && isLoading ? (
-        <VideoCardLoading />
-      ) : (
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
 
-            "@media(max-width: 680px)": { justifyContent: "center" },
-          }}
-        >
-          {videos.map((video) => (
-            <VideoCard
-              key={video?._id}
-              id={video?._id}
-              thumbnail={video?.thumbnailUrl}
-              title={video?.title}
-              channelId={video?.channel?._id}
-              channelName={video?.channel?.channelName}
-              views={video?.views}
-              uploadTime={video?.createdAt}
-              channelProfile={video?.channel?.profilePhoto}
-              videoUrl={video?.videoUrl}
-              duration={video?.duration}
-            />
-          ))}
-          {isLoading && videos.length && (
-            <div
-              style={{
-                width: "100%",
-                position: "relative",
-                padding: "10px",
-                // backgroundColor: "yellow",
-                height: "40px",
-                justifyContent: "center",
-                justifyItems: "center",
-              }}
-            >
-              <CircularProgress
-                sx={{
-                  position: "relative",
-                  left: "50%",
-                }}
-              />
-            </div>
-          )}
-          {!isLoading && !videos.length && (
-            <div
-              style={{
-                width: "100%",
-                position: "relative",
-                padding: "10px",
-                // backgroundColor: "yellow",
-                height: "40px",
-                justifyContent: "center",
-                justifyItems: "center",
-              }}
-            >
-              <Box>No videos to show</Box>
-            </div>
-          )}
-        </Box>
-      )}
+          "@media(max-width: 680px)": { justifyContent: "center" },
+        }}
+      >
+        {videos.map((video) => (
+          <VideoCard
+            key={video?._id}
+            id={video?._id}
+            thumbnail={video?.thumbnailUrl}
+            title={video?.title}
+            channelId={video?.channel?._id}
+            channelName={video?.channel?.channelName}
+            views={video?.views}
+            uploadTime={video?.createdAt}
+            channelProfile={video?.channel?.profilePhoto}
+            videoUrl={video?.videoUrl}
+            duration={video?.duration}
+          />
+        ))}
+
+        {isLoading && <LoadingMoreIndicator />}
+      </Box>
     </>
   );
 };
 
 export default memo(HomeContent);
+
+const EmptyHome = () => {
+  return (
+    <div
+      style={{
+        width: "100%",
+        position: "relative",
+        padding: "10px",
+        // backgroundColor: "yellow",
+        height: "40px",
+        justifyContent: "center",
+        justifyItems: "center",
+      }}
+    >
+      <Box>No videos to show</Box>
+    </div>
+  );
+};
+
+const LoadingMoreIndicator = () => {
+  return (
+    <div
+      style={{
+        width: "100%",
+        position: "relative",
+        padding: "10px",
+        height: "40px",
+        justifyContent: "center",
+        justifyItems: "center",
+      }}
+    >
+      <CircularProgress
+        sx={{
+          position: "relative",
+          left: "50%",
+        }}
+      />
+    </div>
+  );
+};

@@ -1,23 +1,22 @@
-import React, { lazy, Suspense, useEffect } from "react";
+import axios from "axios";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import {
   createBrowserRouter,
   Navigate,
   RouterProvider,
 } from "react-router-dom";
-import axios from "axios";
 import HomeLayoutLoadingPage from "./component/loadingLayouts/HomeLayoutLoadingPage.jsx";
 import ProtectedRoute from "./pages/auth/ProtectedRoute.jsx";
+import Settings from "./pages/channel/Settings.jsx";
+import SearchPage from "./pages/home/SearchPage.jsx";
 import { useAppStore } from "./store/index.js";
 import { GET_CHANNEL_DETAILS } from "./utils/constants.js";
-import SearchPage from "./pages/home/SearchPage.jsx";
-import Settings from "./pages/channel/Settings.jsx";
 
 // Routes imports ****************************************
 const HomeLayout = lazy(() => import("./pages/home/HomeLayout.jsx"));
 const Signup = lazy(() => import("./pages/auth/Signup.jsx"));
 const ProfileSetup = lazy(() => import("./pages/auth/ProfileSetup.jsx"));
-const WatchHistory = lazy(() => import("./pages/channel/WatchHistory.jsx"));
 const PlaylistContent = lazy(() =>
   import("./pages/channel/PlaylistContent.jsx")
 );
@@ -171,7 +170,7 @@ const router = createBrowserRouter([
   },
 ]);
 const App = () => {
-  const { setChannelInfo, isLoggedIn, setIsLoggedIn } = useAppStore();
+  const { setChannelInfo, isLoggedIn } = useAppStore();
   const getChannelInfo = async () => {
     try {
       const { data } = await axios.get(GET_CHANNEL_DETAILS, {

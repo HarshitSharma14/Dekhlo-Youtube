@@ -20,7 +20,8 @@ import {
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
+import { NavLink, Outlet, useNavigate, useParams } from "react-router-dom";
+import { useUrlChcek } from "../../hooks/sidebarState";
 import {
   GET_CHANNEL_DETAILS,
   SUBSCRIBE_CHANNEL,
@@ -30,14 +31,16 @@ import {
 
 const ChannelLayout = () => {
   // useState **********************************************************************************
-  const [activeTab, setActiveTab] = useState(-10);
+  const { isChannelVideos } = useUrlChcek();
+  const activeTab = isChannelVideos ? 0 : 1;
   const [hoveredTab, setHoveredTab] = useState(activeTab);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [channel, setChannel] = useState(null);
   const [sortNo, setSortNo] = useState(0);
+
   // constant **********************************************************************************
-  const navigate = useNavigate();
   const buttonsForSorting = ["Latest", "Popular", "Oldest"];
 
   const sortingFields = [
@@ -45,9 +48,7 @@ const ChannelLayout = () => {
     { sf: "views", so: -1 },
     { sf: "_id", so: 1 },
   ];
-  const location = useLocation();
-  const params = useParams();
-  const { channelId } = params;
+
   const smallScreenConfig = {
     justifyContent: "center",
     width: "45%",
@@ -93,356 +94,255 @@ const ChannelLayout = () => {
     [sortNo, channel?.isOwner]
   );
 
-  useEffect(() => {
-    if (
-      location.pathname.split("/")[location.pathname.split("/").length - 1] ===
-      `${channelId}`
-    ) {
-      console.log("videos");
-      setActiveTab(0);
-      setHoveredTab(0);
-    } else if (
-      location.pathname.split("/")[location.pathname.split("/").length - 1] ===
-      "playlist"
-    ) {
-      setActiveTab(1);
-      setHoveredTab(1);
-    }
-  }, [location.pathname]);
+  const params = useParams();
+  const { channelId } = params;
 
   useEffect(() => {
     getChannelInfo();
   }, [channelId]);
 
+  if (isLoading) return <Box>Channel details fetching</Box>;
+  if (!isLoading && !channel) return <div> Channel does not exist</div>;
+
   return (
     <>
-      {isLoading && <Box>Channel details fetching</Box>}
-      {!isLoading && channel && (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          width: "100%",
+        }}
+      >
+        {/* total top area  */}
         <Box
           sx={{
-            display: "flex",
-            flexDirection: "column",
-            width: "100%",
+            // bgcolor: "blue",
+            width: "90%",
+            margin: "0 auto",
           }}
         >
-          {/* total top area  */}
+          {/* Cover image box only  */}
+          {channel?.coverImage && (
+            <Box
+              sx={{
+                height: "20vw",
+                width: "100%",
+                margin: "auto",
+                borderRadius: "20px",
+                overflow: "hidden",
+                display: "flex",
+                // border: "2px solid red",
+                "@media(min-width: 900px)": {
+                  height: "14vw",
+                },
+              }}
+            >
+              <img
+                src={channel.coverImage}
+                alt="cover image"
+                style={{
+                  width: "100%",
+                  objectFit: "cover",
+                }}
+              />
+            </Box>
+          )}
+
+          {/* with all the info of the top when screen is big  */}
           <Box
             sx={{
+              height: "28vw",
               // bgcolor: "blue",
-              width: "90%",
-              margin: "0 auto",
+              maxHeight: "240px",
+              display: "flex",
+              alignItems: "center",
+              gap: "20px",
+              "@media (min-width:950px)": {
+                minHeight: "210px",
+                height: "19vw",
+              },
             }}
           >
-            {/* Cover image box only  */}
-            {channel?.coverImage && (
-              <Box
-                sx={{
-                  height: "20vw",
-                  width: "100%",
-                  margin: "auto",
-                  borderRadius: "20px",
-                  overflow: "hidden",
-                  display: "flex",
-                  // border: "2px solid red",
-                  "@media(min-width: 900px)": {
-                    height: "14vw",
-                  },
-                }}
-              >
-                <img
-                  src={channel.coverImage}
-                  alt="cover image"
-                  style={{
-                    width: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              </Box>
-            )}
-
-            {/* with all the info of the top when screen is big  */}
             <Box
               sx={{
-                height: "28vw",
-                // bgcolor: "blue",
-                maxHeight: "240px",
+                // bgcolor: "yellow",
+                height: "200px",
+                width: "200px",
+                borderRadius: "100%",
                 display: "flex",
+                flexWrap: "wrap",
+                color: "black",
+                overflow: "hidden",
+                justifyContent: "center",
                 alignItems: "center",
-                gap: "20px",
-                "@media (min-width:950px)": {
-                  minHeight: "210px",
-                  height: "19vw",
+                "@media (max-width: 760px)": {
+                  height: "150px",
+                  width: "150px",
                 },
+                "@media (max-width: 600px)": {
+                  height: "100px",
+                  width: "100px",
+                },
+                // bgcolor: "yellow",
               }}
             >
-              <Box
-                sx={{
-                  // bgcolor: "yellow",
-                  height: "200px",
-                  width: "200px",
-                  borderRadius: "100%",
-                  display: "flex",
-                  flexWrap: "wrap",
-                  color: "black",
-                  overflow: "hidden",
-                  justifyContent: "center",
-                  alignItems: "center",
-                  "@media (max-width: 760px)": {
-                    height: "150px",
-                    width: "150px",
-                  },
-                  "@media (max-width: 600px)": {
-                    height: "100px",
-                    width: "100px",
-                  },
-                  // bgcolor: "yellow",
+              <img
+                src={channel?.profilePhoto}
+                alt="ProfilePhoto"
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
                 }}
-              >
-                <img
-                  src={channel?.profilePhoto}
-                  alt="ProfilePhoto"
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
-              </Box>
-              <Box
-                sx={{
-                  "@media (max-width: 880px)": {
-                    flex: "0 0 60%",
-                  },
-                  // bgcolor: "yellow",
-                }}
-              >
-                <div>
-                  <Box
-                    sx={{
-                      fontSize: "40px",
-                      fontWeight: "bold",
-                      wordBreak: "break-word",
-                      "@media (max-width: 680px)": {
-                        fontSize: "32px",
-                      },
-                      "@media (max-width: 600px)": {
-                        fontSize: "28px",
-                      },
-                      "@media (max-width: 480px)": {
-                        fontSize: "18px",
-                      },
-                    }}
-                  >
-                    {channel?.channelName}
-                  </Box>
-                  <Box
-                    sx={{
-                      "@media (max-width: 760px)": {
-                        fontSize: "14px",
-                      },
-                      "@media (max-width: 600px)": {
-                        fontSize: "12px",
-                      },
-                      "@media (max-width: 450px)": {
-                        fontSize: "10px",
-                      },
-                    }}
-                  >
-                    <span style={{}}>@{channel?.email} </span>
-                    <span
-                      style={{
-                        marginLeft: "4px",
-                        color: "#767676",
-                      }}
-                    >
-                      • {channel?.followers} subscribers • {channel?.videos}{" "}
-                      videos
-                    </span>
-                  </Box>
-                </div>
-                <DiscriptionDialogBox isBig={true} channel={channel} />
+              />
+            </Box>
+            <Box
+              sx={{
+                "@media (max-width: 880px)": {
+                  flex: "0 0 60%",
+                },
+                // bgcolor: "yellow",
+              }}
+            >
+              <div>
                 <Box
                   sx={{
-                    display: channel.isOwner ? "none" : "flex",
-                    gap: "10px",
+                    fontSize: "40px",
+                    fontWeight: "bold",
+                    wordBreak: "break-word",
+                    "@media (max-width: 680px)": {
+                      fontSize: "32px",
+                    },
+                    "@media (max-width: 600px)": {
+                      fontSize: "28px",
+                    },
+                    "@media (max-width: 480px)": {
+                      fontSize: "18px",
+                    },
                   }}
                 >
-                  <ButtonForCreatorSupport
-                    button={2}
-                    config={bigScreenConfig}
-                    channelId={channelId}
-                  />
-                  <ButtonForCreatorSupport
-                    button={1}
-                    isSubscribedInitially={isSubscribed}
-                    isBellInitially={channel.isBell}
-                    config={bigScreenConfig}
-                    channelId={channelId}
-                  />
+                  {channel?.channelName}
                 </Box>
-              </Box>
-            </Box>
-
-            {/* Discription and button for subs and creator support  for small screen  */}
-            <Box
-              sx={{
-                display: channel.isOwner && "none",
-                "@media (min-width: 875px)": {
-                  display: "none",
-                },
-              }}
-            >
-              <DiscriptionDialogBox channel={channel} />
-
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-around",
+                <Box
+                  sx={{
+                    "@media (max-width: 760px)": {
+                      fontSize: "14px",
+                    },
+                    "@media (max-width: 600px)": {
+                      fontSize: "12px",
+                    },
+                    "@media (max-width: 450px)": {
+                      fontSize: "10px",
+                    },
+                  }}
+                >
+                  <span style={{}}>@{channel?.email} </span>
+                  <span
+                    style={{
+                      marginLeft: "4px",
+                      color: "#767676",
+                    }}
+                  >
+                    • {channel?.followers} subscribers • {channel?.videos}{" "}
+                    videos
+                  </span>
+                </Box>
+              </div>
+              <DiscriptionDialogBox isBig={true} channel={channel} />
+              <Box
+                sx={{
+                  display: channel.isOwner ? "none" : "flex",
+                  gap: "10px",
                 }}
               >
                 <ButtonForCreatorSupport
                   button={2}
-                  config={smallScreenConfig}
+                  config={bigScreenConfig}
                   channelId={channelId}
                 />
                 <ButtonForCreatorSupport
                   button={1}
                   isSubscribedInitially={isSubscribed}
                   isBellInitially={channel.isBell}
-                  config={smallScreenConfig}
+                  config={bigScreenConfig}
                   channelId={channelId}
                 />
-              </div>
+              </Box>
             </Box>
           </Box>
 
-          {/* ****************************************************************************************************************************************************** */}
-          {/* mid bar with video and playlist button  */}
+          {/* Discription and button for subs and creator support  for small screen  */}
           <Box
             sx={{
-              bgcolor: "#121212",
-              width: "100%",
-              display: "flex",
-              gap: "25px",
-              position: "sticky",
-              top: "70px",
-              fontSize: "18px",
-              padding: "0 10%",
-              borderBottom: "1px solid #767676",
-              zIndex: "10",
+              display: channel.isOwner && "none",
+              "@media (min-width: 875px)": {
+                display: "none",
+              },
             }}
           >
-            <Box
-              onMouseEnter={() => {
-                setHoveredTab(0);
-              }}
-              onMouseLeave={() => {
-                setHoveredTab(activeTab);
-              }}
-              sx={{
-                cursor: "pointer",
-                padding: "12px 0",
-                boxSizing: "border-box",
-                height: "50px",
-                position: "relative",
+            <DiscriptionDialogBox channel={channel} />
 
-                color: activeTab == 0 ? "white" : "#b3b3b3",
-                transition: "color 0.3s",
-              }}
-              onClick={() => navigate(`/channel/${channelId}`)}
-            >
-              Videos
-            </Box>
-            <Box
-              onMouseEnter={() => {
-                setHoveredTab(1);
-              }}
-              onMouseLeave={() => {
-                setHoveredTab(activeTab);
-              }}
-              sx={{
-                cursor: "pointer",
-                padding: "12px 0",
-                boxSizing: "border-box",
-                height: "50px",
-                position: "relative",
-                color: activeTab == 1 ? "white" : "#b3b3b3",
-              }}
-              onClick={() => navigate(`/channel/${channelId}/playlist`)}
-            >
-              Playlist
-            </Box>
-            <Box
-              sx={{
-                bgcolor: "white",
-                width: "57px",
-                height: "2px",
-                position: "absolute",
-                bottom: "0px",
-                transition: "all 0.5s ",
-                left: `calc(10% + ${hoveredTab * (57 + 25)}px)`,
-              }}
-            />
-          </Box>
-
-          {/* last content  */}
-          {activeTab === 0 && (
-            <Box
-              sx={{
-                padding: "0 8%",
-                mt: "12px",
+            <div
+              style={{
                 display: "flex",
-                gap: "15px",
+                justifyContent: "space-around",
               }}
             >
-              {buttonsForSorting.map((title, index) => (
-                <ButtonForSorting
-                  key={index}
-                  isActive={index === sortNo}
-                  sortNo={index}
-                  title={title}
-                  setSortNo={setSortNo}
-                />
-              ))}
-            </Box>
-          )}
-          <Box>
-            <Outlet context={contextValue} />
+              <ButtonForCreatorSupport
+                button={2}
+                config={smallScreenConfig}
+                channelId={channelId}
+              />
+              <ButtonForCreatorSupport
+                button={1}
+                isSubscribedInitially={isSubscribed}
+                isBellInitially={channel.isBell}
+                config={smallScreenConfig}
+                channelId={channelId}
+              />
+            </div>
           </Box>
         </Box>
-      )}
-      {!isLoading && !channel && <div>Channel does not exist</div>}
+
+        {/* ****************************************************************************************************************************************************** */}
+        {/* mid bar with video and playlist button  */}
+        <MidButtonSection
+          channelId={channelId}
+          hoveredTab={hoveredTab}
+          activeTab={activeTab}
+          setHoveredTab={setHoveredTab}
+        />
+
+        {/* last content  */}
+        {activeTab === 0 && (
+          <Box
+            sx={{
+              padding: "0 8%",
+              mt: "12px",
+              display: "flex",
+              gap: "15px",
+            }}
+          >
+            {buttonsForSorting.map((title, index) => (
+              <ButtonForSorting
+                key={index}
+                isActive={index === sortNo}
+                sortNo={index}
+                title={title}
+                setSortNo={setSortNo}
+              />
+            ))}
+          </Box>
+        )}
+        <Box>
+          <Outlet context={contextValue} />
+        </Box>
+      </Box>
     </>
   );
 };
 
 export default ChannelLayout;
-
-const ButtonForSorting = ({ isActive = false, setSortNo, title, sortNo }) => {
-  return (
-    <Button
-      onClick={() => setSortNo(sortNo)}
-      sx={{
-        bgcolor: isActive ? "white" : "#272727",
-        color: isActive ? "black" : "white",
-        fontSize: "12px",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "7px 12px",
-        mb: "4px",
-        fontWeight: "bold",
-
-        borderRadius: "10px",
-        ":hover": {
-          bgcolor: !isActive && "#767676",
-        },
-      }}
-    >
-      {title}
-    </Button>
-  );
-};
 
 const DiscriptionDialogBox = ({ isBig = false, channel }) => {
   const [isDiscription, setIsDiscription] = useState(false);
@@ -474,7 +374,6 @@ const DiscriptionDialogBox = ({ isBig = false, channel }) => {
           position: "absolute",
           right: "0px",
           top: "0",
-          // borderRadius: "40px",
           backgroundColor: "#121212",
           zIndex: "2",
           boxShadow: "-8px 0 20px 10px #121212",
@@ -571,12 +470,11 @@ const DiscriptionDialogBox = ({ isBig = false, channel }) => {
 };
 
 const ButtonForCreatorSupport = ({
-  button = 1,
+  button = 1, // 1 for subscribe button, 2 for creator support money ;
   isSubscribedInitially = false,
   isBellInitially = false,
   config = {
     justifyContent: "space-around",
-
     "@media (max-width: 714px)": {
       display: "none",
     },
@@ -782,4 +680,108 @@ const ButtonForCreatorSupport = ({
   );
 };
 
+const MidButtonSection = ({
+  channelId,
+  hoveredTab,
+  activeTab,
+  setHoveredTab,
+}) => {
+  return (
+    <>
+      <Box
+        sx={{
+          bgcolor: "#121212",
+          width: "100%",
+          display: "flex",
+          gap: "25px",
+          position: "sticky",
+          top: "70px",
+          fontSize: "18px",
+          padding: "0 10%",
+          borderBottom: "1px solid #767676",
+          zIndex: "10",
+        }}
+      >
+        <NavLink
+          to={`/channel/${channelId}`}
+          onMouseEnter={(e) => {
+            console.log(e.currentTarget.getClientRects());
+            setHoveredTab(0);
+          }}
+          onMouseLeave={() => {
+            setHoveredTab(activeTab);
+          }}
+          style={{
+            cursor: "pointer",
+            padding: "12px 0",
+            boxSizing: "border-box",
+            height: "50px",
+            position: "relative",
+            color: activeTab == 0 ? "white" : "#b3b3b3",
+            transition: "color 0.3s",
+          }}
+        >
+          Videos
+        </NavLink>
+        <NavLink
+          to={`/channel/${channelId}/playlist`}
+          onMouseEnter={() => {
+            setHoveredTab(1);
+          }}
+          onMouseLeave={() => {
+            setHoveredTab(activeTab);
+          }}
+          style={{
+            cursor: "pointer",
+            padding: "12px 0",
+            boxSizing: "border-box",
+            height: "50px",
+            position: "relative",
+            color: activeTab == 1 ? "white" : "#b3b3b3",
+            transition: "color 0.3s",
+          }}
+        >
+          Playlist
+        </NavLink>
+        <Box
+          sx={{
+            bgcolor: "white",
+            width: "57px",
+            height: "2px",
+            position: "absolute",
+            bottom: "0px",
+            transition: "all 0.5s ",
+            left: `calc(10% + ${hoveredTab * (57 + 25)}px)`,
+          }}
+        />
+      </Box>
+    </>
+  );
+};
+
+const ButtonForSorting = ({ isActive = false, setSortNo, title, sortNo }) => {
+  return (
+    <Button
+      onClick={() => setSortNo(sortNo)}
+      sx={{
+        bgcolor: isActive ? "white" : "#272727",
+        color: isActive ? "black" : "white",
+        fontSize: "12px",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: "7px 12px",
+        mb: "4px",
+        fontWeight: "bold",
+
+        borderRadius: "10px",
+        ":hover": {
+          bgcolor: !isActive && "#767676",
+        },
+      }}
+    >
+      {title}
+    </Button>
+  );
+};
 export { ButtonForCreatorSupport };

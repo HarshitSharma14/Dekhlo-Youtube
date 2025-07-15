@@ -12,12 +12,9 @@
 
 /* Sidebar */
 .sidebar {
-  /* width: 70px; */
   overflow: hidden;
   padding-right: 10px;
-  /* height: calc(100vh - 70px); 
-  position: sticky; 
-  top: 70px; */
+  align-items: center;
 }
 .sidebar:hover {
   overflow-y: auto; /* Show scrollbar when hovering over sidebar */
@@ -38,6 +35,7 @@
   flex: 1;
   padding-top: 0;
   padding-left: 0;
+  padding-bottom: 10px;
   transition: all 225ms ease-out;
 }
 

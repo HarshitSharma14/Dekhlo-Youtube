@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React from "react";
 
 import {
   AccountCircleRounded as AccountCircleIcon,
@@ -7,257 +7,77 @@ import {
   HistoryOutlined,
   HomeRounded as HomeIcon,
   HomeOutlined,
-  Menu as MenuIcon,
   SubscriptionsRounded as SubscriptionsIcon,
   SubscriptionsOutlined,
 } from "@mui/icons-material";
 import { Box, Button } from "@mui/material";
-import {
-  Link,
-  Outlet,
-  useLocation,
-  useNavigate,
-  useParams,
-  useSearchParams,
-} from "react-router-dom";
+import { Link, Outlet } from "react-router-dom";
 import Header from "../../component/Header";
 import Siderbar from "../../component/Siderbar";
+import YoutubeIconSection from "../../component/YoutubeIconSection";
+import { useSidebarState } from "../../hooks";
+import { useSidebarMode } from "../../hooks/sidebarState";
 import { useAppStore } from "../../store";
 import "./HomeLayout.css";
-import { LoaderIcon } from "react-hot-toast";
 
 const HomeLayout = () => {
-  // console.log("home");
-  // useStates ************************************************************************
-  const [isVideoPlayer, setIsVideoPlayer] = useState(true);
-  const [bigWindow, setBigWindow] = useState(false);
-
-  // constants *************************************************************************
-  const location = useLocation();
-  const [query] = useSearchParams();
-  const playlistId = query.get("playlistId");
-
-  const sidebarRef = useRef(null);
-  const { isSidebarOpen, toggelSidebar, setSidebarActivity, channelInfo } =
-    useAppStore();
-  const params = useParams();
-  const { videoId } = params;
-
-  const activeOn = {
-    isHome: "isHome",
-    isSubscriptionVideos: "isSubscriptionVideos",
-    isProfile: "isProfile",
-    isWatchHistory: "isWatchHistory",
-    isWatchLater: "isWatchLater",
-    isPlaylist: "isPlaylist",
-    isLikedVideos: "isLikedVideos",
-    isSubscriptionChannels: "isSubscriptionChannels",
-    isSettings: "isSettings",
-  };
-
-  //useEffect **********************************************************************
-  //                <<--- Set the sidebar icon to active according to the url page
-  useEffect(() => {
-    console.log("in home layout ", playlistId);
-    if (location.pathname == "/") setSidebarActivity(activeOn.isHome);
-    else if (location.pathname == "/subs")
-      setSidebarActivity(activeOn.isSubscriptionVideos);
-    else if (location.pathname == "/settings")
-      setSidebarActivity(activeOn.isSettings);
-    else if (location.pathname == `/channel/${channelInfo?._id}`)
-      setSidebarActivity(activeOn.isProfile);
-    else if (location.pathname == `/channel/${channelInfo?._id}/playlist`)
-      setSidebarActivity(activeOn.isPlaylist);
-    else if (
-      playlistId?.toString() ===
-      channelInfo?.permanentPlaylist?.watchHistory?.toString()
-    )
-      setSidebarActivity(activeOn.isWatchHistory);
-    else if (
-      playlistId?.toString() ===
-      channelInfo?.permanentPlaylist?.watchLater?.toString()
-    )
-      setSidebarActivity(activeOn.isWatchLater);
-    else if (
-      playlistId?.toString() ===
-      channelInfo?.permanentPlaylist?.likedVideos?.toString()
-    )
-      setSidebarActivity(activeOn.isLikedVideos);
-    else setSidebarActivity(null);
-  }, [location.pathname, playlistId]);
-
-  //              <<-- checking for the home route to drill prop in sidebar
-  useEffect(() => {
-    if (location.pathname == `/video-player/${videoId}`) setIsVideoPlayer(true);
-    else setIsVideoPlayer(false);
-  }, [location.pathname]);
-
-  //                 <<-- using the window size to predite whether the permanent sidebar should be disappearing or not
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 1000) {
-        setBigWindow(true);
-      } else {
-        setBigWindow(false);
-      }
-    };
-
-    handleResize();
-
-    window.addEventListener("resize", handleResize);
-    return () => {
-      window.removeEventListener("resize", handleResize);
-      setBigWindow(false);
-    };
-  }, []);
-
-  // Empty dependency array ensures it runs only once on mount
-
-  //                    <<--- (using gpt) ignoring the scroll input in the sidebar after its complition (at top and bottom) so that it doesnt interfear with main page's scroll bar
-  useEffect(() => {
-    const sidebar = sidebarRef.current;
-
-    const preventScrollPropagation = (e) => {
-      const { scrollTop, scrollHeight, clientHeight } = sidebar;
-      const atTop = scrollTop === 0;
-      const atBottom = Math.ceil(scrollTop + clientHeight) >= scrollHeight;
-
-      if ((atTop && e.deltaY < 0) || (atBottom && e.deltaY > 0)) {
-        e.preventDefault();
-      } else {
-        sidebar.scrollTop += e.deltaY;
-      }
-    };
-
-    sidebar.addEventListener("wheel", preventScrollPropagation, {
-      passive: false,
-    });
-
-    return () => {
-      sidebar.removeEventListener("wheel", preventScrollPropagation);
-    };
-  }, []);
-
-  const containerRef = useRef(null);
-  useEffect(() => {
-    const handleScroll = () => {
-      const element = containerRef.current;
-      if (element) {
-        const isAtBottom =
-          element.scrollHeight - element.scrollTop === element.clientHeight;
-        if (isAtBottom) {
-          console.log("Reached the end of the scroll bar!");
-        }
-      }
-    };
-    const element = containerRef.current;
-    if (element) {
-      element.addEventListener("scroll", handleScroll);
-    }
-
-    return () => {
-      if (element) {
-        element.removeEventListener("scroll", handleScroll);
-      }
-    };
-  }, []);
-
-  // function for onclick for a video card
-
   return (
-    <>
-      <Box
-        sx={{
-          display: bigWindow && !isVideoPlayer && "none",
-          zIndex: "1201",
-          height: "70px",
-          width: "250px",
-          bgcolor: "#121212",
-          position: "fixed",
-          left: "-250px",
-          top: "0px",
-          marginLeft: isSidebarOpen ? "250px" : "0px",
-          transition: "margin-left 200ms",
-        }}
-      >
-        <div
-          className="flex items-center ml-4 "
-          style={{
-            height: "100%",
-          }}
-        >
-          <button
-            onClick={toggelSidebar}
-            aria-label="menu"
-            className=" text-white hover:bg-gray-700  rounded-full w-10 h-10"
-          >
-            <MenuIcon fontSize="medium" />
-          </button>
-          <button
-            onClick={() => navigate("/")}
-            className="w-[123px] h-[56px] cursor-default text-white font-bold text-2xl"
-          >
-            <span className="yt-icon-shape flex justify-center items-center">
-              <img src="../../assets/logo.png" className="w-[93px] h-[20px]" />
-            </span>
-          </button>
-        </div>
-      </Box>
-      <div className="app-container" ref={containerRef}>
-        <Header isDisabled={false} />
-        <div className="main-layout">
-          <aside
-            className="sidebar "
-            ref={sidebarRef}
-            style={{
-              alignItems: "center",
-            }}
-          >
-            {!isVideoPlayer && (!isSidebarOpen || !bigWindow) && (
-              <PermanentSideBar />
-            )}
+    <div className="app-container">
+      <Header isDisabled={false} />
 
-            {/* Always render the Sidebar to avoid the flash effect seeming a component mount time taken */}
-
-            <Siderbar isVideoPlayer={isVideoPlayer} />
-          </aside>
-
-          {/* Main content of the pages starts here */}
-          <main
-            className="main-content"
-            style={{
-              paddingBottom: "10px",
-            }}
-          >
-            <Outlet />
-          </main>
-        </div>
+      <div className="main-layout">
+        <SidebarsWrapper />
+        <main className="main-content">
+          <Outlet />
+        </main>
       </div>
-    </>
+    </div>
   );
 };
 
 export default HomeLayout;
 
-// component for side bar buttons *************************
+const SidebarsWrapper = () => {
+  useSidebarState(); //   Set the sidebar icon to active according to the url page
+
+  const { showPermanentSidebar } = useSidebarMode();
+
+  return (
+    <>
+      <SidebarDrawerTop />
+      <aside className="sidebar ">
+        {showPermanentSidebar && <PermanentSideBar />}
+        <Siderbar />
+      </aside>
+    </>
+  );
+};
+
+const SidebarDrawerTop = () => {
+  const { isSidebarOpen } = useAppStore();
+  const { drawerVariant } = useSidebarMode();
+  return (
+    <Box
+      sx={{
+        display: drawerVariant === "persistent" && "none",
+        zIndex: "1201",
+        height: "70px",
+        width: "250px",
+        bgcolor: "#121212",
+        position: "fixed",
+        left: "-250px",
+        top: "0px",
+        marginLeft: isSidebarOpen ? "250px" : "0px",
+        transition: "margin-left 200ms",
+      }}
+    >
+      <YoutubeIconSection />
+    </Box>
+  );
+};
+
 const PermanentSideBar = () => {
-  // useStates ************************************************************************
-  const [isHome, setIsHome] = useState(false);
-  const [isSubscription, setIsSubscription] = useState(false);
-  const [isProfile, setIsProfile] = useState(false);
-  const [isWatchHistory, setIsWatchHistory] = useState(false);
-
-  // constants **************************************************************************
-  const { isSidebarOpen, toggelSidebar, sidebarActivity, channelInfo } =
-    useAppStore();
-  const activeOn = {
-    isHome: "isHome",
-    isSubscriptionVideos: "isSubscriptionVideos",
-    isProfile: "isProfile",
-    isWatchHistory: "isWatchHistory",
-  };
-
-  // useEffect ************************************************************************
+  const { sidebarActivity, channelInfo } = useAppStore();
 
   return (
     <>
@@ -267,7 +87,6 @@ const PermanentSideBar = () => {
         outlineIcon={<HomeOutlined />}
         navigateLink={"/"}
         name={"Home"}
-        activeOn={activeOn.isHome}
       />
       <SidebarNavigatioButtons
         isFilled={sidebarActivity.isSubscriptionVideos}
@@ -275,7 +94,6 @@ const PermanentSideBar = () => {
         outlineIcon={<SubscriptionsOutlined />}
         navigateLink={"/subs"}
         name={"Subs"}
-        activeOn={activeOn.isSubscriptionVideos}
       />
       <SidebarNavigatioButtons
         isFilled={sidebarActivity.isWatchHistory}
@@ -283,7 +101,6 @@ const PermanentSideBar = () => {
         outlineIcon={<HistoryOutlined />}
         navigateLink={`/playlist?playlistId=${channelInfo?.permanentPlaylist?.watchHistory}`}
         name={"History"}
-        activeOn={activeOn.isWatchHistory}
       />
       <SidebarNavigatioButtons
         isFilled={sidebarActivity.isProfile}
@@ -291,7 +108,6 @@ const PermanentSideBar = () => {
         outlineIcon={<AccountCircleOutlined />}
         navigateLink={channelInfo ? `/channel/${channelInfo?._id}` : "/signup"}
         name={"You"}
-        activeOn={activeOn.isProfile}
       />
     </>
   );
@@ -302,13 +118,8 @@ const SidebarNavigatioButtons = ({
   filledIcon,
   outlineIcon,
   navigateLink,
-  activeOn,
   isFilled,
 }) => {
-  // constants *******************************************
-  const { setSidebarActivity } = useAppStore();
-
-  const navigate = useNavigate();
   const iconStyle = {
     width: "30px",
     height: "30px",

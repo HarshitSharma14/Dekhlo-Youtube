@@ -42,6 +42,7 @@ import {
   GET_MY_PLAYLISTS,
   REMOVE_VIDEO_FROM_PLAYLISTS,
 } from "../../utils/constants.js";
+import { useUrlChcek } from "../../hooks/sidebarState.js";
 
 const formatTime = (seconds) => {
   if (!seconds || isNaN(seconds)) return "00:00";
@@ -50,20 +51,30 @@ const formatTime = (seconds) => {
   return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
 };
 
-const VideoCard = ({
-  id,
-  thumbnail,
-  title,
-  channelName,
-  views,
-  uploadTime,
-  channelProfile,
-  videoUrl,
-  channelId,
-  isOwner = false,
-  isInChannel = false,
-  duration = 0,
-}) => {
+const VideoCard = ({ video }) => {
+  if (!video) return null;
+  const {
+    _id: id,
+    thumbnailUrl: thumbnail,
+    title,
+    views,
+    createdAt: uploadTime,
+    videoUrl,
+    duration = 0,
+    channel,
+  } = video;
+
+  const {
+    _id: channelId = null,
+    channelName = "Unknown Channel",
+    profilePhoto: channelProfile = "",
+  } = channel || {};
+  console.log("chan el id of video card", !!channelId);
+  const { isChannelVideos: isInChannel } = useUrlChcek();
+  const { channelInfo } = useAppStore();
+
+  const isOwner = channelInfo && channelId && channelId === channelInfo?._id;
+
   // useState *********************************************************************************************
   const [isHovered, setIsHovered] = useState(false);
   const [isInView, setIsInView] = useState(false);
@@ -76,7 +87,6 @@ const VideoCard = ({
   const videoRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
   const navigate = useNavigate();
-  const { channelInfo } = useAppStore();
 
   // function *********************************************************************************************
 

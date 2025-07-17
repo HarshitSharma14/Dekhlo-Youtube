@@ -43,16 +43,7 @@ const ChannelLayout = () => {
   const activeTab = isChannelVideos ? 0 : 1;
   const [hoveredTab, setHoveredTab] = useState(activeTab);
 
-  const [sortNo, setSortNo] = useState(0);
-
   // constant **********************************************************************************
-  const buttonsForSorting = ["Latest", "Popular", "Oldest"];
-
-  const sortingFields = [
-    { sf: "_id", so: -1 },
-    { sf: "views", so: -1 },
-    { sf: "_id", so: 1 },
-  ];
 
   const smallScreenConfig = {
     justifyContent: "center",
@@ -87,17 +78,11 @@ const ChannelLayout = () => {
     enabled: !!channelId, // Prevents firing without channelId
   });
 
-  // useEffect **********************************************************************************
-  const contextValue = useMemo(
-    () => ({
-      sort: sortingFields[sortNo],
-      isOwner: channel?.isOwner,
-    }),
-    [sortNo, channel?.isOwner]
-  );
-
   if (isLoading) return <Box>Channel details fetching</Box>;
-  if (isError) return <div> {error.response?.data?.message}</div>;
+  if (isError)
+    return (
+      <div> {error.response?.data?.message || "Something went wrong"}</div>
+    );
 
   return (
     <>
@@ -308,28 +293,9 @@ const ChannelLayout = () => {
         />
 
         {/* last content  */}
-        {activeTab === 0 && (
-          <Box
-            sx={{
-              padding: "0 8%",
-              mt: "12px",
-              display: "flex",
-              gap: "15px",
-            }}
-          >
-            {buttonsForSorting.map((title, index) => (
-              <ButtonForSorting
-                key={index}
-                isActive={index === sortNo}
-                sortNo={index}
-                title={title}
-                setSortNo={setSortNo}
-              />
-            ))}
-          </Box>
-        )}
+
         <Box>
-          <Outlet context={contextValue} />
+          <Outlet />
         </Box>
       </Box>
     </>
@@ -759,29 +725,4 @@ const MidButtonSection = ({
   );
 };
 
-const ButtonForSorting = ({ isActive = false, setSortNo, title, sortNo }) => {
-  return (
-    <Button
-      onClick={() => setSortNo(sortNo)}
-      sx={{
-        bgcolor: isActive ? "white" : "#272727",
-        color: isActive ? "black" : "white",
-        fontSize: "12px",
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        padding: "7px 12px",
-        mb: "4px",
-        fontWeight: "bold",
-
-        borderRadius: "10px",
-        ":hover": {
-          bgcolor: !isActive && "#767676",
-        },
-      }}
-    >
-      {title}
-    </Button>
-  );
-};
 export { ButtonForCreatorSupport };

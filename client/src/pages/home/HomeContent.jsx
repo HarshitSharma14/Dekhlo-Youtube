@@ -46,19 +46,7 @@ const HomeContent = () => {
         }}
       >
         {allVideos.map((video) => (
-          <VideoCard
-            key={video?._id}
-            id={video?._id}
-            thumbnail={video?.thumbnailUrl}
-            title={video?.title}
-            channelId={video?.channel?._id}
-            channelName={video?.channel?.channelName}
-            views={video?.views}
-            uploadTime={video?.createdAt}
-            channelProfile={video?.channel?.profilePhoto}
-            videoUrl={video?.videoUrl}
-            duration={video?.duration}
-          />
+          <VideoCard key={video?._id} video={video} />
         ))}
 
         {isFetchingNextPage && (

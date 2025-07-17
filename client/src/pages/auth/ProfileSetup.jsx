@@ -1,6 +1,6 @@
 //  React and State Management
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 //  Third-party Libraries
 import { useForm } from "react-hook-form";
@@ -26,6 +26,8 @@ import {
   VisibilityOff,
   AccountCircle,
   PhotoCamera,
+  CancelOutlined,
+  X,
 } from "@mui/icons-material";
 
 //  Project Constants, Styles, and Stores
@@ -140,6 +142,10 @@ const ProfileSetup = () => {
             </Step>
           ))}
         </Stepper>
+
+        <Link to={"/settings"} replace className=" absolute top-6 right-6">
+          <CancelOutlined />
+        </Link>
 
         {/* Form */}
         <Box

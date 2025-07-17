@@ -1,117 +1,66 @@
-import { Box, CircularProgress } from "@mui/material";
-import React, { useEffect, useState } from "react";
-import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
+import { Box } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
 import { useParams } from "react-router-dom";
 import PlaylistCard from "../../component/cards/PlaylistCard";
-import axios from "axios";
+import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
 import { GET_CHANNEL_PLAYLIST } from "../../utils/constants";
 
-const ChannelPlaylist = () => {
-  // useState ****************************************************************************
-  const [playlists, setPlaylists] = useState([]);
-  const [isLoading, setisLoading] = useState(false);
+const getChannelPlaylists = async ({ queryKey }) => {
+  const [_key, channelId] = queryKey;
+  const { data } = await axios.get(`${GET_CHANNEL_PLAYLIST}/${channelId}`, {
+    withCredentials: true,
+  });
+  return data?.playlists || [];
+};
 
-  // constants **************************************************************************
+const ChannelPlaylist = () => {
   const params = useParams();
   const { channelId } = params;
 
-  // function *****************************************************************************
-  const getChannelPlaylists = async () => {
-    setisLoading(true);
-    try {
-      const { data } = await axios.get(`${GET_CHANNEL_PLAYLIST}/${channelId}`, {
-        withCredentials: true,
-      });
-      console.log("channel playlist", data.playlists);
-      setPlaylists(data.playlists);
-    } catch (err) {
-      console.log("something went wrong ", err);
-    } finally {
-      setisLoading(false);
-    }
-  };
+  const {
+    data: playlists,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["channelPlaylists", channelId],
+    queryFn: getChannelPlaylists,
+  });
 
-  // useEffecte *************************************************************************
-  useEffect(() => {
-    getChannelPlaylists();
-  }, []);
+  if (isError)
+    return (
+      <div> {error?.response?.data?.messgae || "Something went wrong"} </div>
+    );
+  if (isLoading)
+    return (
+      <div className=" pt-4">
+        <VideoCardLoading />{" "}
+      </div>
+    );
+  if (!playlists.length)
+    return <div className=" py-6 text-center">No playlists to show</div>;
 
   return (
-    <>
-      <Box
-        sx={{
-          display: "flex",
-          flexWrap: "wrap",
-          "@media(max-width: 680px)": { justifyContent: "center" },
-        }}
-      >
-        {!playlists.length && isLoading ? (
-          <VideoCardLoading />
-        ) : (
-          <>
-            {!isLoading && playlists.length ? (
-              <>
-                {playlists.map((playlist) => (
-                  <PlaylistCard
-                    key={playlist?._id}
-                    playlistId={playlist?._id}
-                    videoId={playlist.videos[0]?._id}
-                    title={playlist?.name}
-                    videoCount={playlist?.videosCount}
-                    mainThumbnail={playlist?.videos[0]?.thumbnailUrl}
-                    secondaryThumbnails={playlist?.videos}
-                  />
-                ))}
-              </>
-            ) : (
-              <></>
-            )}
-            {isLoading && playlists.length && (
-              <div
-                style={{
-                  width: "100%",
-                  position: "relative",
-                  padding: "10px",
-                  // backgroundColor: "yellow",
-                  height: "40px",
-                  justifyContent: "center",
-                  justifyItems: "center",
-                }}
-              >
-                <CircularProgress
-                  sx={{
-                    position: "relative",
-                    left: "50%",
-                  }}
-                />
-              </div>
-            )}
-          </>
-        )}
-
-        {!isLoading && !playlists.length && (
-          <div
-            style={{
-              width: "100%",
-              position: "relative",
-              padding: "10px",
-              // backgroundColor: "yellow",
-              height: "40px",
-              justifyContent: "center",
-              justifyItems: "center",
-            }}
-          >
-            <Box
-              sx={{
-                justifyContent: "center",
-              }}
-            >
-              No playlists to show
-            </Box>
-          </div>
-        )}
-      </Box>
-    </>
+    <Box
+      sx={{
+        display: "flex",
+        flexWrap: "wrap",
+        "@media(max-width: 680px)": { justifyContent: "center" },
+      }}
+    >
+      {playlists.map((playlist) => (
+        <PlaylistCard
+          key={playlist?._id}
+          playlistId={playlist?._id}
+          videoId={playlist.videos[0]?._id}
+          title={playlist?.name}
+          videoCount={playlist?.videosCount}
+          mainThumbnail={playlist?.videos[0]?.thumbnailUrl}
+          secondaryThumbnails={playlist?.videos}
+        />
+      ))}
+    </Box>
   );
 };
 

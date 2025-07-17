@@ -1,28 +1,36 @@
 import { Box, Typography } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { useEffect, useState } from "react";
 import ChannelCard from "../../component/cards/ChannelCard";
 import { GET_SUBSCRIBED_CHANNEL } from "../../utils/constants";
 
+const getSubscribedChannel = async () => {
+  const { data } = await axios.get(GET_SUBSCRIBED_CHANNEL, {
+    withCredentials: true,
+  });
+  console.log("data ", data);
+  return data.following;
+};
+
 const ChannelsSubscribed = () => {
-  const [followings, setFollowings] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const getSubscribedChannel = async () => {
-    setIsLoading(true);
-    try {
-      const { data } = await axios.get(GET_SUBSCRIBED_CHANNEL, {
-        withCredentials: true,
-      });
-      setFollowings(data.following);
-    } catch (err) {
-      console.log("error", err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  useEffect(() => {
-    getSubscribedChannel();
-  }, []);
+  const {
+    data: followings = [],
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["SubscribedChannels"],
+    queryFn: getSubscribedChannel,
+  });
+
+  if (isLoading)
+    return <Box> Loading your subscribed channels please wait... </Box>;
+  if (isError)
+    return (
+      <div>{error.response?.data?.message || "Something went wrong"} </div>
+    );
+  if (!followings.length)
+    return <Box>Your Subscribed channels will show here</Box>;
 
   return (
     <Box
@@ -34,57 +42,44 @@ const ChannelsSubscribed = () => {
         width: "100%",
       }}
     >
-      {isLoading && (
-        <Box> Loading your subscribed channels please wait... </Box>
-      )}
-      {!isLoading && followings.length ? (
-        <>
-          <Box
+      <>
+        <Box
+          sx={{
+            width: "100%",
+            "@media (min-width: 730px)": {
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+            },
+          }}
+        >
+          <Typography
+            variant="h4"
             sx={{
-              width: "100%",
-              "@media (min-width: 730px)": {
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-              },
+              padding: "5px 20px",
+              fontWeight: "bold",
+              color: "#c1c1c1",
+              mt: "4px",
             }}
           >
-            <Typography
-              variant="h4"
-              sx={{
-                padding: "5px 20px",
-                fontWeight: "bold",
-                color: "#c1c1c1",
-                mt: "4px",
-              }}
-            >
-              All Subscriptions
-            </Typography>
-            {followings.map((following) => {
-              return (
-                <ChannelCard
-                  isbell={following?.bell}
-                  channelId={following?.creator?._id}
-                  bio={following?.creator?.bio}
-                  channelName={following?.creator?.channelName}
-                  profilePhoto={following?.creator?.profilePhoto}
-                  subsCount={following?.creator?.subscribersCount}
-                  email={following?.creator?.email}
-                />
-              );
-            })}
-          </Box>
-        </>
-      ) : (
-        <></>
-      )}
-
-      {!isLoading && !followings.length && (
-        <>
-          <Box>Your Subscribed channels will show here</Box>
-        </>
-      )}
+            All Subscriptions
+          </Typography>
+          {followings?.map((following) => {
+            return (
+              <ChannelCard
+                isbell={following?.bell}
+                channelId={following?.creator?._id}
+                bio={following?.creator?.bio}
+                channelName={following?.creator?.channelName}
+                profilePhoto={following?.creator?.profilePhoto}
+                subsCount={following?.creator?.subscribersCount}
+                email={following?.creator?.email}
+              />
+            );
+          })}
+        </Box>
+      </>
     </Box>
   );
 };

@@ -79,6 +79,8 @@ const SidebarDrawerTop = () => {
 const PermanentSideBar = () => {
   const { sidebarActivity, channelInfo } = useAppStore();
 
+  console.log("permanne sidebar", sidebarActivity);
+
   return (
     <>
       <SidebarNavigatioButtons

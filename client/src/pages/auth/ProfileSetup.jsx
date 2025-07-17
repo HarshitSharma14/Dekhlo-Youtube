@@ -1,6 +1,13 @@
-import { Visibility, VisibilityOff } from "@mui/icons-material";
-import AccountCircle from "@mui/icons-material/AccountCircle";
-import PhotoCamera from "@mui/icons-material/PhotoCamera";
+//  React and State Management
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+
+//  Third-party Libraries
+import { useForm } from "react-hook-form";
+import axios from "axios";
+import toast from "react-hot-toast";
+
+//  MUI Components & Icons
 import {
   Avatar,
   Box,
@@ -13,127 +20,58 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
-import axios from "axios";
-import React, { useEffect, useState } from "react";
-import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+
 import {
-  GET_CHANNEL_DETAILS,
-  UPDATE_CHANNEL_INFO_ROUTE,
-} from "../../utils/constants";
+  Visibility,
+  VisibilityOff,
+  AccountCircle,
+  PhotoCamera,
+} from "@mui/icons-material";
+
+//  Project Constants, Styles, and Stores
+import { UPDATE_CHANNEL_INFO_ROUTE } from "../../utils/constants";
+import { useAppStore } from "../../store";
 import "./ProfileSetup.css";
 
 const ProfileSetup = () => {
-  // UseStates **********************************************************************
+  const steps = ["Profile Setup", "Discription", "Password"];
   const [currentStep, setCurrentStep] = useState(0);
-  const [formData, setFormData] = useState({
-    name: "",
-    profilePhotoUrl: "",
-    profilePhotoFile: null,
-    bio: "",
-    password: "",
-    confirmPassword: "",
-  });
-  const [formErrors, setFormErrors] = useState({
-    password: "",
-    confirmPassword: "",
-    channelName: "",
-    bio: "",
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setConfirmShowPassword] = useState(false);
-  const [isSubmiting, setIsSubmiting] = useState(false);
 
-  //constants *********************************************************************
-  const steps = ["Profile Setup", "Bio", "Password"];
-  const isConfirmPasswordDisabled =
-    formData.password === "" || formData.password.length < 6;
-  const isPasswordMatch = formData.password === formData.confirmPassword;
+  const { channelInfo } = useAppStore();
+
+  const formHandler = useForm({
+    mode: "onChange",
+    defaultValues: {
+      name: channelInfo.channelName,
+      profilePhotoUrl: channelInfo.profilePhoto,
+      bio: channelInfo.bio,
+    },
+  });
+
+  const {
+    watch,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+    setValue,
+  } = formHandler;
+
   const navigate = useNavigate();
 
-  // Functions *********************************************************************
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-
-    setFormErrors({ ...formErrors, [e.target.name]: "" });
-
-    // check for teh length of the channel name *****************
-    if (name === "name" && value.length > 25) {
-      setFormErrors((pre) => ({
-        ...pre,
-        channelName: "Channel name can not exceed 25 characters",
-      }));
-    } else if (name === "name")
-      setFormErrors((pre) => ({ ...pre, channelName: "" }));
-
-    // check for bio
-    if (name === "bio" && value.length < 20) {
-      setFormErrors((pre) => ({
-        ...pre,
-        bio: "Bio should contain atleast 20 characters",
-      }));
-    } else if (name === "bio") setFormErrors((pre) => ({ ...pre, bio: "" }));
-
-    // Check for password length and match confirm password ***************
-    if (name === "password" && value.length < 6) {
-      setFormErrors((prev) => ({
-        ...prev,
-        password: "Password must be at least 6 characters.",
-      }));
-    } else if (name === "password") {
-      setFormErrors((prev) => ({
-        ...prev,
-        password: "",
-      }));
-    }
-
-    if (name === "confirmPassword") {
-      if (value !== formData.password) {
-        setFormErrors((prev) => ({
-          ...prev,
-          confirmPassword: "Passwords do not match.",
-        }));
-      } else {
-        setFormErrors((prev) => ({
-          ...prev,
-          confirmPassword: "",
-        }));
-      }
-    }
-  };
-
-  const handleFileChange = (e) => {
-    setFormData({
-      ...formData,
-      profilePhotoFile: e.target.files[0],
-      profilePhotoUrl: URL.createObjectURL(e.target.files[0]),
-    });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (currentStep === 0) {
-      if (formData.profilePhotoUrl) setCurrentStep(currentStep + 1);
-      return;
-    }
-    if (currentStep === 1) {
+  const onSubmit = async (data) => {
+    if (currentStep < steps?.length - 1) {
       setCurrentStep(currentStep + 1);
       return;
     }
-    console.log(currentStep);
-    console.log("Form Submitted:", formData);
-    setIsSubmiting(true);
     const toastId = toast.loading("Submiting...");
 
     const dataToSend = new FormData();
-    dataToSend.append("channelName", formData.name);
-    dataToSend.append("profilePhotoFile", formData.profilePhotoFile);
-    dataToSend.append("bio", formData.bio);
-    dataToSend.append("profilePhotoUrl", formData.profilePhotoUrl);
-    dataToSend.append("password", formData.password);
 
-    console.log(dataToSend);
+    dataToSend.append("channelName", data.name);
+    dataToSend.append("profilePhotoFile", data.profilePhotoFile?.[0]);
+    dataToSend.append("bio", data.bio);
+    dataToSend.append("profilePhotoUrl", data?.profilePhotoUrl);
+    dataToSend.append("password", data.password);
+
     try {
       console.log(UPDATE_CHANNEL_INFO_ROUTE);
 
@@ -143,6 +81,7 @@ const ProfileSetup = () => {
           "Content-Type": "multipart/form-data",
         },
       });
+      console.log("submitted ", data);
       toast.success("Submited successfully", { id: toastId });
       navigate("/");
     } catch (error) {
@@ -150,44 +89,9 @@ const ProfileSetup = () => {
         id: toastId,
       });
     }
-    setIsSubmiting(false);
   };
-
-  const getChannelInfo = async () => {
-    const toatId = toast.loading("Fetching channel info...");
-    try {
-      const { data } = await axios.get(GET_CHANNEL_DETAILS, {
-        withCredentials: true,
-      });
-      setFormData({
-        ...formData,
-        name: data.channel.channelName,
-        profilePhotoUrl: data.channel.profilePhoto.toString(),
-        bio: data.channel.bio,
-      });
-      toast.success("Channel info retreived successfully", { id: toatId });
-    } catch (error) {
-      console.log(error);
-      console.log(
-        "Error fetching channel info",
-        error?.response?.data?.message,
-        error.response
-      );
-      toast.error(
-        error?.response?.data?.message || "Error fetching channel info",
-        { id: toatId }
-      );
-    }
-  };
-
-  // useEffects *********************************************************************
-  useEffect(() => {
-    getChannelInfo();
-  }, []);
 
   return (
-    // <ThemeProvider theme={darkTheme}>
-    //   <CssBaseline />
     <Box
       className="profile-setup-container  bg-gradient-to-r from-youtube-dark-blue to-youtube-dark-red"
       sx={{
@@ -240,209 +144,14 @@ const ProfileSetup = () => {
         {/* Form */}
         <Box
           component="form"
-          onSubmit={handleSubmit}
+          onSubmit={handleSubmit(onSubmit)}
           sx={{ flex: 1, display: "flex", flexDirection: "column", mt: 3 }}
         >
-          {currentStep === 0 && (
-            <Box className="form-step">
-              <Typography
-                variant="h6"
-                mb={4}
-                sx={{
-                  textAlign: "center",
-                  fontWeight: "600",
-                }}
-              >
-                Profile Setup
-              </Typography>
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 4,
-                  mb: "auto",
-                }}
-              >
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 2,
-                    position: "relative",
-                  }}
-                >
-                  <Avatar
-                    sx={{
-                      width: 150,
-                      height: 150,
-                      border: "3px solid black",
-                    }}
-                    src={
-                      formData.profilePhotoUrl ? formData.profilePhotoUrl : null
-                    }
-                  >
-                    <AccountCircle
-                      sx={{
-                        width: "100%",
-                        height: "100%",
-                      }}
-                    />
-                  </Avatar>
-                  <IconButton
-                    color="primary"
-                    aria-label="upload picture"
-                    component="label"
-                    sx={{
-                      position: "absolute",
-                      bottom: "-20px",
-                      right: "54px",
-                      border: "1px solid grey",
-                      bgcolor: "#000000a3",
-                      ":hover": {
-                        bgcolor: "#000000",
-                      },
-                    }}
-                  >
-                    <input
-                      hidden
-                      accept="image/*"
-                      type="file"
-                      onChange={handleFileChange}
-                    />
-                    <PhotoCamera
-                      sx={{
-                        color: "white",
-                      }}
-                    />
-                  </IconButton>
-                </Box>
-                <TextField
-                  label="Channel Name"
-                  error={!!formErrors.channelName}
-                  helperText={formErrors.channelName}
-                  name="name"
-                  fullWidth
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                />
-              </Box>
-            </Box>
-          )}
-
-          {currentStep === 1 && (
-            <Box className="form-step">
-              <Typography
-                variant="h6"
-                mb={4}
-                sx={{
-                  textAlign: "center",
-                  fontWeight: "600",
-                }}
-              >
-                Discription
-              </Typography>
-              <TextField
-                label="What is your Channel all about"
-                name="bio"
-                multiline
-                rows={4}
-                fullWidth
-                value={formData.bio}
-                required
-                error={!!formErrors.bio}
-                helperText={formErrors.bio}
-                onChange={handleChange}
-              />
-            </Box>
-          )}
-
-          {currentStep === 2 && (
-            <Box className="form-step">
-              <Typography
-                variant="h6"
-                mb={4}
-                sx={{
-                  textAlign: "center",
-                  fontWeight: "600",
-                }}
-              >
-                Password
-              </Typography>
-
-              <Box className="flex flex-col gap-4">
-                {/* Password Field */}
-                <TextField
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  name="password"
-                  fullWidth
-                  value={formData.password}
-                  error={!!formErrors.password}
-                  helperText={formErrors.password}
-                  onChange={handleChange}
-                  required
-                  margin="normal"
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => setShowPassword((e) => !e)}
-                            edge="end"
-                          >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                />
-
-                {/* Confirm Password Field */}
-                <TextField
-                  label="Confirm Password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword"
-                  fullWidth
-                  value={formData.confirmPassword}
-                  error={!!formErrors.confirmPassword}
-                  onChange={handleChange}
-                  required
-                  disabled={isConfirmPasswordDisabled}
-                  margin="normal"
-                  slotProps={{
-                    input: {
-                      endAdornment: (
-                        <InputAdornment position="end">
-                          <IconButton
-                            onClick={() => setConfirmShowPassword((e) => !e)}
-                            edge="end"
-                          >
-                            {showConfirmPassword ? (
-                              <VisibilityOff />
-                            ) : (
-                              <Visibility />
-                            )}
-                          </IconButton>
-                        </InputAdornment>
-                      ),
-                    },
-                  }}
-                  sx={{
-                    borderColor: isPasswordMatch ? "green" : "",
-                    "& .MuiOutlinedInput-root": {
-                      "&.Mui-focused fieldset": {
-                        borderColor: isPasswordMatch ? "green" : "",
-                      },
-                    },
-                  }}
-                />
-              </Box>
-            </Box>
-          )}
-
+          <FormWrapper
+            steps={steps}
+            currentStep={currentStep}
+            formHandler={formHandler}
+          />
           {/* Navigation Buttons */}
           <Box
             className="button-group"
@@ -453,14 +162,14 @@ const ProfileSetup = () => {
                 variant="outlined"
                 onClick={() => {
                   setCurrentStep(currentStep - 1);
-                  // setFormData({ ...formData, confirmPassword: "" });
+                  setValue("confirmPassword", "");
                 }}
-                disabled={isSubmiting}
+                disabled={isSubmitting}
               >
                 Previous
               </Button>
             )}
-            {currentStep < 2 ? (
+            {currentStep < steps.length - 1 ? (
               <Button
                 variant="contained"
                 onClick={(e) => {
@@ -470,8 +179,8 @@ const ProfileSetup = () => {
                 }}
                 disabled={
                   currentStep == 0
-                    ? !formData.name || !formData.profilePhotoUrl
-                    : formData?.bio?.length < 20
+                    ? !watch("profilePhotoUrl")?.length || errors?.name
+                    : watch("bio")?.length < 20 || errors?.bio
                 }
               >
                 Next
@@ -483,7 +192,12 @@ const ProfileSetup = () => {
                 sx={{
                   bgcolor: "green",
                 }}
-                disabled={!isPasswordMatch || !formData.password || isSubmiting}
+                disabled={
+                  !watch("password")?.length ||
+                  !watch("confirmPassword")?.length ||
+                  errors?.confirmPassword ||
+                  isSubmitting
+                }
               >
                 Submit
               </Button>
@@ -496,3 +210,259 @@ const ProfileSetup = () => {
 };
 
 export default ProfileSetup;
+
+const FormWrapper = ({ currentStep, formHandler, steps }) => {
+  const formStep = () => {
+    switch (currentStep) {
+      case 0:
+        return <FormStepOne formHandler={formHandler} />;
+
+      case 1:
+        return <FormStepTwo formHandler={formHandler} />;
+
+      case 2:
+        return <FormStepThree formHandler={formHandler} />;
+
+      default:
+        return <div> Out of Bound</div>;
+    }
+  };
+
+  return (
+    <Box className="form-step">
+      <Typography
+        variant="h6"
+        mb={4}
+        sx={{
+          textAlign: "center",
+          fontWeight: "600",
+        }}
+      >
+        {steps[currentStep]}
+      </Typography>
+
+      {formStep()}
+    </Box>
+  );
+};
+
+const FormStepOne = ({ formHandler }) => {
+  const {
+    register,
+    formState: { errors },
+    watch,
+    setValue,
+  } = formHandler;
+
+  const selectedProfilePhotot = watch("profilePhotoFile");
+
+  useEffect(() => {
+    const file = watch("profilePhotoFile")?.[0];
+    if (file) {
+      const photoPreview = URL.createObjectURL(file);
+      setValue("profilePhotoUrl", photoPreview);
+    }
+  }, [selectedProfilePhotot]);
+
+  return (
+    <Box
+      sx={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        gap: 4,
+        mb: "auto",
+      }}
+    >
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+          position: "relative",
+        }}
+      >
+        <Avatar
+          sx={{
+            width: 150,
+            height: 150,
+            border: "3px solid black",
+          }}
+          src={watch("profilePhotoUrl")}
+        >
+          <AccountCircle
+            sx={{
+              width: "100%",
+              height: "100%",
+            }}
+          />
+        </Avatar>
+        <IconButton
+          color="primary"
+          aria-label="upload picture"
+          component="label"
+          sx={{
+            position: "absolute",
+            bottom: "-20px",
+            right: "54px",
+            border: "1px solid grey",
+            bgcolor: "#000000a3",
+            ":hover": {
+              bgcolor: "#000000",
+            },
+          }}
+        >
+          <input
+            hidden
+            accept="image/*"
+            type="file"
+            {...register("profilePhotoFile", {
+              validate: (files) =>
+                files?.length > 0 ||
+                watch("profilePhotoUrl")?.length ||
+                "Set Profile photo",
+            })}
+          />
+          <PhotoCamera
+            sx={{
+              color: "white",
+            }}
+          />
+        </IconButton>
+      </Box>
+      <TextField
+        label="Channel Name"
+        error={!!errors?.name}
+        helperText={errors?.name?.message}
+        name="name"
+        fullWidth
+        {...register("name", {
+          setValueAs: (value) => value.trim(),
+          required: "Channel name is Requeired",
+          maxLength: { value: 25, message: "Maximum 25 charaters allowed" },
+        })}
+      />
+    </Box>
+  );
+};
+
+const FormStepTwo = ({ formHandler }) => {
+  const {
+    register,
+    formState: { errors },
+  } = formHandler;
+
+  return (
+    <TextField
+      label="What is your Channel all about"
+      name="bio"
+      multiline
+      rows={4}
+      fullWidth
+      required
+      error={!!errors?.bio}
+      helperText={errors?.bio?.message}
+      {...register("bio", {
+        setValueAs: (value) => value.trim(),
+
+        required: "Description is required",
+        minLength: {
+          value: 20,
+          message: "Bio should contain atleast 20 characters",
+        },
+      })}
+    />
+  );
+};
+
+const FormStepThree = ({ formHandler }) => {
+  const {
+    register,
+    formState: { errors },
+    watch,
+  } = formHandler;
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // const password = watch("password");
+  return (
+    <Box className="flex flex-col gap-4">
+      {/* Password Field */}
+      <TextField
+        label="Password"
+        type={showPassword ? "text" : "password"}
+        name="password"
+        fullWidth
+        error={!!errors?.password}
+        helperText={errors?.password?.message}
+        {...register("password", {
+          required: "password required",
+          minLength: {
+            value: 6,
+            message: "Password must be at least 6 characters",
+          },
+        })}
+        required
+        margin="normal"
+        slotProps={{
+          input: {
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={(e) => setShowPassword((e) => !e)}
+                  edge="end"
+                >
+                  {showPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          },
+        }}
+      />
+
+      {/* Confirm Password Field */}
+      <TextField
+        label="Confirm Password"
+        type={showConfirmPassword ? "text" : "password"}
+        name="confirmPassword"
+        fullWidth
+        error={!!errors?.confirmPassword}
+        required
+        {...register("confirmPassword", {
+          minLength: 6,
+          required: true,
+          validate: (value) => value === watch("password") || "Error",
+        })}
+        margin="normal"
+        slotProps={{
+          input: {
+            endAdornment: (
+              <InputAdornment position="end">
+                <IconButton
+                  onClick={() => setShowConfirmPassword((e) => !e)}
+                  edge="end"
+                >
+                  {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                </IconButton>
+              </InputAdornment>
+            ),
+          },
+        }}
+        sx={{
+          borderColor:
+            watch("confirmPassword")?.length && !errors?.confirmPassword
+              ? "green"
+              : "",
+          "& .MuiOutlinedInput-root": {
+            "&.Mui-focused fieldset": {
+              borderColor:
+                watch("confirmPassword")?.length && !errors?.confirmPassword
+                  ? "green"
+                  : "",
+            },
+          },
+        }}
+      />
+    </Box>
+  );
+};

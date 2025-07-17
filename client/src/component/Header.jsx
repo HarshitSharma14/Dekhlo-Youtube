@@ -1,43 +1,26 @@
-import React, { useEffect, useState } from "react";
-import {
-  AppBar,
-  Toolbar,
-  IconButton,
-  InputBase,
-  Avatar,
-  Button,
-  Menu,
-  MenuItem,
-  useMediaQuery,
-} from "@mui/material";
-import { AnimatePresence, motion } from "framer-motion";
-import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import NotificationsIcon from "@mui/icons-material/Notifications";
-import MenuIcon from "@mui/icons-material/Menu";
-import axios from "axios";
-import {
-  Search as SearchIcon,
-  AddCircle as CreateIcon,
-} from "@mui/icons-material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import MenuIcon from "@mui/icons-material/Menu";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
+import { Autocomplete, TextField, useMediaQuery } from "@mui/material";
+import axios from "axios";
+import { AnimatePresence, motion } from "framer-motion";
+import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { useAppStore } from "../store";
 import {
   AUTOCOMPLETE_ROUTE,
-  GET_NOTIFICATIONS,
   CHANGE_ISREAD,
+  GET_NOTIFICATIONS,
   LOGOUT_ROUTE,
-  SEARCH_VIDEO_ROUTE,
-  UPDATE_VIDEO_INFO,
 } from "../utils/constants";
-import { useAppStore } from "../store";
-import { Autocomplete, TextField } from "@mui/material";
 import Notifications from "./Notifications";
+import YoutubeIconSection from "./YoutubeIconSection";
 
 const Header = ({ isDisabled }) => {
   const [anchorEl, setAnchorEl] = useState(null);
   const navigate = useNavigate();
-  const isMobile = useMediaQuery("(max-width:768px)");
   const [searchParams] = useSearchParams();
   const s = searchParams.get("s");
   const {
@@ -57,12 +40,33 @@ const Header = ({ isDisabled }) => {
   const [suggestions, setSuggestions] = useState([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   // Toggle the menu (avatar options)
+  const dialogRef = useRef(null);
   const handleAvatarClick = (event) => {
-    setAnchorEl(event.currentTarget);
+    console.log(anchorEl);
+    if (anchorEl === null) {
+      setAnchorEl(event.currentTarget);
+    } else {
+      setAnchorEl(null);
+    }
   };
   const handleAvatarClose = () => {
     setAnchorEl(null);
   };
+  const handleClickOutside = (event) => {
+    if (dialogRef.current && !dialogRef.current.contains(event.target)) {
+      setAnchorEl(null);
+    }
+  };
+  useEffect(() => {
+    if (anchorEl) {
+      document.addEventListener("mousedown", handleClickOutside);
+    } else {
+      document.removeEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [anchorEl]);
 
   const toggleNotifications = async () => {
     if (notificationsOpen) {
@@ -74,7 +78,6 @@ const Header = ({ isDisabled }) => {
           withCredentials: true,
         });
         setNotificationsPending(false);
-        console.log("isread done");
       } catch (e) {
         console.log(e);
       }
@@ -82,8 +85,6 @@ const Header = ({ isDisabled }) => {
   };
 
   const searchVideo = async (value) => {
-    console.log("searchText");
-    console.log(searchText);
     if (value) {
       sessionStorage.setItem("searchText", value);
     } else {
@@ -101,7 +102,6 @@ const Header = ({ isDisabled }) => {
       const response = await axios.get(AUTOCOMPLETE_ROUTE, {
         params: { searchText: text },
       });
-      console.log(response.data);
       setSuggestions(response.data.results);
     } catch (error) {
       console.log(error);
@@ -112,7 +112,6 @@ const Header = ({ isDisabled }) => {
     setSearchText(value);
 
     if (value.length > 1) {
-      console.log("autocomplete");
       fetchAutocomplete(value);
     } else {
       setSuggestions([]);
@@ -122,12 +121,10 @@ const Header = ({ isDisabled }) => {
   useEffect(() => {
     const fetchNoti = async () => {
       try {
-        console.log("inside fetch noti");
         const response = await axios.get(GET_NOTIFICATIONS, {
           withCredentials: true,
         });
-        console.log("inside fetch noti", response.data);
-        console.log(response.data);
+
         if (response.data[response.data.length - 1].isRead) {
           setNotificationsPending(false);
         } else {
@@ -178,33 +175,9 @@ const Header = ({ isDisabled }) => {
 
   return (
     <header className="sticky top-0 bg-[#121212] shadow-none h-[70px] z-10">
-      <div className="flex h-full px-2 justify-between items-center">
+      <div className="flex h-full pr-2 justify-between items-center">
         {/* Left Section: Hamburger Icon & Logo */}
-        <div className={`${back ? "hidden" : "flex"} items-center`}>
-          <button
-            disabled={isDisabled}
-            onClick={toggelSidebar}
-            aria-label="menu"
-            className=" text-white hover:bg-gray-700  rounded-full w-10 h-10"
-          >
-            <MenuIcon fontSize="medium" />
-          </button>
-          <button
-            disabled={isDisabled}
-            onClick={() => {
-              navigate("/");
-            }}
-            className="w-[123px] h-[56px] cursor-default text-white font-bold text-2xl"
-          >
-            <span className="yt-icon-shape flex justify-center items-center">
-              <img src="/assets/logo.png" className="w-[93px] h-[20px]" />
-            </span>
-          </button>
-        </div>
-
-        <div className={`${back ? "flex" : "hidden"}`}>
-          <ArrowBackIcon onClick={() => setBack(false)} />
-        </div>
+        <YoutubeIconSection />
 
         {/* Center Section: Search Bar */}
         <div
@@ -212,22 +185,12 @@ const Header = ({ isDisabled }) => {
             back ? "flex ml-[60px] mr-[20px]" : "hidden"
           } items-center border mr-1 border-s-2 border-[#303030] h-[40px] rounded-3xl w-[600px] max-w-full bg-[#121212] overflow-hidden xs:flex`}
         >
-          {/* <input
-            disabled={isDisabled}
-            className="flex-1 min-w-[30px] bg-[#121212] text-white px-4 outline-none placeholder-gray-500"
-            placeholder="Search"
-            onChange={handleChange}
-            value={searchText}
-          /> */}
-
           <Autocomplete
             freeSolo
             options={suggestions}
             onChange={(e, value) => {
               // For selection
               if (value) {
-                console.log("in");
-                console.log(value);
                 setSearchText(() => value);
                 searchVideo(value);
                 // Trigger search only on selection
@@ -352,16 +315,27 @@ const Header = ({ isDisabled }) => {
             onClick={handleAvatarClick}
             className="text-white hover:bg-gray-700 p-2 rounded-full"
           >
-            <div className="w-8 h-8 bg-gray-500 rounded-full" />
+            {channelInfo?.profilePhoto ? (
+              <img
+                className="rounded-full w-10 h-10"
+                src={channelInfo?.profilePhoto}
+              ></img>
+            ) : (
+              <div className="w-10 h-10 bg-gray-500 rounded-full" />
+            )}
           </button>
-          {anchorEl && (
-            <div className="absolute top-[70px] bg-white rounded shadow-lg py-2">
+          {anchorEl !== null && (
+            <div
+              ref={dialogRef}
+              className="absolute top-[70px] bg-white rounded shadow-lg py-2"
+            >
               <button
                 disabled={isDisabled}
                 className="px-4 py-2 text-gray-700 hover:bg-gray-100"
                 onClick={() => {
                   handleAvatarClose();
-                  navigate("/profile");
+                  if (channelInfo) navigate("/profile");
+                  else navigate("/signup");
                 }}
               >
                 Profile

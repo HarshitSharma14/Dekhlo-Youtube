@@ -1,5 +1,7 @@
+import { useQuery } from "@tanstack/react-query";
+
 import axios from "axios";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import {
   createBrowserRouter,
@@ -169,27 +171,34 @@ const router = createBrowserRouter([
     element: <Navigate to="/" replace />,
   },
 ]);
+
+const fetchChannelInfo = async () => {
+  const { data } = await axios.get(GET_CHANNEL_DETAILS, {
+    withCredentials: true,
+  });
+  return data.channel;
+};
+
 const App = () => {
-  const { setChannelInfo, isLoggedIn } = useAppStore();
-  const getChannelInfo = async () => {
-    try {
-      const { data } = await axios.get(GET_CHANNEL_DETAILS, {
-        withCredentials: true,
-      });
-      console.log("in app data", data.channel);
-      setChannelInfo(data.channel);
-    } catch (err) {
-      setChannelInfo(null);
-      console.log("not logged in", err);
-    }
-  };
+  const { setChannelInfo } = useAppStore();
+
+  const { data: channelInfo, error } = useQuery({
+    queryKey: ["myInfo"],
+    queryFn: fetchChannelInfo,
+  });
+
   useEffect(() => {
-    getChannelInfo();
-  }, [isLoggedIn]);
+    if (channelInfo) {
+      setChannelInfo(channelInfo);
+    } else if (error) {
+      setChannelInfo(null);
+    }
+  }, [channelInfo, error]);
 
   return (
     <>
       <RouterProvider router={router} />
+
       <Toaster
         position="bottom-right"
         toastOptions={{

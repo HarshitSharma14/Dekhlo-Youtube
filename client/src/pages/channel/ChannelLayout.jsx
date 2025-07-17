@@ -17,10 +17,11 @@ import {
   Popover,
   Typography,
 } from "@mui/material";
+import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
-import { NavLink, Outlet, useNavigate, useParams } from "react-router-dom";
+import { NavLink, Outlet, useParams } from "react-router-dom";
 import { useUrlChcek } from "../../hooks/sidebarState";
 import {
   GET_CHANNEL_DETAILS,
@@ -29,15 +30,19 @@ import {
   UNSUBSCRIBE_CHANNEL,
 } from "../../utils/constants";
 
+const fetchChannelInfo = async (channelId) => {
+  const { data } = await axios.get(`${GET_CHANNEL_DETAILS}/${channelId}`, {
+    withCredentials: true,
+  });
+  return data.channel;
+};
+
 const ChannelLayout = () => {
   // useState **********************************************************************************
   const { isChannelVideos } = useUrlChcek();
   const activeTab = isChannelVideos ? 0 : 1;
   const [hoveredTab, setHoveredTab] = useState(activeTab);
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSubscribed, setIsSubscribed] = useState(false);
-  const [channel, setChannel] = useState(null);
   const [sortNo, setSortNo] = useState(0);
 
   // constant **********************************************************************************
@@ -68,22 +73,19 @@ const ChannelLayout = () => {
     },
   };
 
-  // functions **********************************************************************************
-  const getChannelInfo = async () => {
-    setIsLoading(true);
-    try {
-      const { data } = await axios.get(`${GET_CHANNEL_DETAILS}/${channelId}`, {
-        withCredentials: true,
-      });
-      console.log(data.channel);
-      setChannel(data.channel);
-      setIsSubscribed(data.channel.isSubscribed);
-    } catch (err) {
-      console.log("err", err.response);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const params = useParams();
+  const { channelId } = params;
+
+  const {
+    data: channel,
+    isLoading,
+    isError,
+    error,
+  } = useQuery({
+    queryKey: ["channel", channelId],
+    queryFn: () => fetchChannelInfo(channelId),
+    enabled: !!channelId, // Prevents firing without channelId
+  });
 
   // useEffect **********************************************************************************
   const contextValue = useMemo(
@@ -94,15 +96,8 @@ const ChannelLayout = () => {
     [sortNo, channel?.isOwner]
   );
 
-  const params = useParams();
-  const { channelId } = params;
-
-  useEffect(() => {
-    getChannelInfo();
-  }, [channelId]);
-
   if (isLoading) return <Box>Channel details fetching</Box>;
-  if (!isLoading && !channel) return <div> Channel does not exist</div>;
+  if (isError) return <div> {error.response?.data?.message}</div>;
 
   return (
     <>
@@ -262,8 +257,8 @@ const ChannelLayout = () => {
                 />
                 <ButtonForCreatorSupport
                   button={1}
-                  isSubscribedInitially={isSubscribed}
-                  isBellInitially={channel.isBell}
+                  isSubscribedInitially={channel?.isSubscribed}
+                  isBellInitially={channel?.isBell}
                   config={bigScreenConfig}
                   channelId={channelId}
                 />
@@ -274,7 +269,6 @@ const ChannelLayout = () => {
           {/* Discription and button for subs and creator support  for small screen  */}
           <Box
             sx={{
-              display: channel.isOwner && "none",
               "@media (min-width: 875px)": {
                 display: "none",
               },
@@ -284,7 +278,7 @@ const ChannelLayout = () => {
 
             <div
               style={{
-                display: "flex",
+                display: channel.isOwner ? "none" : "flex",
                 justifyContent: "space-around",
               }}
             >
@@ -295,7 +289,7 @@ const ChannelLayout = () => {
               />
               <ButtonForCreatorSupport
                 button={1}
-                isSubscribedInitially={isSubscribed}
+                isSubscribedInitially={channel?.isSubscribed}
                 isBellInitially={channel.isBell}
                 config={smallScreenConfig}
                 channelId={channelId}
@@ -486,6 +480,11 @@ const ButtonForCreatorSupport = ({
   const [isBell, setIsBell] = useState(isBellInitially);
   const [disabled, setDisabled] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  console.log("button ", isSubscribedInitially);
+
+  useEffect(() => {
+    setIsSubscribed(isSubscribedInitially);
+  }, [isSubscribedInitially]);
 
   // functions ***************************************************************************
   const handleSubscribe = async () => {
@@ -507,6 +506,7 @@ const ButtonForCreatorSupport = ({
       setDisabled(false);
     }
   };
+
   const handleUnsubscribe = async () => {
     setDisabled(true);
     try {

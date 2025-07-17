@@ -348,13 +348,13 @@ export const MoreIconButton = ({
       const { data } = await axios.get(`${GET_MY_PLAYLISTS}/${videoId}`, {
         withCredentials: true,
       });
-      console.log("playlist data", data);
+      console.log("playlist more button ", data);
 
       setAvailablePlaylists(
         data.playlists.filter(
           (p) =>
-            p._id !== channelInfo?.permanentPlaylist.likedVideos &&
-            p._id !== channelInfo?.permanentPlaylist.watchHistory
+            p._id !== channelInfo?.permanentPlaylist?.likedVideos &&
+            p._id !== channelInfo?.permanentPlaylist?.watchHistory
         )
       );
 
@@ -362,6 +362,7 @@ export const MoreIconButton = ({
       setAlreadyPresentPlaylist(pl);
     } catch (error) {
       toast.error("Error fetching playlists");
+      console.log("error fetching playlist ", error);
     } finally {
     }
   };

@@ -1,10 +1,4 @@
-import {
-  Delete,
-  MoreVert,
-  Palette,
-  PlayArrow,
-  Share,
-} from "@mui/icons-material";
+import { Delete, PlayArrow, Share } from "@mui/icons-material";
 import {
   Avatar,
   Button,
@@ -15,15 +9,15 @@ import {
   Tooltip,
   Typography,
 } from "@mui/material";
-import ColorThief from "colorthief";
-import React, { useEffect, useState } from "react";
-import { useAppStore } from "../store/index.js";
-import pic from "/assets/watchHistoryCover.jpg";
-import { Navigate, useNavigate } from "react-router-dom";
-import toast from "react-hot-toast";
 import axios from "axios";
+import ColorThief from "colorthief";
+import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
+import { useAppStore } from "../store/index.js";
 import { DELETE_PLAYLIST } from "../utils/constants.js";
 import DeleteDialogBox from "./DeleteDialogBox.jsx";
+import pic from "/assets/watchHistoryCover.jpg";
 
 const samplePlaylist = {
   title: "Watch History",

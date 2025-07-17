@@ -21,6 +21,7 @@ export const useSidebarState = () => {
 
   const { setSidebarActivity, channelInfo } = useAppStore();
   const currentPath = useLocation().pathname;
+  console.log("use side bar state ", currentPath);
 
   useEffect(() => {
     const channelId = channelInfo?._id;
@@ -36,14 +37,18 @@ export const useSidebarState = () => {
     if (currentPath === `/channel/${channelId}/playlist`)
       return setSidebarActivity(activeOn.isPlaylist);
 
-    if (playlistId?.toString() === permanentPlaylist?.watchHistory?.toString())
-      return setSidebarActivity(activeOn.isWatchHistory);
+    if (playlistId) {
+      if (
+        playlistId?.toString() === permanentPlaylist?.watchHistory?.toString()
+      )
+        return setSidebarActivity(activeOn.isWatchHistory);
 
-    if (playlistId?.toString() === permanentPlaylist?.watchLater?.toString())
-      return setSidebarActivity(activeOn.isWatchLater);
+      if (playlistId?.toString() === permanentPlaylist?.watchLater?.toString())
+        return setSidebarActivity(activeOn.isWatchLater);
 
-    if (playlistId?.toString() === permanentPlaylist?.likedVideos?.toString())
-      return setSidebarActivity(activeOn.isLikedVideos);
+      if (playlistId?.toString() === permanentPlaylist?.likedVideos?.toString())
+        return setSidebarActivity(activeOn.isLikedVideos);
+    }
 
     setSidebarActivity(null);
   }, [currentPath, playlistId]);

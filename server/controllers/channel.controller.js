@@ -89,7 +89,6 @@ export const getChannelInfo = AsyncTryCatch(async (req, res, next) => {
 export const updateProfile = AsyncTryCatch(async (req, res, next) => {
   const { channelName, bio, password, profilePhotoUrl } = req.body;
   let profilePhoto = profilePhotoUrl;
-
   if (req.file) {
     profilePhoto = await UploadSinglePhotoToCloudinary(req);
   }
@@ -110,7 +109,6 @@ export const updateProfile = AsyncTryCatch(async (req, res, next) => {
       deleteImageFromCloudinary(profilePhoto);
     }
   }
-
   res
     .status(200)
     .json({ message: "Profile updated successfully", channel: channel });

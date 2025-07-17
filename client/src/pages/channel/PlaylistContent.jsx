@@ -8,6 +8,7 @@ import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import pic from "/assets/emptyPlaylist.png";
 import toast from "react-hot-toast";
 import { useAppStore } from "../../store";
+import { useInfinteScroll } from "../../hooks/infinteScrolling";
 
 const PlaylistContent = () => {
   // useState ********************************************************************************************
@@ -77,6 +78,8 @@ const PlaylistContent = () => {
         }));
       }
       setPlaylistVideos((pre) => [...pre, ...data.videos]);
+      console.log("playlist", data);
+      return data;
     } catch (err) {
       console.log("erro in history");
       console.log(err);

@@ -75,7 +75,7 @@ const deleteVideo = async (publicId) => {
   }
 };
 
-const deleteManyVideos = async (urls) => {
+export const deleteManyVideos = async (urls) => {
   try {
     const publicIds = getManyPublicIdsFromUrls(urls);
     await cloudinary.api.delete_resources(publicIds, {
@@ -86,7 +86,7 @@ const deleteManyVideos = async (urls) => {
   }
 };
 
-const deleteManyThumbnails = async (urls) => {
+export const deleteManyThumbnails = async (urls) => {
   try {
     const publicIds = getManyPublicIdsFromUrls(urls);
     await cloudinary.api.delete_resources(publicIds, {
@@ -203,53 +203,60 @@ cron.schedule("0 1 * * *", async () => {
   if (!fs.existsSync(filePath)) return;
 
   const data = fs.readFileSync(filePath, "utf-8");
-  const channelIds = JSON.parse(data);
+  const pendingIds = JSON.parse(data);
 
-  for (const channelId of channelIds) {
-    try {
-      // Delete channel-level references
-      await Setting.deleteOne({ channel: channelId });
-      await Subscription.deleteMany({ creator: channelId });
-      await Notification.deleteMany({ channel: channelId });
+  try {
+    // Decrement subscriber counts for channels that were followed
+    const mp = new Map();
 
-      // Find subscriptions where this user is a subscriber (they follow others)
-      const subscriptions = await Subscription.find({ subscriber: channelId });
-      const creatorIds = subscriptions.map((s) => s.creator);
 
-      // Remove their subscriptions
-      await Subscription.deleteMany({ subscriber: channelId });
+    await Notification.deleteMany({ channel: { $in: pendingIds } });
+    // console.log("notifications deleted for channel ", channelId);
+    await Subscription.deleteMany({ creator: { $in: pendingIds } });
+    // console.log("subscriptions deleted for channel ", channelId);
+    const playlists = await Playlist.find({ channel: { $in: pendingIds } });
+    const playlistIds = playlists.map((p) => p._id);
 
-      // Decrement subscriber counts of followed channels
-      if (creatorIds.length > 0) {
-        await Channel.updateMany(
-          { _id: { $in: creatorIds } },
-          { $inc: { subscriberCount: -1 } }
-        );
-      }
+    const subscriptions = await Subscription.find({ subscriber: { $in: pendingIds } });
+    subscriptions.forEach((s) => {
+      const count = mp.get(s.creator) || 0;
+      mp.set(s.creator, count + 1);
+    });
+    await Subscription.deleteMany({ subscriber: { $in: pendingIds } });
+    // console.log("subscriptions deleted for channel ", channelId);
 
-      // Delete playlists and related videos
-      const playlists = await Playlist.find({ channel: channelId });
-      const playlistIds = playlists.map((p) => p._id);
+    await Promise.all(
+      Array.from(mp.entries()).map(([creatorId, count]) =>
+        Channel.updateOne(
+          { _id: creatorId },
+          { $inc: { subscriberCount: -count } }
+        )
+      )
+    );
+    await Playlist.deleteMany({ channel: { $in: pendingIds } });
+    // console.log("playlists deleted for channel ", channelId);
+    await PlaylistVideos.deleteMany({ playlistId: { $in: playlistIds } });
+    // console.log("playlist videos deleted for channel ", channelId);
 
-      await Playlist.deleteMany({ channel: channelId });
-      await PlaylistVideos.deleteMany({ playlistId: { $in: playlistIds } });
+    const videos = await Video.find({ channel: { $in: pendingIds } });
+    const videoIds = videos.map((v) => v._id);
+    const videoUrls = videos.map((v) => v.videoUrl);
+    const thumbnailUrls = videos.map((v) => v.thumbnailUrl);
 
-      // Delete videos and related media
-      const videos = await Video.find({ channel: channelId });
-      const videoIds = videos.map((v) => v._id);
-      const videoUrls = videos.map((v) => v.videoUrl);
-      const thumbnailUrls = videos.map((v) => v.thumbnailUrl);
+    await Comment.deleteMany({ videoId: { $in: videoIds } });
+    // console.log("comments deleted for channel ", channelId);
+    await Video.deleteMany({ channel: { $in: pendingIds } });
+    // console.log("videos deleted for channel ", channelId);
 
-      await deleteManyVideos(videoUrls);
-      await deleteManyThumbnails(thumbnailUrls);
 
-      await Comment.deleteMany({ video: { $in: videoIds } });
-      await Video.deleteMany({ channel: channelId });
+    await deleteManyVideos(videoUrls);
+    // console.log("videos deleted for channel ", channelId);
+    await deleteManyThumbnails(thumbnailUrls);
+    // console.log("thumbnails deleted for channel ", channelId);
 
-      console.log(`✅ Successfully cleaned up channel ${channelId}`);
-    } catch (err) {
-      console.error(`❌ Error deleting channel ${channelId}:`, err);
-    }
+  }
+  catch (err) {
+    console.error("Error decrementing subscriber counts:", err);
   }
 
   // Clear file after all deletions

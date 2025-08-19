@@ -18,6 +18,7 @@ import {
   updateVideo,
   removeVideoFromPlaylist,
   deletePlaylist,
+  deleteChannel,
 } from "../controllers/channel.controller.js";
 import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
 
@@ -39,6 +40,7 @@ app.get("/playlist", getPlaylistVideos);
 
 // login required routes ****************************************
 app.use(isUserLoggedIn);
+app.delete("/deleteChannel", deleteChannel);
 app.get("/myplaylist/:videoId", getMyPlaylists);
 app.get("/get-subscribedchannels", getSubscribedChannel);
 app.post("/add-to-playlist", addVideosToPlaylist);

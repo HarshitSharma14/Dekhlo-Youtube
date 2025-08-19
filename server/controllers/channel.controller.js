@@ -11,6 +11,8 @@ import Video from "../models/video.model.js";
 import { emitNotification } from "../socket.js";
 import {
   deleteImageFromCloudinary,
+  deleteManyThumbnails,
+  deleteManyVideos,
   UpdateThumbnail,
   UploadSinglePhotoToCloudinary,
   UploadVideoAndThumbnail,
@@ -499,9 +501,9 @@ export const getChannelVideos = AsyncTryCatch(async (req, res, next) => {
     sortField === "_id"
       ? { _id: Number(sortOrder) }
       : {
-          [sortField]: Number(sortOrder),
-          _id: Number(sortOrder),
-        };
+        [sortField]: Number(sortOrder),
+        _id: Number(sortOrder),
+      };
 
   // Fetch videos
   const unfilteredVideos = await Video.find(query)
@@ -909,11 +911,11 @@ export const deletePlaylist = AsyncTryCatch(async (req, res, next) => {
   let canDeletePlaylist = true;
   if (
     playlistDeleter.permanentPlaylist.get("watchHistory").toString() ===
-      playlistId ||
+    playlistId ||
     playlistDeleter.permanentPlaylist.get("likedVideos").toString() ===
-      playlistId ||
+    playlistId ||
     playlistDeleter.permanentPlaylist.get("watchLater").toString() ===
-      playlistId
+    playlistId
   )
     canDeletePlaylist = false;
 
@@ -934,7 +936,37 @@ export const deletePlaylist = AsyncTryCatch(async (req, res, next) => {
   return res.status(200).json({ success: true });
 });
 
+
+import path from "path";
+import fs from "fs/promises";
+import Comment from "../models/comment.model.js";
 //deleteing channel ******************************************************************************
-export const deleteChannle = AsyncTryCatch(async (req, res, next) => {
+export const deleteChannel = AsyncTryCatch(async (req, res, next) => {
   // TODO: to delete, all videos, playlists, playlistvideos, subs, setttings, notifications ,
-});
+  const channelId = req.channelId;
+  console.log(channelId)
+
+  await Video.updateMany({ channel: channelId }, { $set: { isPrivate: true } });
+  await Playlist.updateMany({ channel: channelId }, { $set: { isPrivate: true } });
+  const settingId = await Channel.findById(channelId).select("settings").lean();
+  await Setting.deleteOne({ _id: settingId.settings });
+  console.log("settings deleted for channel ", channelId);
+  await Channel.findByIdAndDelete(channelId);
+  console.log('channel deleted ', channelId);
+
+  // Step 3: Store channelId in file for later cleanup
+  const filePath = path.join(__dirname, '..', 'pendingDeletions.json');
+
+  // Read existing IDs or start new list
+  let pendingIds = [];
+  if (fs.existsSync(filePath)) {
+    const fileData = fs.readFileSync(filePath, 'utf-8');
+    pendingIds = JSON.parse(fileData);
+  }
+
+  pendingIds.push(channelId);
+
+  fs.writeFileSync(filePath, JSON.stringify(pendingIds, null, 2), 'utf-8');
+
+  res.status(200).json({ message: 'Channel marked for deletion at midnight' });
+})

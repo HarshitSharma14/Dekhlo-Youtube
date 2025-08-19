@@ -88,6 +88,11 @@ const PlaylistContent = () => {
       isFetching.current = false;
     }
   };
+  // title: data.playlist?.name,
+  //         thumbnail: plyalistThumbnail,
+  //         videos: data.playlist?.videosCount,
+  //         videoId: data.videos[0]?._id,
+  //         playlistId: data.playlist?._id,
 
   // useEffects ***********************************************************************************************************
   useEffect(() => {
@@ -163,7 +168,7 @@ const PlaylistContent = () => {
           },
         }}
       >
-        <PlaylistSideArea playlistVideos={playlistVideos} playlist={playlist} />
+        <PlaylistSideArea playlist={playlist} />
       </Box>
       <Box
         sx={{

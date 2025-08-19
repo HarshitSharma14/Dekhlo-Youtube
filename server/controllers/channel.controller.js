@@ -760,6 +760,7 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
 //✅ get videso of playlist *****************************************************************
 export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
   console.log("in get playlist");
+  console.log("moving forward");
   let { playlistId, cursor, limit = 20 } = req.query;
   console.log(playlistId, cursor, limit);
   cursor = JSON.parse(cursor);
@@ -768,7 +769,12 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
   const query = { playlistId: new mongoose.Types.ObjectId(playlistId) };
 
   const playlist = await Playlist.findById(playlistId);
+
   if (!playlist) return next(new ErrorHandler(400, "Missing playlistId"));
+
+  const playlistFetcher = LogedInChannel(req.cookies?.jwt);
+  const isOwner = playlistFetcher === playlist.channel.toString();
+
   console.log("playlist found", playlist);
   if (playlist.isPrivate) {
     const channelIdVisiting = LogedInChannel(req.cookies?.jwt);
@@ -779,7 +785,6 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
     )
       return next(new ErrorHandler(400, "Unauthorized request"));
   }
-  console.log("moving forward");
 
   if (cursor) {
     query._id = {
@@ -830,8 +835,10 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
     ? playlistVideos[playlistVideos.length - 1]._id
     : null;
 
-  res.status(200).json({ playlist, videos, hasMore, nextCursor });
+  res.status(200).json({ playlist, isOwner, videos, hasMore, nextCursor });
 });
+
+// get playlistInfo ************************************************************************
 
 // remove single video from playlist *************************************************************
 export const removeVideoFromPlaylist = AsyncTryCatch(async (req, res, next) => {

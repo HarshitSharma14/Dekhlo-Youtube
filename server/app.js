@@ -75,7 +75,6 @@ app.get("/", (_, res) => {
   res.send("Home route working on the Youtube app");
 });
 
-
 // Middleware to handle error ***************************
 app.use(errorHandlerMiddleware);
 
@@ -88,10 +87,9 @@ const server = app.listen(port, () => {
   mongoose
     .connect(databaseURL, { autoIndex: true })
     .then(async () => {
-      console.log("DB Connection success")
+      console.log("DB Connection success");
     })
     .catch((e) => console.log("DB Connection error: ", e.message));
 });
 
-
-setupSocket(server)
+setupSocket(server);

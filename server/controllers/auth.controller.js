@@ -1,15 +1,23 @@
+import { compare, hash } from "bcrypt";
 import jwt from "jsonwebtoken";
-import { compare } from "bcrypt";
 import Channel from "../models/channel.model.js";
-import { JWT_SECRET } from "../utils/constants.js";
-import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
-import { ErrorHandler } from "../utils/utility.js";
 import Playlist from "../models/playlist.model.js";
 import Setting from "../models/setting.model.js";
+import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
+import {
+  ErrorHandler,
+  generateAccessToken,
+  generateRefreshToken,
+  verifyToken,
+} from "../utils/utility.js";
+import {
+  ACCESS_TOKEN_EXPIRY,
+  REFRESH_TOKEN_EXPIRY,
+  REFRESH_TOKEN_REFRESH_THRESHOLD,
+} from "../utils/constants.js";
 
 // constants ******************************************************
 const clientURL = process.env.CLIENT_URL;
-const maxAge = 24 * 60 * 60 * 1000;
 
 // ✅✅
 export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
@@ -62,58 +70,64 @@ export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
       channel.permanentPlaylist.set("likedVideos", likedVideos._id);
       await channel.save();
 
-      console.log("channel info: ", channel);
       profileAlreadyExist = false;
     }
 
-    // Generate JWT for the channel
-    const token = jwt.sign(
-      { channelId: channel._id },
-      JWT_SECRET,
-      { expiresIn: maxAge } // Token expires in 1 hour
+    // Generate both tokens
+    const accessToken = generateAccessToken(channel._id, channel.tokenVersion);
+    const refreshToken = generateRefreshToken(
+      channel._id,
+      channel.tokenVersion
     );
-    console.log("token created ", token);
-    // console.log(token);
-    return cb(null, { token, profileAlreadyExist });
+
+    // Store refresh token in database
+    channel.refreshToken = refreshToken;
+    channel.refreshTokenExpiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    ); // 7 days
+    await channel.save();
+
+    return cb(null, { accessToken, refreshToken, profileAlreadyExist });
   } catch (err) {
     return cb(err);
   }
 };
 
 export const oauth2_redirect = (req, res) => {
-  if (!req.user || !req.user.token) {
+  if (!req.user || !req.user.accessToken) {
     return res.redirect(`${clientURL}`);
   }
-  const token = req.user.token;
+  const accessToken = req.user.accessToken;
+  const refreshToken = req.user.refreshToken;
   const profileAlreadyExist = req.user.profileAlreadyExist;
 
-  console.log("in the func");
-
-  // Set the token as an HTTP-only cookie
-  res.cookie("jwt", token, {
+  // Set both tokens as HTTP-only cookies
+  res.cookie("accessToken", accessToken, {
     httpOnly: true,
     sameSite: "None",
     secure: true,
+    maxAge: 15 * 60 * 1000, // 15 minutes
   });
+
+  res.cookie("refreshToken", refreshToken, {
+    httpOnly: true,
+    sameSite: "None",
+    secure: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  });
+
   if (!profileAlreadyExist) res.redirect(`${clientURL}/profile-setup`);
   else res.redirect(`${clientURL}`);
 };
 
 export const logout = (req, res) => {
-  res.cookie("jwt", "", {
-    httpOnly: true,
-    sameSite: "None",
-    secure: true,
-    expires: new Date(0), // Explicitly expire the cookie
-  });
-  console.log("LOGOUT");
+  // TODO: clear all tokens from the database
   res.status(200).json({ message: "Logged out successfully." });
 };
 
 export const login = AsyncTryCatch(async (req, res, next) => {
   const { email, password } = req.body;
 
-  console.log(req.body);
   if (typeof email !== "string" || typeof password !== "string") {
     return res.status(400).json({ error: "Invalid input format" });
   }
@@ -126,36 +140,201 @@ export const login = AsyncTryCatch(async (req, res, next) => {
   if (!channel) {
     return next(new ErrorHandler(404, "User does not exist"));
   }
-  console.log("chnnel found ", channel);
-  console.log(channel.password);
-
-  console.log("andr hu uske");
 
   const auth = await compare(password, channel.password);
 
-  console.log("thoda aur andr hu uske");
   if (!auth) {
     return next(new ErrorHandler(401, "Invalid Email or Password"));
   }
-  console.log("thoda sa aur andr hu uske");
+
   const userObj = channel.toObject();
-
-  console.log("bohot andr hu uske");
-
   delete userObj.password;
 
-  const token = jwt.sign({ channelId: channel._id }, JWT_SECRET, {
-    expiresIn: maxAge,
-  });
-  console.log(token);
-  console.log("bohot zyada hi andr hu uske");
+  // Generate both tokens
+  const accessToken = generateAccessToken(channel._id);
+  const refreshToken = generateRefreshToken(channel._id);
 
-  res.cookie("jwt", token, {
-    httpOnly: true,
-    sameSite: "None",
-    secure: true,
-  });
+  // Store refresh token in database
+  channel.refreshToken = refreshToken;
+  channel.refreshTokenExpiresAt = new Date(
+    Date.now() + 7 * 24 * 60 * 60 * 1000
+  ); // 7 days
+  await channel.save();
 
-  console.log("bohot zyada hi hi andr hu uske");
-  return res.status(200).send(userObj);
+  return res.status(200).json({
+    message: "Login successful",
+    accessToken,
+    refreshToken,
+    channel: userObj,
+  });
+});
+
+export const googleLogin = AsyncTryCatch(async (req, res, next) => {
+  const { accessToken } = req.body;
+  console.log("in google login");
+  if (!accessToken) {
+    return next(new ErrorHandler(400, "Access token is required"));
+  }
+
+  try {
+    // For frontend OAuth, we'll use the access token to get user info from Google
+    const response = await fetch(
+      `https://www.googleapis.com/oauth2/v2/userinfo?access_token=${accessToken}`
+    );
+
+    if (!response.ok) {
+      return next(
+        new ErrorHandler(400, "Failed to fetch user info from Google")
+      );
+    }
+
+    const userData = await response.json();
+    const { email, name, picture } = userData;
+    console.log("userData", userData);
+
+    if (!email) {
+      return next(
+        new ErrorHandler(400, "Google account does not have an email")
+      );
+    }
+
+    let profileAlreadyExist = true;
+    let channel = await Channel.findOne({ email });
+
+    if (!channel) {
+      // Create new channel
+      channel = new Channel({
+        channelName: name || "Unnamed Channel",
+        email: email,
+        profilePhoto: picture || "",
+      });
+
+      channel.permanentPlaylist = new Map();
+      const settings = new Setting();
+      await settings.save();
+      channel.settings = settings._id;
+
+      // Create default playlists
+      const watchLater = await Playlist.create({
+        name: "Watch later",
+        channel: channel._id,
+        videoCount: 0,
+        private: true,
+      });
+
+      const watchHistory = await Playlist.create({
+        name: "Watch History",
+        channel: channel._id,
+        videoCount: 0,
+        private: true,
+      });
+
+      const likedVideos = await Playlist.create({
+        name: "Liked Videos",
+        channel: channel._id,
+        videoCount: 0,
+        private: true,
+      });
+
+      channel.permanentPlaylist.set("watchLater", watchLater._id);
+      channel.permanentPlaylist.set("watchHistory", watchHistory._id);
+      channel.permanentPlaylist.set("likedVideos", likedVideos._id);
+
+      await channel.save();
+      profileAlreadyExist = false;
+    }
+
+    // Generate both tokens
+    const newAccessToken = generateAccessToken(channel._id);
+    const newRefreshToken = generateRefreshToken(channel._id);
+
+    // Store refresh token in database
+    channel.refreshToken = newRefreshToken;
+    channel.refreshTokenExpiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000
+    ); // 7 days
+    await channel.save();
+
+    res.status(200).json({
+      message: "Google login successful",
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      channel: {
+        _id: channel._id,
+        channelName: channel.channelName,
+        email: channel.email,
+        profilePhoto: channel.profilePhoto,
+        permanentPlaylist: channel.permanentPlaylist,
+        bio: channel.bio,
+        followers: channel.subscribersCount,
+        videos: channel.videosCount,
+        views: channel.views,
+      },
+    });
+  } catch (error) {
+    return next(new ErrorHandler(400, "Google login failed"));
+  }
+});
+
+/**
+ * Refresh access token using refresh token
+ * Also generates new refresh token if current one is close to expiring
+ */
+export const refreshToken = AsyncTryCatch(async (req, res, next) => {
+  console.log("in refresh token");
+  const { refreshToken: clientRefreshToken } = req.body;
+
+  if (!clientRefreshToken) {
+    return next(new ErrorHandler(400, "Refresh token is required"));
+  }
+
+  try {
+    // Verify refresh token
+    const decodedData = verifyToken(clientRefreshToken, "refresh");
+    if (!decodedData) {
+      return next(new ErrorHandler(401, "Invalid or expired refresh token"));
+    }
+
+    // Find channel and verify token
+    const channel = await Channel.findById(decodedData.channelId);
+    if (!channel || channel.refreshToken !== clientRefreshToken) {
+      return next(new ErrorHandler(401, "Invalid refresh token"));
+    }
+
+    // Check if refresh token is expired
+    if (channel.refreshTokenExpiresAt < new Date()) {
+      return next(new ErrorHandler(401, "Refresh token expired"));
+    }
+
+    // Check if refresh token is close to expiring (less than 1 day left)
+    const oneDayFromNow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const shouldRefreshRefreshToken =
+      channel.refreshTokenExpiresAt <= oneDayFromNow;
+
+    let newRefreshToken = clientRefreshToken;
+    let newRefreshTokenExpiry = channel.refreshTokenExpiresAt;
+
+    if (shouldRefreshRefreshToken) {
+      // Generate new refresh token
+      newRefreshToken = generateRefreshToken(channel._id, channel.tokenVersion);
+      newRefreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+
+      // Update database
+      channel.refreshToken = newRefreshToken;
+      channel.refreshTokenExpiresAt = newRefreshTokenExpiry;
+      await channel.save();
+    }
+
+    // Generate new access token
+    const newAccessToken = generateAccessToken(channel._id);
+
+    res.status(200).json({
+      message: "Token refreshed successfully",
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+      refreshTokenRefreshed: shouldRefreshRefreshToken,
+    });
+  } catch (error) {
+    return next(new ErrorHandler(500, "Failed to refresh token"));
+  }
 });

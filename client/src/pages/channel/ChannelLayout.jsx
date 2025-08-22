@@ -18,7 +18,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import api from "../../utils/api.js";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { NavLink, Outlet, useParams } from "react-router-dom";
@@ -31,9 +31,7 @@ import {
 } from "../../utils/constants";
 
 const fetchChannelInfo = async (channelId) => {
-  const { data } = await axios.get(`${GET_CHANNEL_DETAILS}/${channelId}`, {
-    withCredentials: true,
-  });
+  const { data } = await api.get(`${GET_CHANNEL_DETAILS}/${channelId}`);
   return data.channel;
 };
 
@@ -446,7 +444,6 @@ const ButtonForCreatorSupport = ({
   const [isBell, setIsBell] = useState(isBellInitially);
   const [disabled, setDisabled] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
-  console.log("button ", isSubscribedInitially);
 
   useEffect(() => {
     setIsSubscribed(isSubscribedInitially);
@@ -456,17 +453,10 @@ const ButtonForCreatorSupport = ({
   const handleSubscribe = async () => {
     setDisabled(true);
     try {
-      await axios.post(
-        SUBSCRIBE_CHANNEL,
-        { creatorId: channelId },
-        {
-          withCredentials: true,
-        }
-      );
+      await api.post(SUBSCRIBE_CHANNEL, { creatorId: channelId });
       setIsSubscribed(true);
     } catch (err) {
       setIsSubscribed(false);
-      console.log("not subs ", err);
       toast.error(err?.response?.data?.message || "Something went wrong ");
     } finally {
       setDisabled(false);
@@ -476,11 +466,7 @@ const ButtonForCreatorSupport = ({
   const handleUnsubscribe = async () => {
     setDisabled(true);
     try {
-      await axios.delete(UNSUBSCRIBE_CHANNEL, {
-        data: { creatorId: channelId },
-
-        withCredentials: true,
-      });
+      await api.delete(UNSUBSCRIBE_CHANNEL, { data: { creatorId: channelId } });
       setIsSubscribed(false);
     } catch (err) {
       toast.error(err.response?.data?.message || "Something went wrong");
@@ -493,17 +479,10 @@ const ButtonForCreatorSupport = ({
   const handleToggleBell = async () => {
     setDisabled(true);
     try {
-      await axios.patch(
-        TOGGLE_BELL,
-        { creatorId: channelId },
-        {
-          withCredentials: true,
-        }
-      );
+      await api.patch(TOGGLE_BELL, { creatorId: channelId });
       const bellTemp = isBell;
       setIsBell(!bellTemp);
     } catch (err) {
-      console.log("bell icon ", err);
       toast.error(err?.response?.data?.message || "Something went wrong");
     } finally {
       setAnchorEl(null); // Close popover after action
@@ -513,7 +492,6 @@ const ButtonForCreatorSupport = ({
 
   const handleClick = (e) => {
     if (button === 2) {
-      console.log("clicked on support creato");
       return;
     } else if (!isSubscribed) {
       handleSubscribe();
@@ -671,7 +649,6 @@ const MidButtonSection = ({
         <NavLink
           to={`/channel/${channelId}`}
           onMouseEnter={(e) => {
-            console.log(e.currentTarget.getClientRects());
             setHoveredTab(0);
           }}
           onMouseLeave={() => {

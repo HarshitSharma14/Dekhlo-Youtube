@@ -1,14 +1,11 @@
 import { Box, Typography } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import api from "../../utils/api.js";
 import ChannelCard from "../../component/cards/ChannelCard";
 import { GET_SUBSCRIBED_CHANNEL } from "../../utils/constants";
 
 const getSubscribedChannel = async () => {
-  const { data } = await axios.get(GET_SUBSCRIBED_CHANNEL, {
-    withCredentials: true,
-  });
-  console.log("data ", data);
+  const { data } = await api.get(GET_SUBSCRIBED_CHANNEL);
   return data.following;
 };
 

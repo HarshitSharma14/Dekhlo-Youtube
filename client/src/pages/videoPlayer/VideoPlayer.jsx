@@ -1,53 +1,28 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
+import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import Plyr from "plyr";
 import "plyr/dist/plyr.css";
+import React, { useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { PiShareFatLight } from "react-icons/pi";
-import axios from "axios";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import Comments from "../../component/Comments";
+import Description from "../../component/Description";
+import PlayingPlaylistComp from "../../component/PlayingPlaylistComp";
+import LongVideoCard from "../../component/cards/LongVideoCard";
+import { useAppStore } from "../../store";
+import api from "../../utils/api.js";
 import {
-  GET_COMMENTS,
   GET_PLAYLIST_VIDEOS,
   GET_VIDEO,
   GET_WATCH_NEXT,
   LIKE_UNLIKE,
-  PUT_COMMENT,
-  SUBSCRIBE_CHANNEL,
-  UNSUBSCRIBE_CHANNEL,
 } from "../../utils/constants";
-import RepeatIcon from "@mui/icons-material/Repeat";
-import CloseIcon from "@mui/icons-material/Close";
-import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
-import { BsThreeDots } from "react-icons/bs";
-import Description from "../../component/Description";
-import { BsThreeDotsVertical } from "react-icons/bs";
-import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
-import ShuffleIcon from "@mui/icons-material/Shuffle";
-import Comments from "../../component/Comments";
-import toast from "react-hot-toast";
-import { TextField } from "@mui/material";
-import { MdOutlineEmojiEmotions } from "react-icons/md";
-import dayjs from "dayjs";
-import relativeTime from "dayjs/plugin/relativeTime";
-import Button from "@mui/material/Button";
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
-import { debounce } from "lodash";
-import { useAppStore } from "../../store";
-import LongVideoCard from "../../component/cards/LongVideoCard";
-import { useSearchParams } from "react-router-dom";
-import PlayingPlaylistComp from "../../component/PlayingPlaylistComp";
-import { useNavigate } from "react-router-dom";
-import { Global } from "@emotion/react";
-import { styled } from "@mui/material/styles";
-import CssBaseline from "@mui/material/CssBaseline";
-import { grey } from "@mui/material/colors";
 // import Button from '@mui/material/Button';
-import Box from "@mui/material/Box";
-import Skeleton from "@mui/material/Skeleton";
-import Typography from "@mui/material/Typography";
-import SwipeableDrawer from "@mui/material/SwipeableDrawer";
-import { ButtonForCreatorSupport } from "../channel/ChannelLayout";
 import { MoreIconButton } from "../../component/cards/VideoCard";
+import { ButtonForCreatorSupport } from "../channel/ChannelLayout";
 
 const VideoPlayer = () => {
   const { channelInfo } = useAppStore();
@@ -106,11 +81,7 @@ const VideoPlayer = () => {
   useEffect(() => {
     const getVideoData = async () => {
       try {
-        const response = await axios.get(`${GET_VIDEO}/${videoId}`, {
-          withCredentials: true,
-        });
-        console.log(response.data);
-        // setLoggedIn(response.data.loggedIn);
+        const response = await api.get(`${GET_VIDEO}/${videoId}`);
         setLoggedIn(channelInfo != undefined && channelInfo != null);
         setLikes(response.data.video.likes);
 
@@ -119,7 +90,6 @@ const VideoPlayer = () => {
 
         setIsLiked(response.data.isLiked);
         setVideoDetails(response.data.video);
-        // console.log(channelInfo)
       } catch (error) {
         toast.error("Error fetching video data");
         navigate("/");
@@ -131,17 +101,13 @@ const VideoPlayer = () => {
 
   useEffect(() => {
     if (queryValue) {
-      console.log("playlist", queryValue);
-
       setPlayingPlaylist(true);
 
       const getPlaylistVideos = async () => {
         try {
-          const response = await axios.get(
-            `${GET_PLAYLIST_VIDEOS}?playlistId=${playlistId}`,
-            { withCredentials: true }
+          const response = await api.get(
+            `${GET_PLAYLIST_VIDEOS}?playlistId=${playlistId}`
           );
-          console.log(response.data);
           if (
             response.data.playlist.videos.some((video) => video._id === videoId)
           ) {
@@ -164,8 +130,6 @@ const VideoPlayer = () => {
     }
   }, [queryValue, playlistId]);
 
-  const toggleBell = async () => { };
-
   // use effects
   const share = async () => {
     try {
@@ -183,17 +147,13 @@ const VideoPlayer = () => {
     if (watchNextLoading || !watchNextHasMore) return;
 
     setWatchNextLoading(true);
-    console.log('recheck')
     try {
-      const response = await axios.get(
+      const response = await api.get(
         `${GET_WATCH_NEXT}/${videoId}?cursor=${cursor}`
       );
       setWatchNextHasMore(response.data.hasMore);
       setWatchNext((watchNext) => [...watchNext, ...response.data.watchNext]);
-      setCursor(
-        response.data.nextCursor
-      );
-      console.log(response.data)
+      setCursor(response.data.nextCursor);
       setWatchNextLoading(false);
     } catch (error) {
       console.error("Error fetching video data:", error);
@@ -202,13 +162,10 @@ const VideoPlayer = () => {
 
   useEffect(() => {
     const fetchInitialVideos = async () => {
-      const response = await axios.get(`${GET_WATCH_NEXT}/${videoId}`);
-      // console.log(res);
+      const response = await api.get(`${GET_WATCH_NEXT}/${videoId}`);
       setWatchNextHasMore(response.data.hasMore);
       setWatchNext([...response.data.watchNext]);
-      setCursor(
-        response.data.nextCursor
-      );
+      setCursor(response.data.nextCursor);
     };
 
     fetchInitialVideos(); // Fetch first batch when component mounts
@@ -219,7 +176,6 @@ const VideoPlayer = () => {
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
         getWatchNext(); // Fetch more data when last item appears
-        console.log("innnn");
       }
     });
 
@@ -227,74 +183,62 @@ const VideoPlayer = () => {
     return () => observer.disconnect();
   }, [watchNext]); // Re-run when videos change
 
-  const player = new Plyr(playerRef.current, {
-    autoplay: true,
-    quality: {
-      default: 1080,
-      options: [1080, 720, 480],
-      forced: true,
-      onend: true,
-    },
-    settings: ["quality", "speed"],
-    fullscreen: {
-      enabled: true,
-      fallback: true, // Ensures a fallback for unsupported browsers
-      iosNative: true,
-    },
-  });
+  // const player = new Plyr(playerRef.current, {
+  //   autoplay: true,
+  //   quality: {
+  //     default: 1080,
+  //     options: [1080, 720, 480],
+  //     forced: true,
+  //     onend: true,
+  //   },
+  //   settings: ["quality", "speed"],
+  //   fullscreen: {
+  //     enabled: true,
+  //     fallback: true, // Ensures a fallback for unsupported browsers
+  //     iosNative: true,
+  //   },
+  // });
 
-  const subscribeToggle = async () => {
-    if (loading) return;
+  // const handleSubscribe = async () => {
+  //   setLoading(true);
 
-    console.log("inside subs");
+  //   if (!subscribed) {
+  //     const toastId = toast.loading("Subscribing...");
+  //     try {
+  //       const response = await api.post(SUBSCRIBE_CHANNEL, {
+  //         creatorId: videoDetails.channel._id,
+  //       });
+  //       setSubscribed(true);
+  //       setBell(true);
+  //       videoDetails.channel.subscribersCount += 1;
+  //       toast.success(`${videoDetails.channel.channelName}+' subscribed'`, {
+  //         id: toastId,
+  //       });
+  //     } catch (error) {
+  //       toast.error("Error subscribing", { id: toastId });
+  //     }
+  //   } else {
+  //     const toastId = toast.loading("Unsubscribing...");
+  //     try {
+  //       const response = await api.delete(UNSUBSCRIBE_CHANNEL, {
+  //         data: { creatorId: videoDetails.channel._id },
+  //       });
+  //       closeSubscribeMenu();
+  //       setSubscribed(false);
+  //       setBell(false);
+  //       videoDetails.channel.subscribersCount -= 1;
+  //       toast.success(`${videoDetails.channel.channelName}+' unsubscribed'`, {
+  //         id: toastId,
+  //       });
+  //     } catch (error) {
+  //       toast.error("Error unsubscribing", { id: toastId });
+  //     }
+  //   }
 
-    setLoading(true);
-
-    if (!subscribed) {
-      const toastId = toast.loading("Subscribing...");
-      try {
-        const response = await axios.post(
-          SUBSCRIBE_CHANNEL,
-          { creatorId: videoDetails.channel._id },
-          { withCredentials: true }
-        );
-        console.log(response);
-        setSubscribed(true);
-        setBell(true);
-        videoDetails.channel.subscribersCount += 1;
-        toast.success(`${videoDetails.channel.channelName}+' subscribed'`, {
-          id: toastId,
-        });
-      } catch (error) {
-        console.log(error);
-        toast.error("Error subscribing", { id: toastId });
-      }
-    } else {
-      const toastId = toast.loading("Unsubscribing...");
-      try {
-        const response = await axios.delete(UNSUBSCRIBE_CHANNEL, {
-          data: { creatorId: videoDetails.channel._id },
-          withCredentials: true,
-        });
-        console.log(response);
-        closeSubscribeMenu();
-        setSubscribed(false);
-        setBell(false);
-        videoDetails.channel.subscribersCount -= 1;
-        toast.success(`${videoDetails.channel.channelName}+' unsubscribed'`, {
-          id: toastId,
-        });
-      } catch (error) {
-        console.log(error);
-        toast.error("Error unsubscribing", { id: toastId });
-      }
-    }
-
-    setLoading(false);
-  };
+  //   setLoading(false);
+  // };
 
   const navigateToVideo = (videoIdNew) => {
-    console.log("navingatinggggggggggggggggggggg");
     navigate(`/video-player/${videoIdNew}`);
     setTimeout(() => {
       navigate(0); // Force page reload (not recommended but works)
@@ -362,21 +306,16 @@ const VideoPlayer = () => {
     if (loading) return;
 
     setLoading(true);
-    console.log(loggedIn);
     if (!loggedIn) {
       toast.error("Please login to like the video");
       setLoading(false);
       return;
     }
     try {
-      console.log(!isLiked);
-      const response = await axios.patch(
-        `${LIKE_UNLIKE}/${videoId}`,
-        { isLiked: !isLiked },
-        { withCredentials: true }
-      );
+      const response = await api.patch(`${LIKE_UNLIKE}/${videoId}`, {
+        isLiked: !isLiked,
+      });
       setLikes(response.data.likes);
-      console.log(response.data);
       setIsLiked(!isLiked);
     } catch (error) {
       console.error("Error liking video:", error);
@@ -428,8 +367,9 @@ const VideoPlayer = () => {
           </div>
 
           <div
-            className={`border-2 lg:hidden rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${playingPlaylist ? "block" : "hidden"
-              } h-auto`}
+            className={`border-2 lg:hidden rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${
+              playingPlaylist ? "block" : "hidden"
+            } h-auto`}
           >
             <PlayingPlaylistComp playlist={playlist} videoId={videoId} />
           </div>
@@ -514,7 +454,11 @@ const VideoPlayer = () => {
                       <PiShareFatLight onClick={share} />
                     </div>
 
-                    <div className={`w-[40px] relative h-[36px] rounded-3xl flex flex-row justify-evenly hover:bg-[#635f5f] ml-3 items-center bg-[#2e302f] box-border overflow-hidden ${channelInfo ? "" : "hidden"}`}>
+                    <div
+                      className={`w-[40px] relative h-[36px] rounded-3xl flex flex-row justify-evenly hover:bg-[#635f5f] ml-3 items-center bg-[#2e302f] box-border overflow-hidden ${
+                        channelInfo ? "" : "hidden"
+                      }`}
+                    >
                       {/* <BsThreeDots /> */}
                       <MoreIconButton
                         isInView={true}
@@ -566,7 +510,6 @@ const VideoPlayer = () => {
               setVideoDetails={setVideoDetails}
               loggedIn={loggedIn}
             />
-
           ) : (
             <div className="flex mx-auto mt-4">
               Comments are disabled for this video
@@ -579,15 +522,14 @@ const VideoPlayer = () => {
           className={`hidden lg:flex flex-col lg:w-[35%] pt-3 w-full h-auto box-border lg:mx-6`}
         >
           {/* Right side content */}
-          {/* {console.log(watchNext)} */}
           <div
-            className={`border-2 rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${playingPlaylist ? "block" : "hidden"
-              } h-auto`}
+            className={`border-2 rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${
+              playingPlaylist ? "block" : "hidden"
+            } h-auto`}
           >
             <PlayingPlaylistComp playlist={playlist} playingVideoId={videoId} />
           </div>
           {watchNext?.map((video, index) => {
-            // console.log(video)
             return (
               <div
                 key={index}

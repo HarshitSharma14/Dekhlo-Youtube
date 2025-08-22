@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import api from "../../utils/api.js";
 import { useParams } from "react-router-dom";
 import PlaylistCard from "../../component/cards/PlaylistCard";
 import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
@@ -8,9 +8,7 @@ import { GET_CHANNEL_PLAYLIST } from "../../utils/constants";
 
 const getChannelPlaylists = async ({ queryKey }) => {
   const [_key, channelId] = queryKey;
-  const { data } = await axios.get(`${GET_CHANNEL_PLAYLIST}/${channelId}`, {
-    withCredentials: true,
-  });
+  const { data } = await api.get(`${GET_CHANNEL_PLAYLIST}/${channelId}`);
   return data?.playlists || [];
 };
 
@@ -38,7 +36,7 @@ const ChannelPlaylist = () => {
         <VideoCardLoading />{" "}
       </div>
     );
-  if (!playlists.length)
+  if (!playlists || !playlists.length)
     return <div className=" py-6 text-center">No playlists to show</div>;
 
   return (
@@ -49,17 +47,24 @@ const ChannelPlaylist = () => {
         "@media(max-width: 680px)": { justifyContent: "center" },
       }}
     >
-      {playlists.map((playlist) => (
-        <PlaylistCard
-          key={playlist?._id}
-          playlistId={playlist?._id}
-          videoId={playlist.videos[0]?._id}
-          title={playlist?.name}
-          videoCount={playlist?.videosCount}
-          mainThumbnail={playlist?.videos[0]?.thumbnailUrl}
-          secondaryThumbnails={playlist?.videos}
-        />
-      ))}
+      {playlists.map((playlist) => {
+        // Add null checks for videos array
+        const firstVideo = playlist?.videos?.[0];
+        const videoId = firstVideo?._id;
+        const mainThumbnail = firstVideo?.thumbnailUrl;
+
+        return (
+          <PlaylistCard
+            key={playlist?._id}
+            playlistId={playlist?._id}
+            videoId={videoId}
+            title={playlist?.name}
+            videoCount={playlist?.videosCount}
+            mainThumbnail={mainThumbnail}
+            secondaryThumbnails={playlist?.videos || []}
+          />
+        );
+      })}
     </Box>
   );
 };

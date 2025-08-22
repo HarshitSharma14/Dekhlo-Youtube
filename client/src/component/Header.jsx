@@ -3,7 +3,7 @@ import MenuIcon from "@mui/icons-material/Menu";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import { Autocomplete, TextField, useMediaQuery } from "@mui/material";
-import axios from "axios";
+import api from "../utils/api.js";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
@@ -34,15 +34,12 @@ const Header = ({ isDisabled }) => {
     setNotificationsPending,
   } = useAppStore();
   const [back, setBack] = useState(false);
-  const [searchText, setSearchText] = useState(
-    sessionStorage.getItem("searchText") || s || ""
-  );
+  const [searchText, setSearchText] = useState(s || "");
   const [suggestions, setSuggestions] = useState([]);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   // Toggle the menu (avatar options)
   const dialogRef = useRef(null);
   const handleAvatarClick = (event) => {
-    console.log(anchorEl);
     if (anchorEl === null) {
       setAnchorEl(event.currentTarget);
     } else {
@@ -74,37 +71,28 @@ const Header = ({ isDisabled }) => {
     } else {
       setNotificationsOpen(true);
       try {
-        await axios.get(`${CHANGE_ISREAD}?t=${notifications[0].createdAt}`, {
-          withCredentials: true,
-        });
+        await api.get(`${CHANGE_ISREAD}?t=${notifications[0].createdAt}`);
         setNotificationsPending(false);
       } catch (e) {
-        console.log(e);
+        // Handle error
       }
     }
   };
 
   const searchVideo = async (value) => {
-    if (value) {
-      sessionStorage.setItem("searchText", value);
-    } else {
-      sessionStorage.setItem("searchText", searchText);
-    }
-    navigate(`/search?s=${searchText}`);
-    setTimeout(() => {
-      navigate(0); // Force page reload (not recommended but works)
-    }, 0);
+    navigate(`/search?s=${value}`);
+
     return;
   };
 
   const fetchAutocomplete = async (text) => {
     try {
-      const response = await axios.get(AUTOCOMPLETE_ROUTE, {
+      const response = await api.get(AUTOCOMPLETE_ROUTE, {
         params: { searchText: text },
       });
       setSuggestions(response.data.results);
     } catch (error) {
-      console.log(error);
+      // Handle error
     }
   };
 
@@ -121,9 +109,7 @@ const Header = ({ isDisabled }) => {
   useEffect(() => {
     const fetchNoti = async () => {
       try {
-        const response = await axios.get(GET_NOTIFICATIONS, {
-          withCredentials: true,
-        });
+        const response = await api.get(GET_NOTIFICATIONS);
 
         if (response.data[response.data.length - 1].isRead) {
           setNotificationsPending(false);
@@ -137,27 +123,28 @@ const Header = ({ isDisabled }) => {
           });
         }
       } catch (e) {
-        console.log(e);
+        // Handle error
       }
     };
     if (channelInfo) fetchNoti();
   }, []);
 
-  const logout = async () => {
+  const handleError = (e) => {
+    // Handle error
+  };
+
+  const handleLogout = async () => {
+    const toastId = toast.loading("Logging out...");
     try {
-      const toastId = toast.loading("Logging out...");
-      const response = await axios.get(LOGOUT_ROUTE, { withCredentials: true });
+      const response = await api.get(LOGOUT_ROUTE);
       if (response.status === 200) {
         toast.success("Logout successful", { id: toastId });
-        console.log("logout success");
         setIsLoggedIn(false);
         setChannelInfo(null);
         navigate("/");
-      } else {
-        console.log("error");
       }
     } catch (e) {
-      console.log(e);
+      // Handle error
     }
   };
 
@@ -233,7 +220,7 @@ const Header = ({ isDisabled }) => {
           />
           <button
             disabled={isDisabled}
-            onClick={() => searchVideo()}
+            onClick={() => searchVideo(searchText)}
             className="border-l h-full bg-[#222222] border-[#303030] px-5 flex items-center justify-center hover:bg-[#303030]"
           >
             <svg
@@ -347,7 +334,7 @@ const Header = ({ isDisabled }) => {
                 }`}
                 onClick={() => {
                   handleAvatarClose();
-                  logout();
+                  handleLogout();
                 }}
               >
                 Logout

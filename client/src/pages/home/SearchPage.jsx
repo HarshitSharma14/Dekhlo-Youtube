@@ -1,96 +1,106 @@
-import axios from "axios";
+import api from "../../utils/api.js";
 import React, { useEffect, useRef, useState } from "react";
 import { SEARCH_VIDEO_ROUTE } from "../../utils/constants";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {
+  useLocation,
+  useNavigate,
+  useParams,
+  useSearchParams,
+} from "react-router-dom";
 import LongVideoCard from "../../component/cards/LongVideoCard";
+import { useInfinteScroll } from "../../hooks/infinteScrolling";
+
+const getChannelPlaylists = async ({ pageParam = null, queryKey }) => {
+  const [_key, searchText] = queryKey;
+
+  if (!searchText) return { videos: [], hasMore: false, nextCursor: null };
+
+  const cursorParam = pageParam ? `&cursor=${pageParam}` : "";
+  const { data } = await api.get(
+    `${SEARCH_VIDEO_ROUTE}?s=${searchText}${cursorParam}&limit=20`
+  );
+  return {
+    videos: data?.videos || [],
+    hasMore: data?.hasMore || false,
+    nextCursor: data?.nextCursor || null,
+  };
+};
 
 const SearchPage = () => {
-  console.log("in search page");
-
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
+  const [searchParams] = useSearchParams();
   const searchText = searchParams.get("s");
-
-  const [cursor, setCursor] = useState(null);
-  const [videos, setVideos] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-
-  const lastElementRef = useRef(null);
-
+  console.log("searchText", searchText);
   const navigate = useNavigate();
 
-  const getSearchResults = async () => {
-    if (!hasMore || loading) return;
-    setLoading(true);
-    try {
-      console.log(searchText);
-      const { data } = await axios.get(SEARCH_VIDEO_ROUTE, {
-        params: { searchText, cursor },
-      });
-      console.log(data);
-      if (data.results.length > 0) {
-        setVideos((videos) => [...videos, ...data.results]);
-        setCursor(data.results[data.results.length - 1]?._id);
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.log(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    console.log("one");
-
-    // setVideos([]) // Reset videos when search text changes
-    // setCursor(null) // Reset cursor when search text changes
-    // setHasMore(true) // Reset hasMore when search text changes
-    // setLoading(false) // Reset loading when search text changes
-    // lastElementRef.current = null // Reset lastElementRef when search text changes
-    getSearchResults();
-  }, [searchText]);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        getSearchResults(); // Fetch more data when last item appears
-        console.log("innnn");
-      }
+  const { data, isLoading, isError, error, isFetchingNextPage } =
+    useInfinteScroll(["search", searchText], getChannelPlaylists, {
+      staleTime: 0, // Data is immediately stale
+      gcTime: 0, // Don't cache at all
+      refetchOnMount: true, // Always refetch when component mounts
+      refetchOnWindowFocus: false, // Don't refetch on window focus
     });
 
-    if (lastElementRef.current) observer.observe(lastElementRef.current);
-    return () => observer.disconnect();
-  }, [videos]); // Re-run when videos change
+  const videos = data?.pages.flatMap((page) => page.videos) || [];
 
-  const navigateToVideo = (videoIdNew) => {
-    console.log("navingatinggggggggggggggggggggg");
-    navigate(`/video-player/${videoIdNew}`);
-    setTimeout(() => {
-      navigate(0); // Force page reload (not recommended but works)
-    }, 0);
-    return;
+  const handleVideoClick = (videoId) => {
+    navigate(`/video-player/${videoId}`);
   };
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [searchText]);
+
+  // Show no search text message
+  if (!searchText) {
+    return (
+      <div className="max-w-[1200px] mx-auto mt-5">
+        <div className="flex justify-center items-center mt-5 text-gray-500">
+          Enter a search term to find videos
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (isError) {
+    return (
+      <div className="max-w-[1200px] mx-auto mt-5">
+        <div className="flex justify-center items-center mt-5 text-red-500">
+          {error?.response?.data?.message || "Something went wrong, Try again"}
+        </div>
+      </div>
+    );
+  }
+
+  // Show no results message
+  if (!isLoading && !videos.length) {
+    return (
+      <div className="max-w-[1200px] mx-auto mt-5">
+        <div className="flex justify-center items-center mt-5 text-gray-500">
+          No videos found for "{searchText}"
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1200px] mx-auto mt-5">
+      {isLoading && (
+        <div className="flex justify-center items-center mt-5">Loading...</div>
+      )}
+
       {videos.map((video, index) => (
         <div
           key={video._id}
-          onClick={() => navigateToVideo(video._id)}
-          ref={index === videos.length - 1 ? lastElementRef : null}
+          onClick={() => handleVideoClick(video._id)}
+          className="cursor-pointer"
         >
           <LongVideoCard video={video} />
         </div>
       ))}
-      {loading && (
-        <div className="flex justify-center items-center mt-5">Loading...</div>
-      )}
-      {!hasMore && (
+
+      {isFetchingNextPage && (
         <div className="flex justify-center items-center mt-5">
-          No more videos to show.
+          Loading more...
         </div>
       )}
     </div>

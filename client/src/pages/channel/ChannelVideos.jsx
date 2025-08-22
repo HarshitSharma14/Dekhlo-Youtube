@@ -1,5 +1,5 @@
 import { Box, Button, CircularProgress } from "@mui/material";
-import axios from "axios";
+import api from "../../utils/api.js";
 import { useOutletContext, useParams } from "react-router-dom";
 import VideoCard from "../../component/cards/VideoCard";
 import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
@@ -10,13 +10,11 @@ import { useState } from "react";
 const getVideoss = async ({ pageParam = null, queryKey }) => {
   const [_key, channelId, sort] = queryKey;
 
-  const api = `${GET_CHANNEL_VIDEOS}/${channelId}?cursor=${JSON.stringify(
+  const apiLink = `${GET_CHANNEL_VIDEOS}/${channelId}?cursor=${JSON.stringify(
     pageParam
   )}&sortField=${sort.sf}&sortOrder=${sort.so}&limit=20`;
 
-  const { data } = await axios.get(api, {
-    withCredentials: true,
-  });
+  const { data } = await api.get(apiLink);
   return data;
 };
 

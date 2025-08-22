@@ -1,19 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
-
-import axios from "axios";
-import { lazy, Suspense, useEffect, useState } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import {
   createBrowserRouter,
   Navigate,
   RouterProvider,
 } from "react-router-dom";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 import HomeLayoutLoadingPage from "./component/loadingLayouts/HomeLayoutLoadingPage.jsx";
 import ProtectedRoute from "./pages/auth/ProtectedRoute.jsx";
 import Settings from "./pages/channel/Settings.jsx";
 import SearchPage from "./pages/home/SearchPage.jsx";
 import { useAppStore } from "./store/index.js";
 import { GET_CHANNEL_DETAILS } from "./utils/constants.js";
+import api from "./utils/api.js";
 
 // Routes imports ****************************************
 const HomeLayout = lazy(() => import("./pages/home/HomeLayout.jsx"));
@@ -173,31 +172,46 @@ const router = createBrowserRouter([
 ]);
 
 const fetchChannelInfo = async () => {
-  const { data } = await axios.get(GET_CHANNEL_DETAILS, {
-    withCredentials: true,
-  });
+  const accessToken = localStorage.getItem("accessToken");
+  if (!accessToken) {
+    throw new Error("No access token found");
+  }
+  const { data } = await api.get(GET_CHANNEL_DETAILS);
   return data.channel;
 };
 
 const App = () => {
-  const { setChannelInfo } = useAppStore();
-
-  const { data: channelInfo, error } = useQuery({
-    queryKey: ["myInfo"],
-    queryFn: fetchChannelInfo,
-  });
-
+  const { setChannelInfo, setIsLoggedIn, isLoggedIn } = useAppStore();
   useEffect(() => {
-    if (channelInfo) {
-      setChannelInfo(channelInfo);
-    } else if (error) {
-      setChannelInfo(null);
-    }
-  }, [channelInfo, error]);
+    const loadChannelInfo = async () => {
+      if (isLoggedIn) return;
+      try {
+        const accessToken = localStorage.getItem("accessToken");
+        const refreshToken = localStorage.getItem("refreshToken");
+
+        if (accessToken && refreshToken) {
+          const channelInfo = await fetchChannelInfo();
+          setChannelInfo(channelInfo);
+          setIsLoggedIn(true);
+        } else {
+          setChannelInfo(null);
+          setIsLoggedIn(false);
+        }
+      } catch (error) {
+        console.error("Failed to load channel info:", error);
+        setChannelInfo(null);
+        setIsLoggedIn(false);
+      }
+    };
+
+    loadChannelInfo();
+  }, []);
 
   return (
     <>
-      <RouterProvider router={router} />
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+        <RouterProvider router={router} />
+      </GoogleOAuthProvider>
 
       <Toaster
         position="bottom-right"

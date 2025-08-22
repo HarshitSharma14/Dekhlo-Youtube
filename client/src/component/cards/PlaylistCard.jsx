@@ -16,7 +16,6 @@ const PlaylistCard = ({
 }) => {
   const [hovered, setHovered] = useState(false);
   const navigate = useNavigate();
-  console.log("in pl card", mainThumbnail);
   return (
     <Box
       onMouseEnter={() => setHovered(true)}
@@ -133,7 +132,7 @@ const PlaylistCard = ({
             zIndex: 2,
           }}
         >
-          {secondaryThumbnails.slice(1, 3).map((card, index) => (
+          {secondaryThumbnails?.slice(1, 3)?.map((card, index) => (
             <Box
               key={index}
               sx={{

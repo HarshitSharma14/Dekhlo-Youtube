@@ -72,7 +72,6 @@ const LongVideoCard = ({
     }
   };
   const handleClick = () => {
-    console.log("logn card ", video);
     const videoId = video?._id;
     const playlistId = playlist;
     let route = `/video-player/${videoId}`;

@@ -47,6 +47,15 @@ const channelSchema = new Schema(
       type: Number,
       default: 0,
     },
+    // New fields for refresh token system
+    refreshToken: {
+      type: String,
+      default: null,
+    },
+    refreshTokenExpiresAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

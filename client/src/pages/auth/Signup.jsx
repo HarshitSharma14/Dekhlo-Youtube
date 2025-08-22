@@ -1,3 +1,6 @@
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useGoogleLogin } from "@react-oauth/google";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import GoogleIcon from "@mui/icons-material/Google";
 import {
@@ -6,106 +9,177 @@ import {
   InputAdornment,
   TextField,
   Typography,
+  Button,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
-import Button from "@mui/material/Button";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import { useEffect, useState } from "react";
-import { GOOGLE_LOGIN_URL, LOGIN_ROUTE } from "../../utils/constants";
-
-import axios from "axios";
+import api from "../../utils/api.js";
 import toast from "react-hot-toast";
-import { useNavigate } from "react-router-dom";
+
+import { GOOGLE_LOGIN_URL, LOGIN_ROUTE } from "../../utils/constants";
 import { useAppStore } from "../../store";
 
 export const Signup = () => {
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
-
   const navigate = useNavigate();
-  const [validEmail, setValidEmail] = useState(true);
+  const { setIsLoggedIn, isLoggedIn, setChannelInfo } = useAppStore();
+
+  // Form state
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const [email, setEmail] = useState("");
-
-  const { setIsLoggedIn, isLoggedIn, channelInfo } = useAppStore();
-
+  // Validation state
+  const [validEmail, setValidEmail] = useState(true);
+  const [validPassword, setValidPassword] = useState(true);
   const [formErrors, setFormErrors] = useState({
     password: "",
     email: "",
   });
 
-  const [validPassword, setValidPassword] = useState(true);
-  const [password, setPassword] = useState("");
+  // Loading state
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
+  // Constants
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const MIN_PASSWORD_LENGTH = 6;
 
+  // Redirect if already logged in
   useEffect(() => {
-    console.log(isLoggedIn);
-    console.log(channelInfo);
-    if (isLoggedIn === true || channelInfo !== null) {
+    if (isLoggedIn) {
       navigate("/");
     }
-  }, []);
+  }, [isLoggedIn, navigate]);
 
+  // Handle form input changes
   const handleChange = (e) => {
-    if (e.target.name === "email") {
-      setFormErrors({ ...formErrors, email: "" });
-      const newEmail = e.target.value;
-      setEmail(newEmail);
-      // setValidEmail(emailRegex.test(newEmail));
-      // if (!emailRegex.test(newEmail)) {
-      //   setFormErrors({ ...formErrors, email: "Please enter a valid email." });
-      // }
-    } else {
-      setFormErrors({ ...formErrors, password: "" });
-      const newPassword = e.target.value;
-      setPassword(newPassword);
-      if (newPassword.length < 6) {
-        setFormErrors({
-          ...formErrors,
-          password: "Password must be atleast 6 characters long.",
-        });
+    const { name, value } = e.target;
+
+    if (name === "email") {
+      setEmail(value);
+      setFormErrors((prev) => ({ ...prev, email: "" }));
+
+      // Validate email format
+      if (value.length > 0) {
+        const isValidEmail = emailRegex.test(value);
+        setValidEmail(isValidEmail);
+
+        if (!isValidEmail) {
+          setFormErrors((prev) => ({
+            ...prev,
+            email: "Please enter a valid email address",
+          }));
+        }
+      } else {
+        setValidEmail(true); // Reset validation when empty
       }
-      setValidPassword(!(newPassword.length < 6));
+    } else if (name === "password") {
+      setPassword(value);
+      setFormErrors((prev) => ({ ...prev, password: "" }));
+
+      const isValid = value.length >= MIN_PASSWORD_LENGTH;
+      setValidPassword(isValid);
+
+      if (!isValid) {
+        setFormErrors((prev) => ({
+          ...prev,
+          password: `Password must be at least ${MIN_PASSWORD_LENGTH} characters long.`,
+        }));
+      }
     }
   };
 
+  // Handle regular email/password login
   const handleLogin = async () => {
-    setIsLoggingIn(true);
+    if (!email || !password || !validEmail || !validPassword) {
+      toast.error("Please fill in all fields correctly");
+      return;
+    }
 
+    setIsLoggingIn(true);
     const toastId = toast.loading("Logging in...");
 
     try {
-      const response = await axios.post(
-        LOGIN_ROUTE,
-        { email, password },
-        { withCredentials: true }
-      );
+      const { data } = await api.post(LOGIN_ROUTE, { email, password });
 
-      console.log(response.cookie);
+      // Store tokens in localStorage
+      localStorage.setItem("accessToken", data.accessToken);
+      localStorage.setItem("refreshToken", data.refreshToken);
+
+      // Set channel info and login state
+      if (data?.channel) {
+        setChannelInfo(data.channel);
+        setIsLoggedIn(true);
+      }
+
       toast.success("User logged in successfully", { id: toastId });
-      setIsLoggedIn(true);
       navigate("/");
-    } catch (e) {
-      toast.error(e.response?.data?.message || "Something went wrong", {
-        id: toastId,
-      });
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.message || "Login failed. Please try again.";
+      toast.error(errorMessage, { id: toastId });
+      setIsLoggedIn(false);
+      setChannelInfo(null);
+    } finally {
+      setIsLoggingIn(false);
     }
-    setIsLoggingIn(false);
   };
+
+  // Google OAuth login handler
+  const googleLogin = useGoogleLogin({
+    onSuccess: async (response) => {
+      setIsLoggingIn(true);
+      const toastId = toast.loading("Logging in with Google...");
+
+      try {
+        const { data } = await api.post(GOOGLE_LOGIN_URL, {
+          accessToken: response.access_token,
+        });
+
+        // Store tokens in localStorage
+        localStorage.setItem("accessToken", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+
+        // Set channel info and login state
+        if (data?.channel) {
+          setChannelInfo(data.channel);
+          setIsLoggedIn(true);
+        }
+
+        toast.success("Logged in successfully!", { id: toastId });
+        navigate("/");
+      } catch (error) {
+        const errorMessage =
+          error.response?.data?.message ||
+          "Google login failed. Please try again.";
+        toast.error(errorMessage, { id: toastId });
+        setIsLoggedIn(false);
+        setChannelInfo(null);
+      } finally {
+        setIsLoggingIn(false);
+      }
+    },
+    onError: () => {
+      toast.error("Google login failed. Please try again.");
+      setIsLoggingIn(false);
+    },
+  });
+
+  // Check if form is valid for submission
+  const isFormValid =
+    validEmail && validPassword && email.length > 0 && password.length > 0;
 
   return (
     <div className="flex lg:flex-row flex-col bg-gradient-to-r from-youtube-dark-blue to-youtube-dark-red h-screen w-screen">
-      {/* Background image for small screens */}
+      {/* Background image for large screens */}
       <div className="hidden lg:block">
         <img
           src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.svg"
           className="w-[60vw] p-20"
-          alt="Phone image"
+          alt="Login illustration"
         />
       </div>
 
-      {/******************************* Card ***************************************/}
+      {/* Login Card */}
       <div className="absolute lg:static flex flex-col w-full lg:w-[40vw] h-full justify-center items-center">
         <Box
           className="card"
@@ -136,23 +210,24 @@ export const Signup = () => {
             Login
           </Typography>
 
-          <div className="space-y-8 max-w-md mx-auto w-[90%] justify-center items-center">
+          {/* Email Field */}
+          <div className="space-y-8 max-w-md mx-auto w-[90%]">
             <TextField
               label="Email"
               required
               variant="outlined"
               name="email"
+              type="email"
               value={email}
               onChange={handleChange}
-              sx={{
-                width: "100%",
-              }}
+              sx={{ width: "100%" }}
               error={!validEmail}
               helperText={formErrors.email}
             />
           </div>
 
-          <div className="space-y-8 max-w-md mx-auto w-[90%] justify-center items-center">
+          {/* Password Field */}
+          <div className="space-y-8 max-w-md mx-auto w-[90%]">
             <TextField
               label="Password"
               required
@@ -167,7 +242,7 @@ export const Signup = () => {
                   endAdornment: (
                     <InputAdornment position="end">
                       <IconButton
-                        onClick={() => setShowPassword((e) => !e)}
+                        onClick={() => setShowPassword((prev) => !prev)}
                         edge="end"
                       >
                         {showPassword ? <VisibilityOff /> : <Visibility />}
@@ -181,25 +256,23 @@ export const Signup = () => {
             />
           </div>
 
+          {/* Remember Me & Forgot Password */}
           <div className="w-[80%] flex justify-between items-center">
-            <span>
-              <FormControlLabel
-                control={<Checkbox defaultChecked />}
-                label="Remember me"
-                sx={{
-                  "& .MuiFormControlLabel-label": {
-                    fontSize: "0.9rem", // Adjust size as needed
-                  },
-                }}
-              />
-            </span>
-            <span className="ml-12 flex justify-self-end">
-              <a href="#" className="text-blue-900">
-                Forgot Password?
-              </a>
-            </span>
+            <FormControlLabel
+              control={<Checkbox defaultChecked />}
+              label="Remember me"
+              sx={{
+                "& .MuiFormControlLabel-label": {
+                  fontSize: "0.9rem",
+                },
+              }}
+            />
+            <a href="#" className="text-blue-900 hover:underline">
+              Forgot Password?
+            </a>
           </div>
 
+          {/* Login Button */}
           <Button
             variant="contained"
             sx={{
@@ -207,49 +280,49 @@ export const Signup = () => {
               height: "50px",
               padding: "10px",
               fontSize: "1rem",
-              type: "submit",
               backgroundColor: "rgb(59, 113, 182)",
+              "&:hover": {
+                backgroundColor: "rgb(48, 92, 148)",
+              },
             }}
             onClick={handleLogin}
-            disabled={
-              !validEmail ||
-              !validPassword ||
-              isLoggingIn ||
-              !email.length ||
-              !password.length
-            }
+            disabled={!isFormValid || isLoggingIn}
           >
-            Log In
+            {isLoggingIn ? "Logging in..." : "Log In"}
           </Button>
 
+          {/* Divider */}
           <div className="flex items-center w-[60%]">
             <div className="flex-grow border-t border-[#e5e7eb]"></div>
             <div className="mx-4 text-white font-semibold">OR</div>
             <div className="flex-grow border-t border-[#e5e7eb]"></div>
           </div>
 
+          {/* Google Login Button */}
           <div className="w-full flex justify-center">
-            <a href={GOOGLE_LOGIN_URL} className="w-[90%]">
-              <Button
-                variant="contained"
-                sx={{
-                  width: "100%",
-                  height: "50px",
-                  fontSize: "1rem",
-                  padding: "10px",
-                  backgroundColor: "rgb(59, 113, 182)",
-                }}
-                disabled={isLoggingIn}
-                onClick={() => setIsLoggingIn(true)}
-              >
-                <GoogleIcon fontSize="large" color="action" className="pr-3" />
-                Continue with Google
-              </Button>
-            </a>
+            <Button
+              variant="contained"
+              sx={{
+                width: "100%",
+                height: "50px",
+                fontSize: "1rem",
+                padding: "10px",
+                backgroundColor: "rgb(59, 113, 182)",
+                "&:hover": {
+                  backgroundColor: "rgb(48, 92, 148)",
+                },
+              }}
+              disabled={isLoggingIn}
+              onClick={googleLogin}
+            >
+              <GoogleIcon fontSize="large" color="action" className="pr-3" />
+              Continue with Google
+            </Button>
           </div>
         </Box>
       </div>
     </div>
   );
 };
+
 export default Signup;

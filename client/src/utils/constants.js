@@ -2,20 +2,8 @@ export const server = `${import.meta.env.VITE_SERVER_URL}/api/v1`;
 
 export const GET_HOME_VIDEOS_ROUTE = `${server}/home/videos`;
 
-export const CATEGORY_ENUM = [
-  "news",
-  "sports",
-  "education",
-  "entertainment",
-  "music",
-  "technology",
-  "gaming",
-  "motivation",
-  "art",
-  "others",
-];
 export const AUTH_ROUTE = `${server}/auth`;
-export const GOOGLE_LOGIN_URL = `${AUTH_ROUTE}/login/google`;
+export const GOOGLE_LOGIN_URL = `${AUTH_ROUTE}/google-login`;
 export const LOGIN_ROUTE = `${AUTH_ROUTE}/login`;
 export const LOGOUT_ROUTE = `${AUTH_ROUTE}/logout`;
 
@@ -30,6 +18,7 @@ export const SUBSCRIBE_CHANNEL = `${CHANNEL_ROUTE}/subscribe`;
 export const CHANNEL_WATCH_HISTORY = `${CHANNEL_ROUTE}/watch-history`;
 export const PLAYLIST_VIDEOS = `${CHANNEL_ROUTE}/playlist`;
 export const DELETE_PLAYLIST = `${CHANNEL_ROUTE}/delete-playlist`;
+export const DELETE_CHANNEL = `${CHANNEL_ROUTE}/delete-channel`;
 export const ADD_VIDEO_TO_PLAYLISTS = `${CHANNEL_ROUTE}/add-to-playlist`;
 export const REMOVE_VIDEO_FROM_PLAYLISTS = `${CHANNEL_ROUTE}/remove-from-playlist`;
 export const UNSUBSCRIBE_CHANNEL = `${CHANNEL_ROUTE}/unsubscribe`;
@@ -49,3 +38,16 @@ export const GET_WATCH_NEXT = `${VIDEO_ROUTE}/get-watch-next`;
 export const SEARCH_VIDEO_ROUTE = `${VIDEO_ROUTE}/search-video`;
 export const AUTOCOMPLETE_ROUTE = `${VIDEO_ROUTE}/autocomplete`;
 export const DELETE_VIDEO = `${VIDEO_ROUTE}/delete`;
+
+export const CATEGORY_ENUM = [
+  "news",
+  "sports",
+  "education",
+  "entertainment",
+  "music",
+  "technology",
+  "gaming",
+  "motivation",
+  "art",
+  "others",
+];

@@ -1,10 +1,10 @@
 import { Box, Typography } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
 import LongVideoCard from "../../component/cards/LongVideoCard";
-import axios from "axios";
+import api from "../../utils/api.js";
 import { CHANNEL_WATCH_HISTORY, PLAYLIST_VIDEOS } from "../../utils/constants";
 import PlaylistSideArea from "../../component/PlaylistSideArea";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import pic from "/assets/emptyPlaylist.png";
 import toast from "react-hot-toast";
 import { useAppStore } from "../../store";
@@ -31,17 +31,25 @@ const PlaylistContent = () => {
   const [params] = useSearchParams();
   let playlistId = params.get("playlistId");
 
-  if (playlistId.toString() === "history") {
-    playlistId = channelInfo?.permanentPlaylist?.watchHistory;
-  }
-  if (
-    playlistId.toString() === "undefined" ||
-    playlistId.toString() === "null"
-  ) {
-    toast.error("Something went wrong");
-    return <Navigate to="/" replace />;
-  }
-  if (!playlistId || playlistId?.length == 0) navigate("/");
+  // useEffects ***********************************************************************************************************
+  useEffect(() => {
+    // Log playlistId only when it changes
+    // Handle playlistId validation and navigation
+    if (playlistId?.toString() === "history") {
+      playlistId = channelInfo?.permanentPlaylist?.watchHistory;
+    }
+
+    if (
+      !playlistId ||
+      playlistId?.length === 0 ||
+      playlistId?.toString() === "undefined" ||
+      playlistId?.toString() === "null"
+    ) {
+      toast.error("Something went wrong");
+      navigate("/", { replace: true });
+      return;
+    }
+  }, [playlistId, channelInfo, navigate]);
 
   // functions ***********************************************************************************************
   const getPlaylistVideos = async () => {
@@ -49,16 +57,11 @@ const PlaylistContent = () => {
     isFetching.current = true;
     setLoading(true);
     try {
-      const { data } = await axios.get(
-        //  playlistId, cursor, limit = 20
+      const { data } = await api.get(
         `${PLAYLIST_VIDEOS}?playlistId=${playlistId}&cursor=${JSON.stringify(
           cursor.current
-        )}&limit=20`,
-        {
-          withCredentials: true,
-        }
+        )}&limit=20`
       );
-      console.log("data in pl contend ", data);
       hasMore.current = data.hasMore;
       cursor.current = data.nextCursor;
 
@@ -78,11 +81,9 @@ const PlaylistContent = () => {
         }));
       }
       setPlaylistVideos((pre) => [...pre, ...data.videos]);
-      console.log("playlist", data);
       return data;
     } catch (err) {
-      console.log("erro in history");
-      console.log(err);
+      // Handle error
     } finally {
       setLoading(false);
       isFetching.current = false;
@@ -94,7 +95,6 @@ const PlaylistContent = () => {
   //         videoId: data.videos[0]?._id,
   //         playlistId: data.playlist?._id,
 
-  // useEffects ***********************************************************************************************************
   useEffect(() => {
     const handleScroll = () => {
       if (isFetching.current || !hasMore.current) return;
@@ -110,10 +110,19 @@ const PlaylistContent = () => {
     return () => {
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [cursor]);
+  }, []); // Remove cursor dependency to prevent unnecessary re-renders
 
   useEffect(() => {
-    getPlaylistVideos();
+    // Only fetch videos if we have a valid playlistId
+    if (
+      playlistId &&
+      playlistId !== "undefined" &&
+      playlistId !== "null" &&
+      playlistId.length > 0
+    ) {
+      getPlaylistVideos();
+    }
+
     return () => {
       hasMore.current = true;
       cursor.current = null;

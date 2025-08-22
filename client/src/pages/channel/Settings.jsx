@@ -1,19 +1,36 @@
 import { Switch, Button } from "@mui/material";
 import { Link } from "react-router-dom";
+import api from "../../utils/api.js";
+import { DELETE_CHANNEL } from "../../utils/constants";
+import { useNavigate } from "react-router-dom";
+import { useAppStore } from "../../store";
+import toast from "react-hot-toast";
 
 const Settings = () => {
-  const handleDeleteChannel = () => {
-    if (
-      window.confirm(
-        "Are you sure you want to delete your channel? This action cannot be undone."
-      )
-    ) {
-      console.log("Channel deleted");
+  const { channelInfo, setIsLoggedIn, setChannelInfo } = useAppStore();
+  const navigate = useNavigate();
+
+  const handleDeleteChannel = async () => {
+    try {
+      const token = localStorage.getItem("jwt");
+      if (!token) {
+        toast.error("Please login to delete channel");
+        return;
+      }
+
+      await api.delete(DELETE_CHANNEL);
+      toast.success("Channel deleted successfully");
+      setIsLoggedIn(false);
+      setChannelInfo(null);
+      localStorage.removeItem("jwt");
+      navigate("/signup");
+    } catch (error) {
+      toast.error("Failed to delete channel");
     }
   };
 
-  const handleUpdateChannelInfo = () => {
-    console.log("Redirect to update channel info");
+  const handleUpdateChannel = () => {
+    navigate("/update-channel");
   };
 
   return (
@@ -97,7 +114,7 @@ const Settings = () => {
 
             <Link to="/profile-setup" className="w-full block">
               <button
-                onClick={handleUpdateChannelInfo}
+                onClick={handleUpdateChannel}
                 className="w-full bg-yellow-400 hover:bg-yellow-500 text-black font-semibold py-2 px-4 rounded transition duration-300"
               >
                 Update Channel Info

@@ -1,7 +1,12 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
-export const useInfinteScroll = (queryKey, queryFn, bottomOffset = 100) => {
+export const useInfinteScroll = (
+  queryKey,
+  queryFn,
+  options = {},
+  bottomOffset = 100
+) => {
   const {
     data,
     fetchNextPage,
@@ -15,6 +20,7 @@ export const useInfinteScroll = (queryKey, queryFn, bottomOffset = 100) => {
     getNextPageParam: (lastPage) => {
       return lastPage?.hasMore ? lastPage?.nextCursor : undefined;
     },
+    ...options, // Spread all the options passed by the component
   });
 
   useEffect(() => {

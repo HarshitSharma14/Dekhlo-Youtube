@@ -20,7 +20,10 @@ import {
   deletePlaylist,
   deleteChannel,
 } from "../controllers/channel.controller.js";
-import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
+import {
+  isUserLoggedIn,
+  optionalAuth,
+} from "../middlewares/auth.middleware.js";
 
 const app = Router();
 
@@ -33,14 +36,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // Routes **********************************************
 app.get("/get-info", isUserLoggedIn, getSelfChannelInfo);
-app.get("/get-info/:channelId", getChannelInfo);
-app.get("/playlists/:channelId", getChannelPlaylists);
-app.get("/videos/:channelId", getChannelVideos);
-app.get("/playlist", getPlaylistVideos);
+app.get("/get-info/:channelId", optionalAuth, getChannelInfo);
+app.get("/playlists/:channelId", optionalAuth, getChannelPlaylists);
+app.get("/videos/:channelId", optionalAuth, getChannelVideos);
+app.get("/playlist", optionalAuth, getPlaylistVideos);
 
 // login required routes ****************************************
 app.use(isUserLoggedIn);
-app.delete("/deleteChannel", deleteChannel);
+app.delete("/delete-channel", deleteChannel);
 app.get("/myplaylist/:videoId", getMyPlaylists);
 app.get("/get-subscribedchannels", getSubscribedChannel);
 app.post("/add-to-playlist", addVideosToPlaylist);

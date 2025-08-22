@@ -4,7 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 
 //  Third-party Libraries
 import { useForm } from "react-hook-form";
-import axios from "axios";
+import api from "../../utils/api.js";
 import toast from "react-hot-toast";
 
 //  MUI Components & Icons
@@ -75,15 +75,11 @@ const ProfileSetup = () => {
     dataToSend.append("password", data.password);
 
     try {
-      console.log(UPDATE_CHANNEL_INFO_ROUTE);
-
-      const data = await axios.post(UPDATE_CHANNEL_INFO_ROUTE, dataToSend, {
-        withCredentials: true,
+      const response = await api.post(UPDATE_CHANNEL_INFO_ROUTE, dataToSend, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       });
-      console.log("submitted ", data);
       toast.success("Submited successfully", { id: toastId });
       navigate("/");
     } catch (error) {

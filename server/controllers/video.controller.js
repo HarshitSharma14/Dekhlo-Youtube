@@ -1,7 +1,6 @@
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
 import Channel from "../models/channel.model.js";
 import Video from "../models/video.model.js";
-import { JWT_SECRET } from "../utils/constants.js";
 import { ErrorHandler, LogedInChannel } from "../utils/utility.js";
 import jwt from "jsonwebtoken";
 import Comment from "../models/comment.model.js";
@@ -36,16 +35,18 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
 
   await Channel.findByIdAndUpdate(video.channel, { $inc: { views: 1 } });
 
-
   let isLiked = false;
 
-  const channelIdVisiting = LogedInChannel(req.cookies?.jwt);
+  const channelIdVisiting = req.channelId;
   let isSubscribed = false;
   let isBell = false;
   if (channelIdVisiting) {
-    const subscription = await Subscription.find({ creator: video.channel, subscriber: channelIdVisiting });
+    const subscription = await Subscription.find({
+      creator: video.channel,
+      subscriber: channelIdVisiting,
+    });
     isSubscribed = !!subscription.length;
-    isBell = subscription.bell
+    isBell = subscription.bell;
 
     const channelVisiting = await Channel.findById(channelIdVisiting).populate(
       "settings"
@@ -71,14 +72,14 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
       });
     }
     // Check if the video is liked by the visiting channel
-    const likedVideoPlaylistId = channelVisiting.permanentPlaylist.get("likedVideos");
-
+    const likedVideoPlaylistId =
+      channelVisiting.permanentPlaylist.get("likedVideos");
 
     isLiked = !!(await PlaylistVideos.findOne({
       playlistId: likedVideoPlaylistId,
       videoId: videoId,
     }));
-    console.log(isLiked)
+    console.log(isLiked);
   }
 
   return res.status(200).json({
@@ -129,7 +130,10 @@ export const getComments = AsyncTryCatch(async (req, res, next) => {
   //   },
   // ]);
 
-  const comments = await Comment.find(matchQuery).sort({ _id: -1 }).limit(parseInt(limit)).populate('channel', '_id channelName profilePhoto')
+  const comments = await Comment.find(matchQuery)
+    .sort({ _id: -1 })
+    .limit(parseInt(limit))
+    .populate("channel", "_id channelName profilePhoto");
 
   // console.log(comments)
 
@@ -157,16 +161,17 @@ export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
 
   // Correct query with $and for multiple _id conditions
   let query = {
-    $and: [
-      { _id: { $ne: new mongoose.Types.ObjectId(videoId) } },
-    ],
+    $and: [{ _id: { $ne: new mongoose.Types.ObjectId(videoId) } }],
   };
 
   if (cursor) {
     query.$and.push({ _id: { $lt: new mongoose.Types.ObjectId(cursor) } });
   }
 
-  const watchNext = await Video.find(query).sort({ _id: -1 }).limit(limit).populate('channel', '_id channelName profilePhoto');
+  const watchNext = await Video.find(query)
+    .sort({ _id: -1 })
+    .limit(limit)
+    .populate("channel", "_id channelName profilePhoto");
 
   // const watchNext = await Video.aggregate([
   //   { $match: query },
@@ -193,7 +198,6 @@ export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
     nextCursor,
   });
 });
-
 
 export const putComment = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.params;
@@ -314,9 +318,11 @@ export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
 });
 
 export const searchVideo = AsyncTryCatch(async (req, res, next) => {
-  const { searchText } = req.query;
-  const cursor = req.query?.cursor;
-  const limit = 10;
+  const { s: searchText, cursor } = req.query;
+  console.log("searchText", searchText);
+  console.log("cursor", cursor);
+  // const cursor = req.query?.cursor;
+  const limit = parseInt(req.query?.limit) || 10;
 
   const results = await Video.aggregate([
     {
@@ -397,7 +403,7 @@ export const searchVideo = AsyncTryCatch(async (req, res, next) => {
           },
         ],
         results: [
-          { $limit: 50 }, // ✅ Fetch initial batch
+          { $limit: limit + 1 }, // ✅ Fetch one extra to check if more exist
         ],
       },
     },
@@ -409,7 +415,7 @@ export const searchVideo = AsyncTryCatch(async (req, res, next) => {
       $group: {
         _id: "$results._id",
         doc: { $first: "$results" }, // Keep only one instance
-        combinedScore: { $first: "$combinedScore" },
+        combinedScore: { $first: "$searchScore" },
       },
     },
 
@@ -426,10 +432,22 @@ export const searchVideo = AsyncTryCatch(async (req, res, next) => {
     { $sort: { combinedScore: -1, _id: 1 } },
 
     // ✅ Limit results
-    { $limit: limit },
+    { $limit: limit + 1 },
   ]);
 
-  return res.status(200).json({ results });
+  console.log("results", results.length);
+
+  // Check if there are more results
+  const hasMore = results.length > limit;
+  const videos = hasMore ? results.slice(0, limit) : results;
+  const nextCursor = hasMore ? results[limit - 1]._id : null;
+
+  return res.status(200).json({
+    videos,
+    hasMore,
+    nextCursor,
+    totalFound: results.length,
+  });
 });
 
 export const autoComplete = AsyncTryCatch(async (req, res, next) => {

@@ -34,7 +34,7 @@ import {
   DeleteOutlined,
 } from "@mui/icons-material";
 import { useAppStore } from "../../store/index.js";
-import axios from "axios";
+import api from "../../utils/api.js";
 import toast from "react-hot-toast";
 import {
   ADD_VIDEO_TO_PLAYLISTS,
@@ -69,7 +69,6 @@ const VideoCard = ({ video }) => {
     channelName = "Unknown Channel",
     profilePhoto: channelProfile = "",
   } = channel || {};
-  console.log("chan el id of video card", !!channelId);
   const { isChannelVideos: isInChannel } = useUrlChcek();
   const { channelInfo } = useAppStore();
 
@@ -355,10 +354,7 @@ export const MoreIconButton = ({
     setAnchorEl(null);
     setModalOpen(true);
     try {
-      const { data } = await axios.get(`${GET_MY_PLAYLISTS}/${videoId}`, {
-        withCredentials: true,
-      });
-      console.log("playlist more button ", data);
+      const { data } = await api.get(`${GET_MY_PLAYLISTS}/${videoId}`);
 
       setAvailablePlaylists(
         data.playlists.filter(
@@ -372,7 +368,6 @@ export const MoreIconButton = ({
       setAlreadyPresentPlaylist(pl);
     } catch (error) {
       toast.error("Error fetching playlists");
-      console.log("error fetching playlist ", error);
     } finally {
     }
   };
@@ -394,14 +389,10 @@ export const MoreIconButton = ({
       isPrivate,
       videoId,
     };
-    console.log("crenew play", dataToSend);
     try {
-      await axios.post(ADD_VIDEO_TO_PLAYLISTS, dataToSend, {
-        withCredentials: true,
-      });
+      await api.post(ADD_VIDEO_TO_PLAYLISTS, dataToSend);
       toast.success("Video added to new playlist", { id: toastId });
     } catch (err) {
-      console.log("erro creating playlist", err);
       toast.error(err.response?.data?.message || "Something went wrong", {
         id: toastId,
       });
@@ -419,18 +410,12 @@ export const MoreIconButton = ({
       playlistIds.push(channelInfo?.watchLater);
     }
     const dataToSend = { playlistIds, videoId };
-    console.log("add vid", dataToSend);
-
     const toastId = toast.loading("Adding video to playlist...");
     try {
-      await axios.post(ADD_VIDEO_TO_PLAYLISTS, dataToSend, {
-        withCredentials: true,
-      });
-      console.log("suee");
+      await api.post(ADD_VIDEO_TO_PLAYLISTS, dataToSend);
       toast.success("Video added.", { id: toastId });
       setAlreadyPresentPlaylist((pre) => [...pre, ...schedulePlaylistAdd]);
     } catch (err) {
-      console.log("error in adding videos to playlists");
       toast.error(err.response?.data?.message || "Something went wrong", {
         id: toastId,
       });
@@ -443,10 +428,7 @@ export const MoreIconButton = ({
     const toastId = toast.loading("Deleting Video...");
     closeModal();
     try {
-      await axios.delete(DELETE_VIDEO, {
-        data: { videoId },
-        withCredentials: true,
-      });
+      await api.delete(DELETE_VIDEO, { data: { videoId } });
       toast.success("Video Deleted Successfully", { id: toastId });
     } catch (err) {
       toast.error(err.response.data?.message || "Something went wrong", {
@@ -464,17 +446,12 @@ export const MoreIconButton = ({
     const data = { playlistIds, videoId };
 
     try {
-      await axios.delete(REMOVE_VIDEO_FROM_PLAYLISTS, {
-        data,
-        withCredentials: true,
-      });
+      await api.delete(REMOVE_VIDEO_FROM_PLAYLISTS, { data });
 
       if (playlistId && setPlaylistVideos)
         setPlaylistVideos((pre) => {
           let temp = [...pre];
-          console.log("pre temp ", temp);
           temp = temp.filter((t) => t._id !== videoId);
-          console.log("after temp", temp);
           return temp;
         });
       setAlreadyPresentPlaylist((prev) =>
@@ -482,12 +459,10 @@ export const MoreIconButton = ({
       );
       toast.success("Video removed.");
     } catch (err) {
-      console.log("error in removing videos to playlists");
       toast.error(err.response?.data?.message || "Something went wrong");
     } finally {
       setSchedulePlaylistRemove([]);
     }
-    console.log("out");
   };
 
   const handleCheckClick = (id) => {
@@ -735,7 +710,6 @@ export const MoreIconButton = ({
                       justifyContent: "space-between",
                     }}
                     onClick={(e) => {
-                      console.log("clicked");
                       handleCheckClick(playlist._id);
                     }}
                   >

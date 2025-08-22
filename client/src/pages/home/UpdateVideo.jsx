@@ -22,7 +22,7 @@ import CloudUploadIcon from "@mui/icons-material/CloudUpload";
 import toast from "react-hot-toast";
 import SaveIcon from "@mui/icons-material/Save";
 import { convertLength } from "@mui/material/styles/cssUtils";
-import axios from "axios";
+import api from "../../utils/api.js";
 import { useAppStore } from "../../store";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 
@@ -54,47 +54,26 @@ const UpdateVideo = () => {
   const [uploading, setUploading] = useState(false);
 
   // Runs only on mount
-  console.log("channel ifno", channelInfo);
-  // ************************************************useeffect to get channel details
-
-  // ************************************************useeffect to getvideo details after we have channel info
   useEffect(() => {
-    const getVideoDetails = async () => {
-      console.log(`${GET_VIDEO_DETAILS}/${videoId}`);
-      if (!channelInfo || !videoId) return;
+    if (channelInfo) {
+      // Channel info loaded
+    }
+  }, [channelInfo]);
 
-      try {
-        const response = await axios.get(`${GET_VIDEO_DETAILS}/${videoId}`, {
-          withCredentials: true,
-        });
-        console.log("Video Details Received:", response);
-        console.log("vid detais", response.data);
-        if (response.data.videoDetails.channel !== channelInfo._id) {
-          navigate("/");
-        }
-        setJustEditVideo(true);
+  useEffect(() => {
+    if (videoId) {
+      fetchVideoDetails();
+    }
+  }, [videoId]);
 
-        setVideoDetails({
-          title: response.data.videoDetails.title,
-          description: response.data.videoDetails.description,
-          category: response.data.videoDetails.category,
-          thumbnailFile: null,
-          duration: response.data.videoDetails.duration,
-          videoFile: null,
-          canComment: response.data.videoDetails.canComment ? "true" : "false",
-          isPrivate: response.data.videoDetails.isPrivate,
-        });
-
-        setImageSrc(response.data.videoDetails.thumbnailUrl);
-
-        setVideoUploaded(true);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    getVideoDetails();
-  }, [channelInfo, videoId]); // Runs whenever channelInfo or videoId changes
+  const fetchVideoDetails = async () => {
+    try {
+      const response = await api.get(`${GET_VIDEO_DETAILS}/${videoId}`);
+      setVideoDetails(response.data.videoDetails);
+    } catch (error) {
+      toast.error("Failed to fetch video details");
+    }
+  };
 
   //refs**********************************************
   const videoUploadRef = useRef();
@@ -123,9 +102,6 @@ const UpdateVideo = () => {
       return;
     }
 
-    console.log(videoDetails.thumbnailFile);
-    console.log(videoDetails.videoFile);
-    console.log(videoDetails);
     const formData = new FormData();
     formData.append("title", videoDetails.title);
     formData.append("description", videoDetails.description);
@@ -139,30 +115,21 @@ const UpdateVideo = () => {
     formData.append("video", videoDetails.videoFile);
 
     const toastId = toast.loading("Uploading video...");
-    console.log("firs");
-    formData.forEach((value, key) => {
-      console.log(`${key}:`, value);
-    });
     try {
-      const response = await axios.post(UPDATE_VIDEO_INFO, formData, {
+      const response = await api.post(UPDATE_VIDEO_INFO, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
-        withCredentials: true,
       });
-      console.log("in try");
-      console.log(response.data);
 
       toast.success("Video uploaded successfully.", { id: toastId });
       navigate("/");
     } catch (e) {
-      console.log("in cathc");
       toast.error(e.response?.data?.message || "Something went wrong", {
         id: toastId,
       });
     }
     setUploading(false);
-    // console.log(response.data)
   };
 
   useEffect(() => {
@@ -208,7 +175,6 @@ const UpdateVideo = () => {
       return;
     }
     const videoFile = e.target.files[0];
-    // console.log(file)
     setVideoDetails((prev) => ({ ...prev, videoFile: videoFile }));
     const videoURL = URL.createObjectURL(videoFile);
     const video = videoRef.current;

@@ -10,7 +10,10 @@ import {
   autoComplete,
   deleteVideo,
 } from "../controllers/video.controller.js";
-import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
+import {
+  isUserLoggedIn,
+  optionalAuth,
+} from "../middlewares/auth.middleware.js";
 //liking video , commenting , view count , update video info
 
 const app = Router();
@@ -18,7 +21,7 @@ const app = Router();
 app.get("/search-video", searchVideo);
 app.get("/autocomplete", autoComplete);
 app.get("/video-details/:videoId", getVideoDetails);
-app.get("/get-video/:videoId", getVideo);
+app.get("/get-video/:videoId", optionalAuth, getVideo);
 app.get("/get-comments/:videoId", getComments);
 app.get("/get-watch-next/:videoId", getWatchNext);
 

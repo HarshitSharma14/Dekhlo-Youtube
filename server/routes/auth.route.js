@@ -1,6 +1,11 @@
 import { Router } from "express";
 import passport from "passport";
-import { logout, oauth2_redirect } from "../controllers/auth.controller.js";
+import {
+  logout,
+  oauth2_redirect,
+  googleLogin,
+  refreshToken,
+} from "../controllers/auth.controller.js";
 
 import { login } from "../controllers/auth.controller.js";
 import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
@@ -8,26 +13,31 @@ import { isUserLoggedIn } from "../middlewares/auth.middleware.js";
 const app = Router();
 
 // login with Google Route *****************************************
-app.get(
-  "/login/google",
-  passport.authenticate("google", {
-    scope: ["profile", "email"],
-    session: false,
-  })
-);
+// app.get(
+//   "/login/google",
+//   passport.authenticate("google", {
+//     scope: ["profile", "email"],
+//     session: false,
+//   })
+// );
 
-// Google redirects here after authentication
-app.get(
-  "/oauth2/redirect/google",
-  passport.authenticate("google", {
-    failureRedirect: `${process.env.CLIENT_URL}`,
-    session: false,
-  }),
-  oauth2_redirect
-);
+// // Google redirects here after authentication
+// app.get(
+//   "/oauth2/redirect/google",
+//   passport.authenticate("google", {
+//     failureRedirect: `${process.env.CLIENT_URL}`,
+//     session: false,
+//   }),
+//   oauth2_redirect
+// );
+
+// Frontend Google OAuth login
+app.post("/google-login", googleLogin);
 
 // Routes ***********************************
 app.post("/login", login);
+app.post("/refresh", refreshToken);
+
 app.get("/logout", isUserLoggedIn, logout);
 
 export default app;

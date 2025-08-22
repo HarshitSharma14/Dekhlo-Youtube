@@ -21,7 +21,6 @@ export const useSidebarState = () => {
 
   const { setSidebarActivity, channelInfo } = useAppStore();
   const currentPath = useLocation().pathname;
-  console.log("use side bar state ", currentPath);
 
   useEffect(() => {
     const channelId = channelInfo?._id;

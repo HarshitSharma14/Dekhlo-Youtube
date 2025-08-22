@@ -9,7 +9,7 @@ import {
   Typography,
 } from "@mui/material";
 import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
+import api from "../utils/api.js";
 import ColorThief from "colorthief";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -29,15 +29,11 @@ const PlaylistSideArea = ({ playlist = samplePlaylist }) => {
 
   const [params] = useSearchParams();
   let playlistId = params.get("playlistId");
-  console.log(playlistId);
   const { data } = useQuery({
     queryKey: ["playlistDetails", playlistId],
     queryFn: async () => {
-      const { data } = await axios.get(
-        `${GET_PLAYLIST_Details}?playlistId=${playlistId}`,
-        {
-          withCredentials: true,
-        }
+      const { data } = await api.get(
+        `${GET_PLAYLIST_Details}?playlistId=${playlistId}`
       );
       return data;
     },
@@ -77,14 +73,11 @@ const PlaylistSideArea = ({ playlist = samplePlaylist }) => {
 
   const deleteHandler = async () => {
     try {
-      await axios.delete(DELETE_PLAYLIST, {
+      await api.delete(DELETE_PLAYLIST, {
         data: { playlistId: playlist.playlistId },
-        withCredentials: true,
       });
-      console.log("delteded");
       navigate(`/channel/${channelInfo?._id}`, { replace: true });
     } catch (error) {
-      console.log("erroe in deleting ");
       toast.error(error?.response?.data?.message || "Something went wrong");
     }
   };

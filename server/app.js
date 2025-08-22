@@ -14,7 +14,6 @@ import videoRoutes from "./routes/video.route.js";
 
 // Other Imports *********************************
 import { loginSignup } from "./controllers/auth.controller.js";
-import { JWT_SECRET } from "./utils/constants.js";
 import { errorHandlerMiddleware } from "./middlewares/error.middlewares.js";
 import { getVideosForHomePage } from "./controllers/home.controller.js";
 import { setupSocket } from "./socket.js";
@@ -71,7 +70,6 @@ app.use("/api/v1/video", videoRoutes);
 app.post("/api/v1/home/videos", getVideosForHomePage);
 
 app.get("/", (_, res) => {
-  console.log(JWT_SECRET);
   res.send("Home route working on the Youtube app");
 });
 

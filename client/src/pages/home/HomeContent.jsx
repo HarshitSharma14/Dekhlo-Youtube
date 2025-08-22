@@ -1,5 +1,5 @@
 import { Box, CircularProgress } from "@mui/material";
-import axios from "axios";
+import api from "../../utils/api.js";
 import { memo } from "react";
 import VideoCard from "../../component/cards/VideoCard";
 import VideoCardLoading from "../../component/loadingLayouts/VideoCardLoading";
@@ -8,16 +8,10 @@ import { GET_HOME_VIDEOS_ROUTE } from "../../utils/constants";
 
 const fetchVideos = async ({ pageParam = null }) => {
   const limit = 20;
-  const { data } = await axios.post(
-    GET_HOME_VIDEOS_ROUTE,
-    { cursor: pageParam, limit },
-    {
-      withCredentials: true,
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
+  const { data } = await api.post(GET_HOME_VIDEOS_ROUTE, {
+    cursor: pageParam,
+    limit,
+  });
   return data;
 };
 

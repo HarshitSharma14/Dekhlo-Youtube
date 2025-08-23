@@ -29,8 +29,8 @@ const PlaylistSideArea = ({ playlist = samplePlaylist }) => {
 
   const [params] = useSearchParams();
   let playlistId = params.get("playlistId");
-
-  console.log("playlist", playlist);
+  console.log("in side area playlistId", playlistId);
+  console.log("in side area playlist", playlist);
 
   // const playlist = playlist;
   // playlist = playlist?.thumbnail || samplePlaylist.thumbnail;

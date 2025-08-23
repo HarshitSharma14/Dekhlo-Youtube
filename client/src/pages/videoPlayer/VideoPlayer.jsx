@@ -2,9 +2,7 @@ import ThumbUpAltIcon from "@mui/icons-material/ThumbUpAlt";
 import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import Plyr from "plyr";
-import "plyr/dist/plyr.css";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { PiShareFatLight } from "react-icons/pi";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -27,6 +25,8 @@ import { ButtonForCreatorSupport } from "../channel/ChannelLayout";
 const VideoPlayer = () => {
   const { channelInfo } = useAppStore();
 
+  // Simple video player setup - no custom styling
+
   const navigate = useNavigate();
 
   // states and refs
@@ -44,8 +44,7 @@ const VideoPlayer = () => {
   const [watchNextHasMore, setWatchNextHasMore] = useState(true);
   const lastElementRef = useRef(null);
   const [playingPlaylist, setPlayingPlaylist] = useState(false);
-  const [playlist, setPlaylist] = useState([]);
-  const plyrInstance = useRef(null); // Ref for Plyr instance
+  const [playlist, setPlaylist] = useState({});
   const [copied, setCopied] = useState(false);
 
   const [searchParams] = useSearchParams();
@@ -56,30 +55,23 @@ const VideoPlayer = () => {
   const [loading, setLoading] = useState(false);
 
   const [anchorEl, setAnchorEl] = useState(null);
-  const open = Boolean(anchorEl);
-
-  const openSubscribeMenu = (event) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const closeSubscribeMenu = () => {
-    setAnchorEl(null);
-  };
-
-  // useEffect(() => {
-  //   const handlePopState = () => {
-  //     window.location.reload(); // 🔥 Reload on back/forward navigation
-  //   };
-
-  //   window.addEventListener("popstate", handlePopState);
-
-  //   return () => {
-  //     window.removeEventListener("popstate", handlePopState);
-  //   };
-  // }, []);
 
   // getting video data
   useEffect(() => {
     console.log("videoId", videoId);
+
+    // Reset video player state when videoId changes
+    setVideoDetails({});
+    setLikes(0);
+    setIsLiked(false);
+    setSubscribed(false);
+    setBell(false);
+    setWatchNext([]);
+    setCursor(null);
+    setWatchNextHasMore(true);
+    setPlayingPlaylist(false);
+    setPlaylist({});
+
     const getVideoData = async () => {
       try {
         const response = await api.get(`${GET_VIDEO}/${videoId}`);
@@ -98,38 +90,51 @@ const VideoPlayer = () => {
       }
     };
     getVideoData();
+  }, [videoId, navigate, channelInfo]);
+
+  // Listen for browser navigation events
+  useEffect(() => {
+    const handlePopState = () => {
+      // Force a re-render when browser navigation occurs
+      const currentVideoId = window.location.pathname.split("/").pop();
+      if (currentVideoId && currentVideoId !== videoId) {
+        // The URL has changed but the component hasn't re-rendered yet
+        // Force a re-render by updating the state
+        setVideoDetails({});
+        setWatchNext([]);
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
   }, [videoId]);
 
   useEffect(() => {
     if (queryValue) {
       setPlayingPlaylist(true);
 
-      const getPlaylistVideos = async () => {
+      const getPlaylistInfo = async () => {
         try {
           const response = await api.get(
             `${GET_PLAYLIST_VIDEOS}?playlistId=${playlistId}`
           );
-          if (
-            response.data.playlist.videos.some((video) => video._id === videoId)
-          ) {
+          console.log("response", response.data);
+          if (response.data?.videos?.some((video) => video._id === videoId)) {
             setPlaylist(response.data.playlist);
           } else {
             navigate(`/video-player/${videoId}`);
-            setTimeout(() => {
-              navigate(0); // Force page reload (not recommended but works)
-            }, 0);
           }
         } catch (error) {
-          console.error("Error fetching video data:", error);
+          console.error("Error fetching playlist data:", error);
           toast.error("Not a valid playlist");
           setPlayingPlaylist(false);
           navigate(`/video-player/${videoId}`);
         }
       };
 
-      getPlaylistVideos();
+      getPlaylistInfo();
     }
-  }, [queryValue, playlistId]);
+  }, [queryValue, playlistId, videoId, navigate]);
 
   // use effects
   const share = async () => {
@@ -163,14 +168,20 @@ const VideoPlayer = () => {
 
   useEffect(() => {
     const fetchInitialVideos = async () => {
-      const response = await api.get(`${GET_WATCH_NEXT}/${videoId}`);
-      setWatchNextHasMore(response.data.hasMore);
-      setWatchNext([...response.data.watchNext]);
-      setCursor(response.data.nextCursor);
+      try {
+        const response = await api.get(`${GET_WATCH_NEXT}/${videoId}`);
+        setWatchNextHasMore(response.data.hasMore);
+        setWatchNext([...response.data.watchNext]);
+        setCursor(response.data.nextCursor);
+      } catch (error) {
+        console.error("Error fetching watch next videos:", error);
+        setWatchNext([]);
+        setWatchNextHasMore(false);
+      }
     };
 
-    fetchInitialVideos(); // Fetch first batch when component mounts
-  }, []);
+    fetchInitialVideos(); // Fetch first batch when videoId changes
+  }, [videoId]); // Add videoId as dependency
 
   // Use Intersection Observer to detect when the last item is visible
   useEffect(() => {
@@ -182,126 +193,22 @@ const VideoPlayer = () => {
 
     if (lastElementRef.current) observer.observe(lastElementRef.current);
     return () => observer.disconnect();
-  }, [watchNext]); // Re-run when videos change
+  }, [watchNext, videoId]); // Re-run when videos or videoId changes
 
-  // const player = new Plyr(playerRef.current, {
-  //   autoplay: true,
-  //   quality: {
-  //     default: 1080,
-  //     options: [1080, 720, 480],
-  //     forced: true,
-  //     onend: true,
-  //   },
-  //   settings: ["quality", "speed"],
-  //   fullscreen: {
-  //     enabled: true,
-  //     fallback: true, // Ensures a fallback for unsupported browsers
-  //     iosNative: true,
-  //   },
-  // });
+  const navigateToVideo = useCallback(
+    (videoIdNew) => {
+      // Clear current video state before navigating
+      setVideoDetails({});
+      setWatchNext([]);
+      setCursor(null);
+      setWatchNextHasMore(true);
 
-  // const handleSubscribe = async () => {
-  //   setLoading(true);
+      navigate(`/video-player/${videoIdNew}`);
+    },
+    [navigate]
+  );
 
-  //   if (!subscribed) {
-  //     const toastId = toast.loading("Subscribing...");
-  //     try {
-  //       const response = await api.post(SUBSCRIBE_CHANNEL, {
-  //         creatorId: videoDetails.channel._id,
-  //       });
-  //       setSubscribed(true);
-  //       setBell(true);
-  //       videoDetails.channel.subscribersCount += 1;
-  //       toast.success(`${videoDetails.channel.channelName}+' subscribed'`, {
-  //         id: toastId,
-  //       });
-  //     } catch (error) {
-  //       toast.error("Error subscribing", { id: toastId });
-  //     }
-  //   } else {
-  //     const toastId = toast.loading("Unsubscribing...");
-  //     try {
-  //       const response = await api.delete(UNSUBSCRIBE_CHANNEL, {
-  //         data: { creatorId: videoDetails.channel._id },
-  //       });
-  //       closeSubscribeMenu();
-  //       setSubscribed(false);
-  //       setBell(false);
-  //       videoDetails.channel.subscribersCount -= 1;
-  //       toast.success(`${videoDetails.channel.channelName}+' unsubscribed'`, {
-  //         id: toastId,
-  //       });
-  //     } catch (error) {
-  //       toast.error("Error unsubscribing", { id: toastId });
-  //     }
-  //   }
-
-  //   setLoading(false);
-  // };
-
-  const navigateToVideo = (videoIdNew) => {
-    navigate(`/video-player/${videoIdNew}`);
-    // setTimeout(() => {
-    //   navigate(0); // Force page reload (not recommended but works)
-    // }, 0);
-    return;
-  };
-
-  useEffect(() => {
-    if (playerRef.current && videoDetails.videoUrl) {
-      // Initialize Plyr
-      plyrInstance.current = new Plyr(playerRef.current, {
-        autoplay: true,
-        controls: [
-          "play-large", // Large play button in the center
-          "rewind", // Rewind button
-          "fast-forward", // Fast forward button
-          "play",
-          "progress",
-          "current-time",
-          "duration",
-          "mute",
-          "volume",
-          "settings",
-          "pip", // Picture-in-picture mode
-          "airplay", // Airplay for Apple devices
-          "fullscreen",
-        ],
-        settings: ["speed"],
-        fullscreen: { enabled: true, fallback: true, iosNative: true },
-        loop: { active: false },
-        keyboard: { focused: true, global: false },
-        autopause: true,
-        hideControls: true,
-        seekTime: 10,
-      });
-
-      const videoElement = playerRef.current.querySelector("video");
-      if (videoElement) {
-        videoElement.classList.add("w-full", "h-full", "object-cover");
-      }
-
-      return () => {
-        // Destroy Plyr instance on unmount
-        plyrInstance.current?.destroy();
-      };
-    }
-  }, [videoDetails.videoUrl]);
-
-  // useEffect(() => {
-  //     if (playerRef.current && videoDetails.videoUrl) {
-
-  // functions
-
-  // const openDiscription = () => { };
-
-  //         return () => {
-  //             player.destroy();  // Clean up when the component is unmounted
-  //         };
-  //     }
-  // }, [videoDetails]);  // Re-run when videoDetails change
-
-  // functions
+  // Simple video player setup with keyboard shortcuts
 
   const handleLike = async () => {
     if (loading) return;
@@ -337,6 +244,21 @@ const VideoPlayer = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Reset video element reference when videoId changes
+  useEffect(() => {
+    if (playerRef.current) {
+      // Pause and reset the current video
+      playerRef.current.pause();
+      playerRef.current.currentTime = 0;
+      playerRef.current.load(); // Force reload of video source
+    }
+
+    // Also reset the ref to ensure clean state
+    if (playerRef.current) {
+      playerRef.current = null;
+    }
+  }, [videoId]);
+
   return (
     <>
       <div
@@ -352,18 +274,23 @@ const VideoPlayer = () => {
           {/* Video Player */}
           <div className="w-full flex justify-center box-border">
             {videoDetails.videoUrl ? (
-              <video
-                className="plyr-video w-full h-full max-h-[100vh] object-contain rounded-2xl"
-                ref={playerRef}
-                controls
-                // allowFullScreen="true"
-                crossOrigin="anonymous"
-                poster={videoDetails.thumbnailUrl}
-              >
-                <source src={videoDetails.videoUrl} type="video/mp4" />
-              </video>
+              <div className="w-full max-w-4xl">
+                <video
+                  key={videoId} // Force re-render when videoId changes
+                  ref={playerRef}
+                  className="w-full h-auto max-h-[80vh] rounded-lg"
+                  controls
+                  preload="metadata"
+                  poster={videoDetails.thumbnailUrl}
+                >
+                  <source src={videoDetails.videoUrl} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
             ) : (
-              <p>Loading video...</p>
+              <div className="w-full max-w-4xl h-64 bg-gray-800 rounded-lg flex items-center justify-center">
+                <p className="text-gray-400">Loading video...</p>
+              </div>
             )}
           </div>
 
@@ -372,7 +299,7 @@ const VideoPlayer = () => {
               playingPlaylist ? "block" : "hidden"
             } h-auto`}
           >
-            <PlayingPlaylistComp playlist={playlist} videoId={videoId} />
+            <PlayingPlaylistComp playlist={playlist} playingVideoId={videoId} />
           </div>
 
           {/* Description */}
@@ -489,7 +416,10 @@ const VideoPlayer = () => {
                   key={index}
                   onClick={() => navigateToVideo(video._id)}
                 >
-                  <LongVideoCard video={video} />
+                  <LongVideoCard
+                    video={video}
+                    showVideoChannelDetails={false}
+                  />
                 </div>
               );
             })}
@@ -524,11 +454,15 @@ const VideoPlayer = () => {
         >
           {/* Right side content */}
           <div
-            className={`border-2 rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${
+            className={`border-2 rounded-2xl border-gray-500 flex flex-col max-h-[500px] w-full  mb-4  ${
               playingPlaylist ? "block" : "hidden"
             } h-auto`}
           >
-            <PlayingPlaylistComp playlist={playlist} playingVideoId={videoId} />
+            <PlayingPlaylistComp
+              playlist={playlist}
+              playingVideoId={videoId}
+              setPlayingPlaylist={setPlayingPlaylist}
+            />
           </div>
           {watchNext?.map((video, index) => {
             return (
@@ -537,7 +471,7 @@ const VideoPlayer = () => {
                 onClick={() => navigateToVideo(video._id)}
                 ref={index === watchNext.length - 1 ? lastElementRef : null}
               >
-                <LongVideoCard video={video} />
+                <LongVideoCard video={video} showVideoChannelDetails={false} />
               </div>
             );
           })}

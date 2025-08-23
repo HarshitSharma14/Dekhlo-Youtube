@@ -29,6 +29,9 @@ const ChannelCard = ({
           color: "white",
           width: "100%",
           maxWidth: 1000,
+          backgroundColor: "rgba(255, 255, 255, 0.03)",
+          border: "1px solid rgba(255, 255, 255, 0.08)",
+          marginBottom: "12px",
         }}
       >
         {/* Profile Avatar */}
@@ -44,7 +47,7 @@ const ChannelCard = ({
           onClick={() => navigate(`/channel/${channelId}`)}
           sx={{ flex: 1, cursor: "pointer" }}
         >
-          <Typography variant="h6" fontWeight="bold" color="gray">
+          <Typography variant="h6" fontWeight="bold" color="white">
             {channelName}
           </Typography>
           <Typography

@@ -4,7 +4,7 @@ import { useAppStore } from "../store/index.js";
 // Create a shared axios instance with default configuration
 const api = axios.create({
   baseURL: import.meta.env.VITE_SERVER_URL,
-  timeout: 10000,
+  timeout: 10000000,
   withCredentials: true,
 });
 
@@ -36,7 +36,6 @@ api.interceptors.request.use(
     }
 
     // Log request (optional - remove in production)
-    console.log("🚀 Request:", config.method?.toUpperCase(), config.url);
 
     return config;
   },
@@ -50,7 +49,6 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => {
     // Log successful response (optional - remove in production)
-    console.log("✅ Response:", response.status, response.config.url);
     return response;
   },
   async (error) => {
@@ -58,10 +56,6 @@ api.interceptors.response.use(
 
     // Handle 498 errors (expired token from optional auth) - less aggressive refresh
     if (error.response?.status === 498 && !originalRequest._retry) {
-      console.log(
-        "🔄 Token expired (498) - attempting refresh for optional auth"
-      );
-
       // Mark as retried to prevent infinite loops
       originalRequest._retry = true;
 
@@ -71,7 +65,6 @@ api.interceptors.response.use(
 
         if (!refreshToken) {
           // No refresh token - clear tokens and retry anonymously
-          console.log("clearing tokens");
 
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
@@ -80,7 +73,6 @@ api.interceptors.response.use(
             setChannelInfo(null);
             setIsLoggedIn(false);
           } catch {}
-          console.log("⚠️ No refresh token - retrying request anonymously");
 
           // Ensure we don't send Authorization header
           if (originalRequest.headers) {
@@ -107,18 +99,13 @@ api.interceptors.response.use(
           localStorage.setItem("refreshToken", newRefreshToken);
         }
 
-        console.log("✅ Token refreshed successfully for optional auth");
-
         // Retry original request with new token
         originalRequest.headers = originalRequest.headers || {};
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);
       } catch (refreshError) {
         // Refresh failed - clear tokens and retry anonymously
-        console.log(
-          "❌ Token refresh failed for optional auth - retrying request anonymously"
-        );
-        console.log("clearing tokens");
+
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         try {
@@ -138,7 +125,6 @@ api.interceptors.response.use(
 
     // Handle 401 errors (unauthorized/expired token) - aggressive refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
-      console.log("401 error");
       if (isRefreshing) {
         // If already refreshing, queue this request
         return new Promise((resolve, reject) => {
@@ -161,8 +147,6 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem("refreshToken");
 
         if (!refreshToken) {
-          // No refresh token - redirect to login
-          console.log("clearing tokens");
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
           try {
@@ -199,7 +183,6 @@ api.interceptors.response.use(
       } catch (refreshError) {
         // Refresh failed - clear tokens and redirect to login
         processQueue(refreshError, null);
-        console.log("clearing tokens");
 
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");

@@ -42,13 +42,12 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
   const query = {};
   if (cursor) {
     const cursorId = new mongoose.Types.ObjectId(cursor);
-    query._id = { $gt: cursorId };
+    query._id = { $lt: cursorId };
   }
 
   const videos = await Video.aggregate([
     { $match: query },
     { $sort: { _id: -1 } },
-    { $limit: parsedLimit },
     {
       $lookup: {
         from: "channels",
@@ -67,6 +66,7 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
       },
     },
     { $unwind: "$channel" },
+    { $limit: parsedLimit },
   ]);
 
   const hasMore = videos.length === parsedLimit;

@@ -1,40 +1,16 @@
-import { MoreVert } from "@mui/icons-material";
-import {
-  Avatar,
-  Box,
-  CardMedia,
-  IconButton,
-  Tooltip,
-  Typography,
-} from "@mui/material";
+import { Avatar, Box, CardMedia, Typography } from "@mui/material";
 import React, { useRef, useState } from "react";
-import { MoreIconButton } from "./VideoCard";
+import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../../store";
 import { formatUploadTime } from "../../utils/helper";
-import { Navigate, useNavigate } from "react-router-dom";
-const image =
-  "https://images.pexels.com/photos/30426849/pexels-photo-30426849/free-photo-of-urban-black-and-white-bicycle-scene.jpeg?auto=compress&cs=tinysrgb&w=400&lazy=load";
-const videoUrl =
-  "https://static.videezy.com/system/resources/previews/000/006/997/original/MR8_8189.mp4";
+import { MoreIconButton } from "./VideoCard";
 
-// const video = {
-//   _id: "1a2b3c4d",
-//   title: "Exploring the Streets of New York City in 4K",
-//   views: "1.2M",
-//   duration: 1345, // in seconds (approx 22 minutes and 25 seconds)
-//   createdAt: "2023-06-15T14:30:00Z", // ISO format for date
-//   thumbnailUrl:
-//     "https://images.pexels.com/photos/30426849/pexels-photo-30426849/free-photo-of-urban-black-and-white-bicycle-scene.jpeg?auto=compress&cs=tinysrgb&w=400&lazy=load",
-//   videoUrl:
-//     "https://static.videezy.com/system/resources/previews/000/006/997/original/MR8_8189.mp4",
-//   description:
-//     "Take a breathtaking virtual tour through the streets of New York City, exploring famous landmarks and hidden gems in stunning 4K quality.",
-// };
 const LongVideoCard = ({
   video,
   playlist = null,
   remove,
   setPlaylistVideos,
+  showVideoChannelDetails = true,
 }) => {
   const boxRef = useRef(null);
   const hoverTimeoutRef = useRef(null);
@@ -97,7 +73,6 @@ const LongVideoCard = ({
         padding: "0 6px",
         position: "relative",
         cursor: "pointer",
-        // height: height ? "120px" : "auto",
         height: "auto",
       }}
       onMouseEnter={() => {
@@ -160,6 +135,7 @@ const LongVideoCard = ({
               display: !hovered && "none",
               objectFit: "cover",
               height: height,
+              aspectRatio: "16/9",
             }}
           />
         )}
@@ -222,16 +198,21 @@ const LongVideoCard = ({
           }}
         >
           {video.views} views {formatUploadTime(video?.createdAt)}
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: "10px" }}>
-          <Avatar
-            src={video.channel?.profilePhoto}
-            sx={{
-              width: "25px",
-              height: "25px",
-              marginLeft: "10px",
-            }}
-          />
+        </Typography>{" "}
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          {showVideoChannelDetails && (
+            <>
+              <Avatar
+                src={video.channel?.profilePhoto}
+                sx={{
+                  width: "25px",
+                  height: "25px",
+                  marginLeft: "10px",
+                }}
+              />
+            </>
+          )}
+
           <Typography
             sx={{
               padding: "2px 10px",
@@ -248,26 +229,27 @@ const LongVideoCard = ({
             {video.channel?.channelName}
           </Typography>
         </Box>
+        {showVideoChannelDetails && (
+          <Typography
+            sx={{
+              padding: "2px 10px",
+              fontSize: "12px",
+              color: "#b1b1b1",
+              wordBreak: "break-word",
+              display: "-webkit-box",
+              WebkitBoxOrient: "vertical",
+              WebkitLineClamp: 2,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
 
-        <Typography
-          sx={{
-            padding: "2px 10px",
-            fontSize: "12px",
-            color: "#b1b1b1",
-            wordBreak: "break-word",
-            display: "-webkit-box",
-            WebkitBoxOrient: "vertical",
-            WebkitLineClamp: 2,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-
-            "@media (max-width:530px)": {
-              display: "none",
-            },
-          }}
-        >
-          {video?.description}
-        </Typography>
+              "@media (max-width:840px)": {
+                display: "none",
+              },
+            }}
+          >
+            {video?.description}
+          </Typography>
+        )}
       </Box>
 
       <MoreIconButton

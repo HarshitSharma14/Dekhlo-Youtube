@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TextField } from "@mui/material";
+import { Avatar, TextField } from "@mui/material";
 import React from "react";
 import toast from "react-hot-toast";
 import { MdOutlineEmojiEmotions } from "react-icons/md";
@@ -75,7 +75,11 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
       setComments((prevComments) => [response.data.comment, ...prevComments]);
       setSkip(skip + 1);
       setCommentText("");
-    } catch (error) {}
+    } catch (error) {
+      console.log("error", error);
+    } finally {
+      setCommentText("");
+    }
   };
 
   const fetchComments = async () => {
@@ -172,8 +176,8 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
             </div>
             <div className="flex flex-row mt-5">
               <div className="rounded-full h-[50px] w-[50px]">
-                <img
-                  className="w-full h-full rounded-full"
+                <Avatar
+                  className="w-[50px] h-[50px] "
                   src={videoDetails.channel?.profilePhoto}
                 />
               </div>
@@ -219,7 +223,7 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
                     }
                   >
                     <div className="flex w-[40px] h-[40px] rounded-full mr-2">
-                      <img
+                      <Avatar
                         className="w-full h-auto rounded-full"
                         src={comment?.channel?.profilePhoto}
                       />
@@ -293,7 +297,7 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
             {comments[0] ? (
               <>
                 <div className="absolute top-0 left-0 w-[40px] h-[40px] flex items-center mr-2">
-                  <img
+                  <Avatar
                     className="rounded-full w-[40px] h-[40px] "
                     src={comments[0]?.channel?.profilePhoto}
                   />
@@ -353,7 +357,7 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
             </div>
             <div className="flex flex-row mt-5 border-b-2 border-[#7b7e8344]">
               <div className="rounded-full h-[50px] w-[50px]">
-                <img
+                <Avatar
                   className="object-contain w-full h-full rounded-full"
                   src={videoDetails.channel?.profilePhoto}
                 />
@@ -398,7 +402,7 @@ const Comments = ({ videoDetails, setVideoDetails, loggedIn }) => {
                     ref={index === comments.length - 1 ? lastCommentRef : null}
                   >
                     <div className="flex w-[40px] h-[40px] rounded-full mr-2">
-                      <img
+                      <Avatar
                         className="w-full h-auto rounded-full"
                         src={comment?.channel?.profilePhoto}
                       />

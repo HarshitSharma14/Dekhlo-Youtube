@@ -1,11 +1,12 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 export const useInfinteScroll = (
   queryKey,
   queryFn,
   options = {},
-  bottomOffset = 100
+  bottomOffset = 100,
+  containerRef = null
 ) => {
   const {
     data,
@@ -23,22 +24,67 @@ export const useInfinteScroll = (
     ...options, // Spread all the options passed by the component
   });
 
+  // Default ref for window scrolling if no container ref is provided
+  const defaultRef = useRef(null);
+
   useEffect(() => {
     const handleScroll = () => {
-      const bottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - bottomOffset;
+      if (!hasNextPage || isFetchingNextPage) return;
 
-      if (bottom && hasNextPage && !isFetchingNextPage) {
+      let isNearBottom = false;
+
+      if (containerRef?.current) {
+        // Custom container scrolling
+        const container = containerRef.current;
+        const scrollTop = container.scrollTop;
+        const clientHeight = container.clientHeight;
+        const scrollHeight = container.scrollHeight;
+
+        isNearBottom = scrollTop + clientHeight >= scrollHeight - bottomOffset;
+      } else {
+        // Default window scrolling
+        isNearBottom =
+          window.innerHeight + window.scrollY >=
+          document.documentElement.scrollHeight - bottomOffset;
+      }
+
+      if (isNearBottom) {
         fetchNextPage();
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+    let targetElement;
+    let eventType;
 
-  return { data, isLoading, isError, hasNextPage, isFetchingNextPage };
+    if (containerRef?.current) {
+      // Use custom container for scroll events
+      targetElement = containerRef.current;
+      eventType = "scroll";
+    } else {
+      // Use window for scroll events
+      targetElement = window;
+      eventType = "scroll";
+    }
+
+    targetElement.addEventListener(eventType, handleScroll, { passive: true });
+
+    return () => {
+      targetElement.removeEventListener(eventType, handleScroll);
+    };
+  }, [
+    hasNextPage,
+    isFetchingNextPage,
+    fetchNextPage,
+    containerRef,
+    bottomOffset,
+  ]);
+
+  return {
+    data,
+    isLoading,
+    isError,
+    hasNextPage,
+    isFetchingNextPage,
+    containerRef: containerRef || defaultRef,
+  };
 };

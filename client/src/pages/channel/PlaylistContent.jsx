@@ -1,5 +1,5 @@
-import { Box, Typography } from "@mui/material";
-import React, { useEffect, useRef, useState } from "react";
+import { Box, Typography, CircularProgress } from "@mui/material";
+import React, { useEffect, useState } from "react";
 import LongVideoCard from "../../component/cards/LongVideoCard";
 import api from "../../utils/api.js";
 import { CHANNEL_WATCH_HISTORY, PLAYLIST_VIDEOS } from "../../utils/constants";
@@ -10,21 +10,28 @@ import toast from "react-hot-toast";
 import { useAppStore } from "../../store";
 import { useInfinteScroll } from "../../hooks/infinteScrolling";
 
+const getPlaylistVideos = async ({ pageParam = null, queryKey }) => {
+  const [_key, playlistId] = queryKey;
+
+  const apiLink = `${PLAYLIST_VIDEOS}?playlistId=${playlistId}&cursor=${JSON.stringify(
+    pageParam
+  )}&limit=20`;
+
+  const { data } = await api.get(apiLink);
+  return data;
+};
+
 const PlaylistContent = () => {
   // useState ********************************************************************************************
-  const [playlistVideos, setPlaylistVideos] = useState([]);
   const { channelInfo } = useAppStore();
   const [playlist, setPlaylist] = useState({
     title: "",
     thumbnail: "temp",
     videos: "temp",
+    videoId: null,
+    playlistId: "",
+    isOwner: false,
   });
-  const [loading, setLoading] = useState(false);
-
-  // useRef **********************************************************************************************
-  const isFetching = useRef(false); // I am using this for my infinte scrolling, as its .current values changes instantly as i change them but it does not cause a rerender, also it persists throughout every render
-  const hasMore = useRef(true);
-  const cursor = useRef(null);
 
   // constants *********************************************************************************************
   const navigate = useNavigate();
@@ -51,114 +58,61 @@ const PlaylistContent = () => {
     }
   }, [playlistId, channelInfo, navigate]);
 
-  // functions ***********************************************************************************************
-  const getPlaylistVideos = async () => {
-    if (!hasMore.current || isFetching.current) return;
-    isFetching.current = true;
-    setLoading(true);
-    try {
-      const { data } = await api.get(
-        `${PLAYLIST_VIDEOS}?playlistId=${playlistId}&cursor=${JSON.stringify(
-          cursor.current
-        )}&limit=20`
-      );
-      hasMore.current = data.hasMore;
-      cursor.current = data.nextCursor;
+  // Use the enhanced infinite scroll hook
+  const { data, isLoading, isError, isFetchingNextPage, hasNextPage } =
+    useInfinteScroll(["playlistVideos", playlistId], getPlaylistVideos, {
+      enabled:
+        !!playlistId &&
+        playlistId !== "undefined" &&
+        playlistId !== "null" &&
+        playlistId.length > 0,
+    });
 
-      if (cursor.current === null) {
-        let plyalistThumbnail;
-        if (data.videos?.length)
-          plyalistThumbnail = data.videos[0]?.thumbnailUrl;
-        else plyalistThumbnail = pic;
+  const videos = data?.pages.flatMap((page) => page.videos) || [];
+  console.log("in playlist content", videos);
 
-        setPlaylist((pre) => ({
-          ...pre,
-          title: data.playlist?.name,
-          thumbnail: plyalistThumbnail,
-          videos: data.playlist?.videosCount,
-          videoId: data.videos[0]?._id,
-          playlistId: data.playlist?._id,
-          isOwner: data?.isOwner,
-        }));
-      }
-      setPlaylistVideos((pre) => [...pre, ...data.videos]);
-      return data;
-    } catch (err) {
-      // Handle error
-    } finally {
-      setLoading(false);
-      isFetching.current = false;
-    }
-  };
-  // title: data.playlist?.name,
-  //         thumbnail: plyalistThumbnail,
-  //         videos: data.playlist?.videosCount,
-  //         videoId: data.videos[0]?._id,
-  //         playlistId: data.playlist?._id,
-
+  // Update playlist info when data changes
   useEffect(() => {
-    const handleScroll = () => {
-      if (isFetching.current || !hasMore.current) return;
-      const bottom =
-        window.innerHeight + window.scrollY >=
-        document.documentElement.scrollHeight - 100;
+    if (data?.pages?.[0]) {
+      const firstPage = data.pages[0];
+      let playlistThumbnail = pic;
 
-      if (bottom) {
-        getPlaylistVideos();
+      if (firstPage.videos?.length > 0) {
+        playlistThumbnail = firstPage.videos[0]?.thumbnailUrl || pic;
       }
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
-  }, []); // Remove cursor dependency to prevent unnecessary re-renders
 
-  useEffect(() => {
-    // Only fetch videos if we have a valid playlistId
-    if (
-      playlistId &&
-      playlistId !== "undefined" &&
-      playlistId !== "null" &&
-      playlistId.length > 0
-    ) {
-      getPlaylistVideos();
+      setPlaylist({
+        title: firstPage.playlist?.name || "",
+        thumbnail: playlistThumbnail,
+        videos: firstPage.playlist?.videosCount || 0,
+        videoId: firstPage.videos?.[0]?._id || null,
+        playlistId: firstPage.playlist?._id || "",
+        isOwner: firstPage?.isOwner || false,
+      });
     }
+  }, [data]);
 
+  // Cleanup effect
+  useEffect(() => {
     return () => {
-      hasMore.current = true;
-      cursor.current = null;
-      isFetching.current = false;
-
       setPlaylist({
         title: "",
         thumbnail: "temp",
         videos: "temp",
+        videoId: null,
+        playlistId: "",
+        isOwner: false,
       });
-      setPlaylistVideos([]);
     };
-  }, [playlistId]);
+  }, []);
 
-  useEffect(() => {
-    return () => {
-      if (playlistVideos?.length) {
-        setPlaylist((pre) => {
-          let pree = { ...pre };
-          pree.videos = pree.videos - 1;
-          let thumbnail = pic;
-          if (playlistVideos[1]?.thumbnailUrl)
-            thumbnail = playlistVideos[1].thumbnailUrl;
-          let videoId = null;
-          if (playlistVideos[0]?._id) videoId = playlistVideos[0]?._id;
-
-          return {
-            ...pree,
-            thumbnail,
-            videoId,
-          };
-        });
-      }
-    };
-  }, [playlistVideos]);
+  if (isError) {
+    return (
+      <div className="text-center py-8 text-red-400">
+        Error loading playlist videos
+      </div>
+    );
+  }
 
   return (
     <Box
@@ -196,25 +150,54 @@ const PlaylistContent = () => {
         >
           {playlist?.title}
         </Typography>
-        {loading && !playlistVideos?.length && "Loading ..."}
 
-        {playlistVideos?.length ? (
+        {isLoading && !videos?.length && (
+          <div className="text-center py-8">
+            <CircularProgress size={24} className="text-[#ff0000]" />
+            <p className="text-gray-400 text-sm mt-2">Loading playlist...</p>
+          </div>
+        )}
+
+        {videos?.length ? (
           <>
-            {playlistVideos?.map((video, index) => {
+            {videos?.map((video, index) => {
               return (
-                <LongVideoCard
-                  key={index}
-                  remove={`Remove from ${playlist?.title}`}
-                  video={video}
-                  playlist={playlistId}
-                  setPlaylistVideos={setPlaylistVideos}
-                />
+                <div className="mb-4" key={video._id || index}>
+                  <LongVideoCard
+                    remove={`Remove from ${playlist?.title}`}
+                    video={video}
+                    playlist={playlistId}
+                    setPlaylistVideos={() => {}} // This is no longer needed with infinite scroll
+                  />
+                </div>
               );
             })}
-            {loading && <>Loading more videos...</>}
+
+            {/* Loading indicator for next page */}
+            {isFetchingNextPage && (
+              <div className="text-center py-4">
+                <CircularProgress size={20} className="text-[#ff0000]" />
+                <p className="text-gray-400 text-xs mt-1">
+                  Loading more videos...
+                </p>
+              </div>
+            )}
+
+            {/* Show more button for mobile or when infinite scroll might not work */}
+            {hasNextPage && !isFetchingNextPage && (
+              <div className="text-center py-4">
+                <p className="text-gray-400 text-sm">
+                  Scroll down to load more videos
+                </p>
+              </div>
+            )}
           </>
         ) : (
-          "No Videos to Show"
+          !isLoading && (
+            <div className="text-center py-8 text-gray-400">
+              No Videos to Show
+            </div>
+          )
         )}
       </Box>
     </Box>

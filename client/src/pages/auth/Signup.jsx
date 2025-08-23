@@ -23,6 +23,17 @@ export const Signup = () => {
   const navigate = useNavigate();
   const { setIsLoggedIn, isLoggedIn, setChannelInfo } = useAppStore();
 
+  // Remove scrollbars from body when component mounts
+  useEffect(() => {
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = "auto";
+      document.documentElement.style.overflow = "auto";
+    };
+  }, []);
+
   // Form state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -169,9 +180,9 @@ export const Signup = () => {
     validEmail && validPassword && email.length > 0 && password.length > 0;
 
   return (
-    <div className="flex lg:flex-row flex-col bg-gradient-to-r from-youtube-dark-blue to-youtube-dark-red h-screen w-screen">
+    <div className="flex lg:flex-row flex-col bg-gradient-to-r from-youtube-dark-blue to-youtube-dark-red h-screen w-screen overflow-hidden">
       {/* Background image for large screens */}
-      <div className="hidden lg:block">
+      <div className="hidden lg:block lg:flex-shrink-0">
         <img
           src="https://mdbcdn.b-cdn.net/img/Photos/new-templates/bootstrap-login-form/draw2.svg"
           className="w-[60vw] p-20"
@@ -180,7 +191,7 @@ export const Signup = () => {
       </div>
 
       {/* Login Card */}
-      <div className="absolute lg:static flex flex-col w-full lg:w-[40vw] h-full justify-center items-center">
+      <div className="flex flex-col w-full lg:w-[40vw] h-full justify-center items-center overflow-y-auto">
         <Box
           className="card"
           sx={{

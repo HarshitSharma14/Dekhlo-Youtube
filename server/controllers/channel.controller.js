@@ -288,6 +288,9 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   }
 
   const { videoUrlNew, thumbnailUrlNew } = await UploadVideoAndThumbnail(req);
+  const channel = await Channel.findById(channelId).select(
+    "channelName profilePhoto"
+  );
 
   const videonew = new Video({
     title,
@@ -295,6 +298,7 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
     videoUrl: videoUrlNew,
     thumbnailUrl: thumbnailUrlNew,
     channel: channelId,
+    channelName: channel.channelName,
     isPrivate,
     canComment,
     category,
@@ -688,7 +692,8 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
 
 //✅ get videso of playlist *****************************************************************
 export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
-  let { playlistId, cursor, limit = 20 } = req.query;
+  let { playlistId, cursor = null, limit = 10 } = req.query;
+  console.log("playlistId", playlistId);
   cursor = JSON.parse(cursor);
   const parsedLimit = parseInt(limit);
 
@@ -702,10 +707,8 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
   const isOwner =
     req.channelId && req.channelId.toString() === playlist.channel.toString();
 
-  if (playlist.isPrivate) {
-    if (!isOwner) {
-      return next(new ErrorHandler(400, "Unauthorized request"));
-    }
+  if (playlist.isPrivate && !isOwner) {
+    return next(new ErrorHandler(400, "Unauthorized request"));
   }
 
   if (cursor) {
@@ -722,32 +725,31 @@ export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
         from: "videos",
         foreignField: "_id",
         localField: "videoId",
+        pipeline: [
+          {
+            $lookup: {
+              from: "channels",
+              localField: "channel",
+              foreignField: "_id",
+              as: "channel",
+            },
+          },
+          { $unwind: "$channel" },
+        ],
         as: "video",
       },
     },
     {
       $unwind: {
         path: "$video",
-        preserveNullAndEmptyArrays: true,
       },
     },
   ]);
   const videos = [];
-  const idsToDelete = [];
   for (const entry of playlistVideos) {
     if (entry.video) {
       videos.push(entry.video);
-    } else {
-      idsToDelete.push(entry._id);
     }
-  }
-
-  if (idsToDelete.length > 0) {
-    await PlaylistVideos.deleteMany({ _id: { $in: idsToDelete } });
-    await Playlist.updateOne(
-      { _id: playlistId },
-      { $inc: { videosCount: -idsToDelete.length } }
-    );
   }
 
   const hasMore = playlistVideos.length === parsedLimit;

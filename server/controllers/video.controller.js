@@ -264,12 +264,14 @@ export const likeUnlikeVideo = AsyncTryCatch(async (req, res, next) => {
     videoId: videoId,
   });
 
-  console.log(videoToggle);
-
   if (videoToggle) {
-    await PlaylistVideos.deleteMany({
+    await PlaylistVideos.deleteOne({
       playlistId: likedVideosPlaylistId,
       videoId: videoId,
+    });
+
+    await Playlist.findByIdAndUpdate(likedVideosPlaylistId, {
+      $inc: { videosCount: -1 },
     });
 
     await Video.findByIdAndUpdate(videoId, { $inc: { likes: -1 } });
@@ -282,6 +284,9 @@ export const likeUnlikeVideo = AsyncTryCatch(async (req, res, next) => {
       videoId: videoId,
     });
     await playlistVideo.save();
+    await Playlist.findByIdAndUpdate(likedVideosPlaylistId, {
+      $inc: { videosCount: 1 },
+    });
 
     const notification = new Notification({
       channel: video.channel,
@@ -332,30 +337,12 @@ export const searchVideo = AsyncTryCatch(async (req, res, next) => {
         compound: {
           should: [
             {
-              // ✅ High weight for channel name
-              text: {
-                query: searchText,
-                path: "channelName",
-                fuzzy: { maxEdits: 2 },
-                score: { boost: { value: 3 } },
-              },
-            },
-            {
               // ✅ Medium weight for title and category
               text: {
                 query: searchText,
-                path: ["title", "category"],
+                path: ["title"],
                 fuzzy: { maxEdits: 2 },
-                score: { boost: { value: 10 } },
-              },
-            },
-            {
-              // ✅ Low weight for description
-              text: {
-                query: searchText,
-                path: ["description"],
-                fuzzy: { maxEdits: 2 },
-                score: { boost: { value: 2 } },
+                score: { boost: { value: 1 } },
               },
             },
           ],

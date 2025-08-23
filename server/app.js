@@ -19,6 +19,7 @@ import { getVideosForHomePage } from "./controllers/home.controller.js";
 import { setupSocket } from "./socket.js";
 import Channel from "./models/channel.model.js";
 import Setting from "./models/setting.model.js";
+import "./utils/features.js"; // Initialize cron jobs
 
 // localConstansts ************************************
 const app = express();

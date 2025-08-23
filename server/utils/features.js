@@ -3,6 +3,7 @@ import streamifier from "streamifier";
 import cron from "node-cron";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 // import Subscription from "../models/subscription.model";
 import Setting from "../models/setting.model.js";
 import Channel from "../models/channel.model.js";
@@ -10,6 +11,12 @@ import Playlist from "../models/playlist.model.js";
 import PlaylistVideos from "../models/playlistVideos.js";
 import Video from "../models/video.model.js";
 import Subscription from "../models/subscription.model.js";
+import Notification from "../models/notification.model.js";
+import Comment from "../models/comment.model.js";
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export const UploadSinglePhotoToCloudinary = async (req) => {
   try {
@@ -136,9 +143,9 @@ export const UpdateThumbnail = async (req) => {
     // Upload the photo
     const photoResult = req.files?.thumbnail
       ? await uploadFile(req.files.thumbnail[0], {
-        resource_type: "image",
-        folder: "Thumbnails", // Store photos in 'Photos' folder
-      })
+          resource_type: "image",
+          folder: "Thumbnails", // Store photos in 'Photos' folder
+        })
       : null;
     console.log("photo uploaded");
     return {
@@ -171,17 +178,17 @@ export const UploadVideoAndThumbnail = async (req) => {
     // Upload the photo
     const photoResult = req.files?.thumbnail
       ? await uploadFile(req.files.thumbnail[0], {
-        resource_type: "image",
-        folder: "Thumbnails", // Store photos in 'Photos' folder
-      })
+          resource_type: "image",
+          folder: "Thumbnails", // Store photos in 'Photos' folder
+        })
       : null;
     console.log("photo uploaded");
     // Upload the video
     const videoResult = req.files?.video
       ? await uploadFile(req.files.video[0], {
-        resource_type: "video",
-        folder: "Videos", // Store videos in 'Videos' folder
-      })
+          resource_type: "video",
+          folder: "Videos", // Store videos in 'Videos' folder
+        })
       : null;
     console.log("video uplaoded");
     // Response with the uploaded file details
@@ -200,15 +207,31 @@ cron.schedule("0 1 * * *", async () => {
   console.log("🔁 Running midnight cleanup...");
 
   const filePath = path.join(__dirname, "..", "pendingDeletions.json");
-  if (!fs.existsSync(filePath)) return;
-
-  const data = fs.readFileSync(filePath, "utf-8");
-  const pendingIds = JSON.parse(data);
+  console.log("File path for pending deletions:", filePath);
 
   try {
+    const fileExists = await fs.promises
+      .access(filePath)
+      .then(() => true)
+      .catch(() => false);
+    console.log("File exists:", fileExists);
+
+    if (!fileExists) {
+      console.log("No pending deletions file found, skipping cleanup");
+      return;
+    }
+
+    const data = await fs.promises.readFile(filePath, "utf-8");
+    const pendingIds = JSON.parse(data);
+    console.log("Found pending IDs for cleanup:", pendingIds);
+
+    if (pendingIds.length === 0) {
+      console.log("No pending IDs to clean up");
+      return;
+    }
+
     // Decrement subscriber counts for channels that were followed
     const mp = new Map();
-
 
     await Notification.deleteMany({ channel: { $in: pendingIds } });
     // console.log("notifications deleted for channel ", channelId);
@@ -217,7 +240,9 @@ cron.schedule("0 1 * * *", async () => {
     const playlists = await Playlist.find({ channel: { $in: pendingIds } });
     const playlistIds = playlists.map((p) => p._id);
 
-    const subscriptions = await Subscription.find({ subscriber: { $in: pendingIds } });
+    const subscriptions = await Subscription.find({
+      subscriber: { $in: pendingIds },
+    });
     subscriptions.forEach((s) => {
       const count = mp.get(s.creator) || 0;
       mp.set(s.creator, count + 1);
@@ -248,17 +273,16 @@ cron.schedule("0 1 * * *", async () => {
     await Video.deleteMany({ channel: { $in: pendingIds } });
     // console.log("videos deleted for channel ", channelId);
 
-
     await deleteManyVideos(videoUrls);
     // console.log("videos deleted for channel ", channelId);
     await deleteManyThumbnails(thumbnailUrls);
     // console.log("thumbnails deleted for channel ", channelId);
 
+    // Clear file after all deletions
+    await fs.promises.writeFile(filePath, JSON.stringify([], null, 2), "utf-8");
+    console.log("Successfully cleared pending deletions file");
+    console.log("✅ Midnight cleanup completed successfully");
+  } catch (err) {
+    console.error("❌ Error in midnight cleanup:", err);
   }
-  catch (err) {
-    console.error("Error decrementing subscriber counts:", err);
-  }
-
-  // Clear file after all deletions
-  fs.writeFileSync(filePath, JSON.stringify([], null, 2), "utf-8");
 });

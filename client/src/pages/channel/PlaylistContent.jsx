@@ -78,6 +78,7 @@ const PlaylistContent = () => {
           videos: data.playlist?.videosCount,
           videoId: data.videos[0]?._id,
           playlistId: data.playlist?._id,
+          isOwner: data?.isOwner,
         }));
       }
       setPlaylistVideos((pre) => [...pre, ...data.videos]);

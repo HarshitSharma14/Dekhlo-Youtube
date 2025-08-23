@@ -29,15 +29,8 @@ const PlaylistSideArea = ({ playlist = samplePlaylist }) => {
 
   const [params] = useSearchParams();
   let playlistId = params.get("playlistId");
-  const { data } = useQuery({
-    queryKey: ["playlistDetails", playlistId],
-    queryFn: async () => {
-      const { data } = await api.get(
-        `${GET_PLAYLIST_Details}?playlistId=${playlistId}`
-      );
-      return data;
-    },
-  });
+
+  console.log("playlist", playlist);
 
   // const playlist = playlist;
   // playlist = playlist?.thumbnail || samplePlaylist.thumbnail;
@@ -53,9 +46,6 @@ const PlaylistSideArea = ({ playlist = samplePlaylist }) => {
     playlist.playlistId === channelInfo?.permanentPlaylist?.watchHistory ||
     playlist.playlistId === channelInfo?.permanentPlaylist?.watchLater;
 
-  if (isLikedVideoPlaylist)
-    deleteText =
-      "All Videos will be removed from this playlist, but the likes will persist on videos.\nDo you want to proceed";
   if (cannotDeltePlaylist)
     deleteText =
       "All Videos will be removed from this playlist, but the playlist is default and cannot be deleted.\nDo you want to proceed";
@@ -124,9 +114,10 @@ const PlaylistSideArea = ({ playlist = samplePlaylist }) => {
         <CardMedia
           component="img"
           height="180"
+          width="100%"
           image={playlist?.thumbnail?.length ? playlist.thumbnail : pic}
           alt={playlist.title}
-          sx={{ objectFit: "cover", width: "100%" }}
+          sx={{ objectFit: "cover", width: "100%", aspectRatio: "16/9" }}
         />
       </div>
 
@@ -172,7 +163,7 @@ const PlaylistSideArea = ({ playlist = samplePlaylist }) => {
             <Share />
           </IconButton>
 
-          {data?.isOwner && (
+          {playlist?.isOwner && !isLikedVideoPlaylist && (
             <>
               <Tooltip title="Delete Playlist">
                 <IconButton onClick={() => setOpen(true)}>

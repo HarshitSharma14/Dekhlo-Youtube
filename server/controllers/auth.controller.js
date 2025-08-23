@@ -120,8 +120,13 @@ export const oauth2_redirect = (req, res) => {
   else res.redirect(`${clientURL}`);
 };
 
-export const logout = (req, res) => {
-  // TODO: clear all tokens from the database
+export const logout = async (req, res) => {
+  const channelId = req.channelId;
+  await Channel.findByIdAndUpdate(channelId, {
+    refreshToken: null,
+    refreshTokenExpiresAt: null,
+  });
+
   res.status(200).json({ message: "Logged out successfully." });
 };
 

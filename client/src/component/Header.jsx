@@ -2,7 +2,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import MenuIcon from "@mui/icons-material/Menu";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import { Autocomplete, TextField, useMediaQuery } from "@mui/material";
+import { Autocomplete, Avatar, TextField, useMediaQuery } from "@mui/material";
 import api from "../utils/api.js";
 import { AnimatePresence, motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
@@ -50,7 +50,10 @@ const Header = ({ isDisabled }) => {
     setAnchorEl(null);
   };
   const handleClickOutside = (event) => {
+    // Only handle clicks if they're not on the dialog itself
     if (dialogRef.current && !dialogRef.current.contains(event.target)) {
+      event.preventDefault();
+      event.stopPropagation();
       setAnchorEl(null);
     }
   };
@@ -141,10 +144,12 @@ const Header = ({ isDisabled }) => {
         toast.success("Logout successful", { id: toastId });
         setIsLoggedIn(false);
         setChannelInfo(null);
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
         navigate("/");
       }
     } catch (e) {
-      // Handle error
+      toast.error("Logout failed", { id: toastId });
     }
   };
 
@@ -302,45 +307,131 @@ const Header = ({ isDisabled }) => {
             onClick={handleAvatarClick}
             className="text-white hover:bg-gray-700 p-2 rounded-full"
           >
-            {channelInfo?.profilePhoto ? (
-              <img
-                className="rounded-full w-10 h-10"
-                src={channelInfo?.profilePhoto}
-              ></img>
-            ) : (
-              <div className="w-10 h-10 bg-gray-500 rounded-full" />
-            )}
+            <Avatar
+              sx={{ width: "2.5rem", height: "2.5rem" }}
+              className="rounded-full"
+              src={channelInfo?.profilePhoto}
+              alt="profile"
+            />
           </button>
-          {anchorEl !== null && (
-            <div
-              ref={dialogRef}
-              className="absolute top-[70px] bg-white rounded shadow-lg py-2"
-            >
-              <button
-                disabled={isDisabled}
-                className="px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={() => {
-                  handleAvatarClose();
-                  if (channelInfo) navigate("/profile");
-                  else navigate("/signup");
-                }}
-              >
-                Profile
-              </button>
-              <button
-                disabled={isDisabled}
-                className={`px-4 py-2 text-gray-700 hover:bg-gray-100 ${
-                  channelInfo === null ? "hidden" : ""
-                }`}
-                onClick={() => {
-                  handleAvatarClose();
-                  handleLogout();
-                }}
-              >
-                Logout
-              </button>
-            </div>
-          )}
+          <AnimatePresence>
+            {anchorEl !== null && (
+              <>
+                {/* Backdrop to prevent clicks behind dialog */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-40"
+                  onClick={handleAvatarClose}
+                />
+                <motion.div
+                  ref={dialogRef}
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.15, ease: "easeOut" }}
+                  className="absolute top-[70px] right-0 bg-[#1f1f1f] rounded-xl  shadow-2xl py-4 w-80 max-w-[calc(100vw-2rem)] border border-gray-700 z-50 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)]"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {/* Profile Header */}
+                  <div className="px-6 pb-4 border-b border-gray-700">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex-shrink-0">
+                        <Avatar
+                          sx={{ width: "4rem", height: "4rem" }}
+                          className="rounded-full object-cover border-2 border-gray-600"
+                          src={channelInfo?.profilePhoto}
+                          alt="profile"
+                        />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-lg font-semibold text-white truncate">
+                          {channelInfo?.channelName || "Channel Name"}
+                        </h3>
+                        <p className="text-sm text-gray-400 truncate">
+                          {channelInfo?.email || "email@example.com"}
+                        </p>
+                        <div className="flex items-center mt-1">
+                          <svg
+                            className="w-4 h-4 mr-1 text-gray-500"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3z" />
+                          </svg>
+                          <span className="text-sm font-medium text-gray-300">
+                            {channelInfo?.followers || 0} followers
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="px-6 pt-4 space-y-2">
+                    <button
+                      disabled={isDisabled}
+                      className="w-full flex items-center justify-center px-4 py-3 text-sm font-medium text-gray-200 bg-gray-800 hover:bg-gray-700 hover:shadow-sm rounded-lg transition-all duration-200 border border-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => {
+                        handleAvatarClose();
+                        if (channelInfo)
+                          navigate(`/channel/${channelInfo._id}`);
+                      }}
+                    >
+                      <svg
+                        className="w-4 h-4 mr-2"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                      Profile
+                    </button>
+
+                    {channelInfo && (
+                      <button
+                        disabled={isDisabled}
+                        className="w-full flex items-center justify-center px-4 py-3 text-sm font-medium text-red-400 bg-red-900/20 hover:bg-red-900/30 hover:shadow-sm rounded-lg transition-all duration-200 border border-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => {
+                          handleAvatarClose();
+                          handleLogout();
+                        }}
+                      >
+                        <svg
+                          className="w-4 h-4 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                          />
+                        </svg>
+                        Logout
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Footer */}
+                  <div className="px-6 pt-4 border-t border-gray-700">
+                    <p className="text-xs text-gray-500 text-center">
+                      YouTube Clone App
+                    </p>
+                  </div>
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
           <div className="relative">
             <AnimatePresence mode="wait">
               {notificationsOpen && ( // Ensuring notifications are conditionally rendered

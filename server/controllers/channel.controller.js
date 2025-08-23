@@ -125,19 +125,11 @@ export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
   if (!channelToBeSubscribed) {
     return next(new ErrorHandler(404, "Channel not found"));
   }
-  console.log("channelToBeSubscribed", channelToBeSubscribed);
   const settingsId = channelToBeSubscribed.settings;
-  console.log("settingsId", settingsId);
   const settings = await Setting.findById(settingsId);
-  console.log("settings", settings);
   if (!settings) {
     return next(new ErrorHandler(404, "Settings not found"));
   }
-
-  // if (settings.notifications.newSubscribers) {
-  //   // Handle new subscriber notification
-  // }
-
   const isSubsriptionAlreadyExist = await Subscription.findOne({
     subscriber: req.channelId,
     creator: creatorId,
@@ -518,36 +510,102 @@ export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
 // start from here
 
 //✅ get any channels playlist **********************************************************************************
+// export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
+//   const channelId = req.params?.channelId;
+//   // console.log("in get channel playlists ", channelId);
+
+//   let canSendPrivatePlaylist = false;
+//   // Check if user is authenticated and is the channel owner
+//   if (req.channelId) {
+//     canSendPrivatePlaylist = req.channelId.toString() === channelId.toString();
+//   }
+
+//   const playlists = await Playlist.find({ channel: channelId })
+//     .populate("channel", "channelName profilePhoto")
+//     .lean();
+
+//   const playlistVideos = await PlaylistVideos.find({
+//     playlistId: { $in: playlists.map((p) => p._id) },
+//   }).lean();
+
+//   const dataToSend = {
+//     playlists: playlists.map((playlist) => ({
+//       _id: playlist._id,
+//       name: playlist.name,
+//       isPrivate: playlist.isPrivate,
+//       isPresent: playlistVideos.some(
+//         (pv) => pv.playlistId.toString() === playlist._id.toString()
+//       ),
+//     })),
+//   };
+
+//   res.status(200).json(dataToSend);
+// });
 export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
   const channelId = req.params?.channelId;
   // console.log("in get channel playlists ", channelId);
 
   let canSendPrivatePlaylist = false;
-  // Check if user is authenticated and is the channel owner
-  if (req.channelId) {
-    canSendPrivatePlaylist = req.channelId.toString() === channelId.toString();
-  }
+  const channelIdVisiting = req.channelId;
+  // console.log("channeld Id visiting ", channelIdVisiting);
+  if (channelIdVisiting)
+    canSendPrivatePlaylist =
+      channelIdVisiting.toString() === channelId.toString();
 
-  const playlists = await Playlist.find({ channel: channelId })
-    .populate("channel", "channelName profilePhoto")
-    .lean();
+  console.log("can send private playlists ", canSendPrivatePlaylist);
 
-  const playlistVideos = await PlaylistVideos.find({
-    playlistId: { $in: playlists.map((p) => p._id) },
-  }).lean();
-
-  const dataToSend = {
-    playlists: playlists.map((playlist) => ({
-      _id: playlist._id,
-      name: playlist.name,
-      isPrivate: playlist.isPrivate,
-      isPresent: playlistVideos.some(
-        (pv) => pv.playlistId.toString() === playlist._id.toString()
-      ),
-    })),
+  const matchQuery = {
+    channel: new mongoose.Types.ObjectId(channelId),
   };
+  if (!canSendPrivatePlaylist) matchQuery.isPrivate = false;
 
-  res.status(200).json(dataToSend);
+  const playlists = await Playlist.aggregate([
+    {
+      $match: matchQuery,
+    },
+    {
+      $lookup: {
+        from: "playlistvideos",
+        localField: "_id",
+        foreignField: "playlistId",
+        pipeline: [
+          { $sort: { createdAt: -1 } },
+          { $limit: 5 },
+          {
+            $lookup: {
+              from: "videos",
+              localField: "videoId",
+              foreignField: "_id",
+              pipeline: [
+                {
+                  $project: {
+                    _id: 1,
+                    thumbnailUrl: 1,
+                  },
+                },
+              ],
+              as: "video",
+            },
+          },
+          { $unwind: "$video" },
+          { $replaceRoot: { newRoot: "$video" } },
+          { $limit: 3 },
+        ],
+        as: "videos",
+      },
+    },
+    {
+      $project: {
+        _id: 1,
+        name: 1,
+        description: 1,
+        videos: 1,
+        videosCount: 1,
+      },
+    },
+  ]);
+
+  res.status(200).json({ playlists });
 });
 
 //✅ get my channels playlist **********************************************************************************
@@ -753,7 +811,7 @@ const decearseCountInPlaylist = async (videoRemoverId, playlists) => {
       { $inc: { videosCount: -1 } }
     );
   } catch (error) {
-    console.error("Failed to decrement playlist video count:", err);
+    console.error("Failed to decrement playlist video count:", error);
   }
 };
 
@@ -795,34 +853,79 @@ export const deletePlaylist = AsyncTryCatch(async (req, res, next) => {
 
 import path from "path";
 import fs from "fs/promises";
+import { fileURLToPath } from "url";
 import Comment from "../models/comment.model.js";
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 //deleteing channel ******************************************************************************
 export const deleteChannel = AsyncTryCatch(async (req, res, next) => {
-  // TODO: to delete, all videos, playlists, playlistvideos, subs, setttings, notifications ,
   const channelId = req.channelId;
 
-  await Video.updateMany({ channel: channelId }, { $set: { isPrivate: true } });
-  await Playlist.updateMany(
-    { channel: channelId },
-    { $set: { isPrivate: true } }
-  );
-  const settingId = await Channel.findById(channelId).select("settings").lean();
-  await Setting.deleteOne({ _id: settingId.settings });
-  await Channel.findByIdAndDelete(channelId);
+  try {
+    // Get channel info first to check if it exists
+    const channel = await Channel.findById(channelId).select("settings").lean();
+    if (!channel) {
+      return next(new ErrorHandler(404, "Channel not found"));
+    }
 
-  // Step 3: Store channelId in file for later cleanup
-  const filePath = path.join(__dirname, "..", "pendingDeletions.json");
+    // Mark content as private immediately (fast operation)
+    await Promise.all([
+      Video.updateMany({ channel: channelId }, { $set: { isPrivate: true } }),
+      Playlist.updateMany(
+        { channel: channelId },
+        { $set: { isPrivate: true } }
+      ),
+    ]);
 
-  // Read existing IDs or start new list
-  let pendingIds = [];
-  if (fs.existsSync(filePath)) {
-    const fileData = fs.readFileSync(filePath, "utf-8");
-    pendingIds = JSON.parse(fileData);
+    // Delete settings and channel (fast operations)
+    if (channel.settings) {
+      await Setting.deleteOne({ _id: channel.settings });
+    }
+    await Channel.findByIdAndDelete(channelId);
+
+    // Store channelId in file for later cleanup
+    const filePath = path.join(__dirname, "..", "pendingDeletions.json");
+
+    // Read existing IDs or start new list
+    let pendingIds = [];
+    try {
+      const fileExists = await fs
+        .access(filePath)
+        .then(() => true)
+        .catch(() => false);
+
+      if (fileExists) {
+        const fileData = await fs.readFile(filePath, "utf-8");
+        pendingIds = JSON.parse(fileData);
+      }
+    } catch (error) {
+      console.error("Error reading pending deletions file:", error);
+      // If file is corrupted, start fresh
+      pendingIds = [];
+    }
+
+    // Add new channel ID if not already present
+    if (!pendingIds.includes(channelId)) {
+      pendingIds.push(channelId);
+    }
+
+    // Write updated list
+    await fs.writeFile(filePath, JSON.stringify(pendingIds, null, 2), "utf-8");
+
+    console.log(
+      `Channel ${channelId} marked for deletion. Cleanup scheduled for midnight.`
+    );
+
+    res.status(200).json({
+      message:
+        "Channel deleted successfully. Content cleanup scheduled for midnight.",
+      cleanupScheduled: true,
+    });
+  } catch (error) {
+    console.error("Error in deleteChannel:", error);
+    return next(new ErrorHandler(500, "Failed to delete channel"));
   }
-
-  pendingIds.push(channelId);
-
-  fs.writeFileSync(filePath, JSON.stringify(pendingIds, null, 2), "utf-8");
-
-  res.status(200).json({ message: "Channel marked for deletion at midnight" });
 });

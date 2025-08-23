@@ -47,6 +47,7 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
 
   const videos = await Video.aggregate([
     { $match: query },
+    { $sort: { _id: -1 } },
     { $limit: parsedLimit },
     {
       $lookup: {
@@ -67,6 +68,7 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
     },
     { $unwind: "$channel" },
   ]);
+
   const hasMore = videos.length === parsedLimit;
   const nextCursor = hasMore ? videos[videos.length - 1]._id : null;
 

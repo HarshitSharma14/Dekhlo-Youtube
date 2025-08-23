@@ -65,31 +65,32 @@ const VideoPlayer = () => {
     setAnchorEl(null);
   };
 
-  useEffect(() => {
-    const handlePopState = () => {
-      window.location.reload(); // 🔥 Reload on back/forward navigation
-    };
+  // useEffect(() => {
+  //   const handlePopState = () => {
+  //     window.location.reload(); // 🔥 Reload on back/forward navigation
+  //   };
 
-    window.addEventListener("popstate", handlePopState);
+  //   window.addEventListener("popstate", handlePopState);
 
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, []);
+  //   return () => {
+  //     window.removeEventListener("popstate", handlePopState);
+  //   };
+  // }, []);
 
   // getting video data
   useEffect(() => {
+    console.log("videoId", videoId);
     const getVideoData = async () => {
       try {
         const response = await api.get(`${GET_VIDEO}/${videoId}`);
-        setLoggedIn(channelInfo != undefined && channelInfo != null);
-        setLikes(response.data.video.likes);
+        setLoggedIn(() => channelInfo != undefined && channelInfo != null);
+        setLikes(() => response.data.video.likes);
 
-        setSubscribed(response.data.isSubscribed);
-        setBell(response.data.isBell);
+        setSubscribed(() => response.data.isSubscribed);
+        setBell(() => response.data.isBell);
 
-        setIsLiked(response.data.isLiked);
-        setVideoDetails(response.data.video);
+        setIsLiked(() => response.data.isLiked);
+        setVideoDetails(() => response.data.video);
       } catch (error) {
         toast.error("Error fetching video data");
         navigate("/");
@@ -240,9 +241,9 @@ const VideoPlayer = () => {
 
   const navigateToVideo = (videoIdNew) => {
     navigate(`/video-player/${videoIdNew}`);
-    setTimeout(() => {
-      navigate(0); // Force page reload (not recommended but works)
-    }, 0);
+    // setTimeout(() => {
+    //   navigate(0); // Force page reload (not recommended but works)
+    // }, 0);
     return;
   };
 

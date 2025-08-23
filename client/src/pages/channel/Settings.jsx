@@ -5,25 +5,25 @@ import { DELETE_CHANNEL } from "../../utils/constants";
 import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../../store";
 import toast from "react-hot-toast";
+import { useState } from "react";
+import DeleteDialogBox from "../../component/DeleteDialogBox.jsx";
 
 const Settings = () => {
-  const { channelInfo, setIsLoggedIn, setChannelInfo } = useAppStore();
+  const { setIsLoggedIn, setChannelInfo } = useAppStore();
+  const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleDeleteChannel = async () => {
     try {
-      const token = localStorage.getItem("jwt");
-      if (!token) {
-        toast.error("Please login to delete channel");
-        return;
-      }
-
       await api.delete(DELETE_CHANNEL);
       toast.success("Channel deleted successfully");
-      setIsLoggedIn(false);
-      setChannelInfo(null);
-      localStorage.removeItem("jwt");
-      navigate("/signup");
+      setTimeout(() => {
+        setIsLoggedIn(false);
+        setChannelInfo(null);
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
+      }, 100);
+      navigate("/", { replace: true });
     } catch (error) {
       toast.error("Failed to delete channel");
     }
@@ -106,7 +106,7 @@ const Settings = () => {
           </div>
           <div className="flex flex-col md:flex-row gap-4">
             <button
-              onClick={handleDeleteChannel}
+              onClick={() => setOpen(true)}
               className="w-full bg-red-600 hover:bg-red-700 text-black font-semibold py-2 px-4 rounded transition duration-300"
             >
               Delete Channel
@@ -123,6 +123,12 @@ const Settings = () => {
           </div>
         </div>
       </div>
+      <DeleteDialogBox
+        open={open}
+        setOpen={setOpen}
+        deleteHandler={handleDeleteChannel}
+        deleteText="Are you sure to delete your channel"
+      />
     </div>
   );
 };

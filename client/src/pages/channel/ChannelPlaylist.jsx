@@ -25,7 +25,7 @@ const ChannelPlaylist = () => {
     queryKey: ["channelPlaylists", channelId],
     queryFn: getChannelPlaylists,
   });
-
+  console.log("playlists", playlists);
   if (isError)
     return (
       <div> {error?.response?.data?.messgae || "Something went wrong"} </div>

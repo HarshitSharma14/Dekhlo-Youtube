@@ -1,8 +1,10 @@
+import { useNavigate } from "react-router-dom";
 import { useAppStore } from "../store";
 import { Menu as MenuIcon } from "@mui/icons-material";
 
 const YoutubeIconSection = () => {
   const { toggelSidebar } = useAppStore();
+  const navigate = useNavigate();
   return (
     <div
       className="flex items-center ml-4 "
@@ -19,7 +21,7 @@ const YoutubeIconSection = () => {
       </button>
       <button
         onClick={() => navigate("/")}
-        className="w-[123px] h-[56px] cursor-default text-white font-bold text-2xl"
+        className="w-[123px] h-[56px] cursor-pointer text-white font-bold text-2xl"
       >
         <span className="yt-icon-shape flex justify-center items-center">
           <img src="/assets/logo.png" className="w-[93px] h-[20px]" />

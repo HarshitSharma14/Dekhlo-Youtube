@@ -20,12 +20,15 @@ import { setupSocket } from "./socket.js";
 import Channel from "./models/channel.model.js";
 import Setting from "./models/setting.model.js";
 import "./utils/features.js"; // Initialize cron jobs
+import { optionalAuth } from "./middlewares/auth.middleware.js";
 
 // localConstansts ************************************
 const app = express();
 const clientURL = process.env.CLIENT_URL;
 const serverURL = process.env.SERVER_URL;
-const databaseURL = process.env.DATABASE_URL;
+const databaseURI = process.env.DATABASE_URI;
+const databaseName = process.env.DATABASE_NAME;
+const databaseURL = `${databaseURI}/${databaseName}`;
 const corsOptions = {
   origin: `${clientURL}`, // Frontend URL
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Methods you want to allow
@@ -68,10 +71,12 @@ app.use("/api/v1/channel", channelRoutes);
 app.use("/api/v1/video", videoRoutes);
 
 // Single Routes  ******************************
-app.post("/api/v1/home/videos", getVideosForHomePage);
+app.post("/api/v1/home/videos", optionalAuth, getVideosForHomePage);
 
-app.get("/", (_, res) => {
-  res.send("Home route working on the Youtube app");
+app.get("/", async (_, res) => {
+  res.status(200).json({
+    message: "Home route working on the Youtube app",
+  });
 });
 
 // Middleware to handle error ***************************

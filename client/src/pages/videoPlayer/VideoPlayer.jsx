@@ -112,7 +112,6 @@ const VideoPlayer = () => {
   useEffect(() => {
     if (queryValue) {
       setPlayingPlaylist(true);
-
       const getPlaylistInfo = async () => {
         try {
           const response = await api.get(
@@ -132,7 +131,10 @@ const VideoPlayer = () => {
         }
       };
 
-      getPlaylistInfo();
+      if (playlistId) {
+        console.log("calling playlist ", playlistId);
+        getPlaylistInfo();
+      }
     }
   }, [queryValue, playlistId, videoId, navigate]);
 
@@ -294,13 +296,18 @@ const VideoPlayer = () => {
             )}
           </div>
 
-          <div
-            className={`border-2 lg:hidden rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${
-              playingPlaylist ? "block" : "hidden"
-            } h-auto`}
-          >
-            <PlayingPlaylistComp playlist={playlist} playingVideoId={videoId} />
-          </div>
+          {playlistId && (
+            <div
+              className={`border-2 lg:hidden rounded-2xl border-gray-500 flex flex-col w-full max-h-[500px] mb-4  ${
+                playingPlaylist ? "block" : "hidden"
+              } h-auto`}
+            >
+              <PlayingPlaylistComp
+                playlist={playlist}
+                playingVideoId={videoId}
+              />
+            </div>
+          )}
 
           {/* Description */}
           <div className="bg-[#121212] mt-3 flex flex-col  w-full max-w-[100vw] box-border">
@@ -453,17 +460,19 @@ const VideoPlayer = () => {
           className={`hidden lg:flex flex-col lg:w-[35%] pt-3 w-full h-auto box-border lg:mx-6`}
         >
           {/* Right side content */}
-          <div
-            className={`border-2 rounded-2xl border-gray-500 flex flex-col max-h-[500px] w-full  mb-4  ${
-              playingPlaylist ? "block" : "hidden"
-            } h-auto`}
-          >
-            <PlayingPlaylistComp
-              playlist={playlist}
-              playingVideoId={videoId}
-              setPlayingPlaylist={setPlayingPlaylist}
-            />
-          </div>
+          {playlistId && (
+            <div
+              className={`border-2 rounded-2xl border-gray-500 flex flex-col max-h-[500px] w-full  mb-4  ${
+                playingPlaylist ? "block" : "hidden"
+              } h-auto`}
+            >
+              <PlayingPlaylistComp
+                playlist={playlist}
+                playingVideoId={videoId}
+                setPlayingPlaylist={setPlayingPlaylist}
+              />
+            </div>
+          )}
           {watchNext?.map((video, index) => {
             return (
               <div

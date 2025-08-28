@@ -21,7 +21,6 @@ import { ErrorHandler } from "../utils/utility.js";
 
 //✅✅ get self channel if logged in ************************************************************************************
 export const getSelfChannelInfo = AsyncTryCatch(async (req, res, next) => {
-  console.log("get self channel info", req.channelId);
   const channel = await Channel.findById(req.channelId)
     .select(
       "channelName email profilePhoto bio subscribersCount videosCount views permanentPlaylist"
@@ -40,7 +39,7 @@ export const getSelfChannelInfo = AsyncTryCatch(async (req, res, next) => {
     views: channel.views,
     permanentPlaylist: channel.permanentPlaylist,
   };
-  console.log("get self channel info", dataToSend);
+
   res
     .status(200)
     .json({ message: "Channel Info fetched ", channel: dataToSend });
@@ -118,7 +117,6 @@ export const updateProfile = AsyncTryCatch(async (req, res, next) => {
 
 //✅✅ subscribe ************************************************************************************************
 export const subscribeChannel = AsyncTryCatch(async (req, res, next) => {
-  console.log("subscribeChannel ");
   const { creatorId } = req.body;
 
   const channelToBeSubscribed = await Channel.findById(creatorId);
@@ -306,6 +304,33 @@ export const updateVideo = AsyncTryCatch(async (req, res, next) => {
   });
 
   await videonew.save();
+
+  const pythonUrl = process.env.PYTHON_SERVER_URL;
+  const createEmbeddingapi = `${pythonUrl}/create-embedding/${videonew._id}`;
+  const response = await fetch(createEmbeddingapi, {
+    method: "PUT",
+  });
+  const data = await response.json();
+
+  if (!data.success) {
+    await Video.findByIdAndDelete(videonew._id);
+    return next(
+      new ErrorHandler(400, "Video uploaded failed to Python server")
+    );
+  }
+
+  const similarityApi = `${pythonUrl}/update-similar-video-matrix/${videonew._id}`;
+  const similarityResponse = await fetch(similarityApi, {
+    method: "PUT",
+  });
+  const similarityData = await similarityResponse.json();
+
+  if (!similarityData.success) {
+    await Video.findByIdAndDelete(videonew._id);
+    return next(
+      new ErrorHandler(400, "Video uploaded failed to Python server")
+    );
+  }
 
   // const subscibersId = await Subscription.find({
   //   creator: channelId,
@@ -507,7 +532,7 @@ export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
   if (invalidSubIds.length > 0) {
     await Subscription.deleteMany({ _id: { $in: invalidSubIds } });
   }
-  console.log("subs", subs);
+
   res.status(200).json({ following: subs });
 });
 
@@ -516,7 +541,7 @@ export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
 //✅ get any channels playlist **********************************************************************************
 // export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
 //   const channelId = req.params?.channelId;
-//   // console.log("in get channel playlists ", channelId);
+//   //
 
 //   let canSendPrivatePlaylist = false;
 //   // Check if user is authenticated and is the channel owner
@@ -547,16 +572,14 @@ export const getSubscribedChannel = AsyncTryCatch(async (req, res, next) => {
 // });
 export const getChannelPlaylists = AsyncTryCatch(async (req, res, next) => {
   const channelId = req.params?.channelId;
-  // console.log("in get channel playlists ", channelId);
+  //
 
   let canSendPrivatePlaylist = false;
   const channelIdVisiting = req.channelId;
-  // console.log("channeld Id visiting ", channelIdVisiting);
+  //
   if (channelIdVisiting)
     canSendPrivatePlaylist =
       channelIdVisiting.toString() === channelId.toString();
-
-  console.log("can send private playlists ", canSendPrivatePlaylist);
 
   const matchQuery = {
     channel: new mongoose.Types.ObjectId(channelId),
@@ -631,7 +654,7 @@ export const getMyPlaylists = AsyncTryCatch(async (req, res, next) => {
     ...pl,
     isPresent: pv.includes(String(pl._id)),
   }));
-  // console.log(dataToSend);
+  //
 
   res.status(200).json({ playlists: dataToSend });
 });
@@ -693,7 +716,7 @@ export const addVideosToPlaylist = AsyncTryCatch(async (req, res, next) => {
 //✅ get videso of playlist *****************************************************************
 export const getPlaylistVideos = AsyncTryCatch(async (req, res, next) => {
   let { playlistId, cursor = null, limit = 10 } = req.query;
-  console.log("playlistId", playlistId);
+
   cursor = JSON.parse(cursor);
   const parsedLimit = parseInt(limit);
 
@@ -792,7 +815,7 @@ export const removeVideoFromPlaylist = AsyncTryCatch(async (req, res, next) => {
   if (!playlistVideo.length) {
     return next(new ErrorHandler(400, "Video not found in playlist"));
   }
-  // console.log(playlistVideo);
+  //
   const accessablePlaylistsVideos = [];
 
   playlistVideo.forEach((pv) => {
@@ -800,7 +823,7 @@ export const removeVideoFromPlaylist = AsyncTryCatch(async (req, res, next) => {
       accessablePlaylistsVideos.push(pv._id);
   });
 
-  // console.log(accessablePlaylistsVideos);
+  //
   await PlaylistVideos.deleteMany({ _id: { $in: accessablePlaylistsVideos } });
   decearseCountInPlaylist(videoRemoverId, playlists);
   return res.status(200).json({ success: true });
@@ -916,10 +939,6 @@ export const deleteChannel = AsyncTryCatch(async (req, res, next) => {
 
     // Write updated list
     await fs.writeFile(filePath, JSON.stringify(pendingIds, null, 2), "utf-8");
-
-    console.log(
-      `Channel ${channelId} marked for deletion. Cleanup scheduled for midnight.`
-    );
 
     res.status(200).json({
       message:

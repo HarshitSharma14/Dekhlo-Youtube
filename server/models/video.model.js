@@ -54,14 +54,15 @@ const videoSchema = new Schema(
       default: true,
     },
     embedding: { type: [Number], required: false },
+    similarVideos: [
+      {
+        videoId: { type: Schema.Types.ObjectId, ref: "Video" },
+        score: { type: Number, required: true },
+      },
+    ],
   },
   { timestamps: true }
 );
-
-// TODO: discuss the indexs again, as a/c to gpt the _id can also act as createdAt in the sort({_id: -1}) query, as the first 4 bytes of _id is the timeStamp;
-
-// videoSchema.index({ channel: 1, createdAt: -1, _id: -1 });
-// videoSchema.index({ channel: 1, createdAt: 1, _id: 1 });
 
 videoSchema.index({ channel: 1, views: -1, _id: -1 });
 videoSchema.index({ channel: 1, _id: -1 });

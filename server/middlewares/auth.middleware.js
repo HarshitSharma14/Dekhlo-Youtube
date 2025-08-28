@@ -7,15 +7,11 @@ import {
 import { AsyncTryCatch } from "./error.middlewares.js";
 
 export const isUserLoggedIn = AsyncTryCatch(async (req, res, next) => {
-  console.log("checking if user is logged in");
   const token = extractTokenFromRequest(req);
-  console.log("token", token);
 
   if (!token)
     return next(new ErrorHandler(401, "Please Login to access this resource"));
-  console.log("token found");
   const decodedData = verifyToken(token, "access");
-  console.log("decodedData", decodedData);
   if (!decodedData) {
     return next(new ErrorHandler(401, "Invalid or expired token"));
   }
@@ -25,7 +21,6 @@ export const isUserLoggedIn = AsyncTryCatch(async (req, res, next) => {
   }
 
   req.channelId = decodedData.channelId;
-  console.log("user logged in");
   next();
 });
 

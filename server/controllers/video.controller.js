@@ -79,7 +79,6 @@ export const getVideo = AsyncTryCatch(async (req, res, next) => {
       playlistId: likedVideoPlaylistId,
       videoId: videoId,
     }));
-    console.log(isLiked);
   }
 
   return res.status(200).json({
@@ -135,8 +134,6 @@ export const getComments = AsyncTryCatch(async (req, res, next) => {
     .limit(parseInt(limit))
     .populate("channel", "_id channelName profilePhoto");
 
-  // console.log(comments)
-
   const hasMore = comments.length == limit;
   const nextCursor = hasMore ? comments[comments.length - 1]._id : null;
 
@@ -151,46 +148,30 @@ export const getComments = AsyncTryCatch(async (req, res, next) => {
 //✅ get watch next video side alliey ******************************************************
 export const getWatchNext = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.params;
-  const cursor = req.query.cursor;
-  const limit = 3;
+  const { cursor = 0, limit = 5 } = req.query;
 
   const video = await Video.findById(videoId);
   if (!video) {
     return next(new ErrorHandler(404, "Video not found"));
   }
 
-  // Correct query with $and for multiple _id conditions
-  let query = {
-    $and: [{ _id: { $ne: new mongoose.Types.ObjectId(videoId) } }],
-  };
+  const similarVideosIds = video.similarVideos;
 
-  if (cursor) {
-    query.$and.push({ _id: { $lt: new mongoose.Types.ObjectId(cursor) } });
+  let watchNext = [];
+  let cnt = limit;
+  let nextCursor = cursor;
+  for (let i = cursor; i < similarVideosIds.length && cnt > 0; i++) {
+    const video = await Video.findById(similarVideosIds[i]["videoId"]).populate(
+      "channel",
+      "_id channelName profilePhoto"
+    );
+    if (video) {
+      cnt--;
+      watchNext.push(video);
+      nextCursor = i + 1;
+    }
   }
-
-  const watchNext = await Video.find(query)
-    .sort({ _id: -1 })
-    .limit(limit)
-    .populate("channel", "_id channelName profilePhoto");
-
-  // const watchNext = await Video.aggregate([
-  //   { $match: query },
-  //   { $sort: { _id: -1 } },
-  //   { $limit: limit },
-  //   {
-  //     $lookup: {
-  //       from: "channels",
-  //       foreignField: "_id",
-  //       localField: "channel",
-  //       pipeline: [{ $project: { _id: 1, profilePhoto: 1, channelName: 1 } }],
-  //       as: "channel",
-  //     },
-  //   },
-  //   { $unwind: "$channel" },
-  // ]);
-
-  const hasMore = watchNext.length === limit;
-  const nextCursor = hasMore ? watchNext[watchNext.length - 1]._id : null;
+  const hasMore = nextCursor < similarVideosIds.length;
 
   return res.status(200).json({
     watchNext,
@@ -297,8 +278,6 @@ export const likeUnlikeVideo = AsyncTryCatch(async (req, res, next) => {
     });
 
     await notification.save();
-    console.log("liking");
-    console.log(video.channel);
     emitNotification(video.channel.toString(), {
       message: notification.message,
       channel: video.channel,
@@ -324,9 +303,6 @@ export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
 
 export const searchVideo = AsyncTryCatch(async (req, res, next) => {
   const { s: searchText, cursor } = req.query;
-  console.log("searchText", searchText);
-  console.log("cursor", cursor);
-  // const cursor = req.query?.cursor;
   const limit = parseInt(req.query?.limit) || 10;
 
   const results = await Video.aggregate([
@@ -422,8 +398,6 @@ export const searchVideo = AsyncTryCatch(async (req, res, next) => {
     { $limit: limit + 1 },
   ]);
 
-  console.log("results", results.length);
-
   // Check if there are more results
   const hasMore = results.length > limit;
   const videos = hasMore ? results.slice(0, limit) : results;
@@ -439,7 +413,6 @@ export const searchVideo = AsyncTryCatch(async (req, res, next) => {
 
 export const autoComplete = AsyncTryCatch(async (req, res, next) => {
   const { searchText } = req.query;
-  // console.log("AutoComplete Query:", searchText);
 
   // 🔥 Separate Search for Title
   const titleResults = await Video.aggregate([
@@ -495,7 +468,6 @@ export const autoComplete = AsyncTryCatch(async (req, res, next) => {
   // ✅ Apply Limit of 10
   const limitedResults = combinedResults.slice(0, 5).map((res) => res.text);
 
-  // console.log("Autocomplete Results:", limitedResults);
   res.status(200).json({ results: limitedResults });
 });
 
@@ -554,7 +526,6 @@ export const deleteComment = AsyncTryCatch(async (req, res, next) => {
 export const deleteVideo = AsyncTryCatch(async (req, res, next) => {
   const { videoId } = req.body;
   const channelDeletingVideo = req.channelId;
-  console.log("deleting video", videoId, channelDeletingVideo);
 
   const video = await Video.findById(videoId);
 

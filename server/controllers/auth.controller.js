@@ -176,7 +176,6 @@ export const login = AsyncTryCatch(async (req, res, next) => {
 
 export const googleLogin = AsyncTryCatch(async (req, res, next) => {
   const { accessToken } = req.body;
-  console.log("in google login");
   if (!accessToken) {
     return next(new ErrorHandler(400, "Access token is required"));
   }
@@ -195,7 +194,6 @@ export const googleLogin = AsyncTryCatch(async (req, res, next) => {
 
     const userData = await response.json();
     const { email, name, picture } = userData;
-    console.log("userData", userData);
 
     if (!email) {
       return next(
@@ -286,7 +284,6 @@ export const googleLogin = AsyncTryCatch(async (req, res, next) => {
  * Also generates new refresh token if current one is close to expiring
  */
 export const refreshToken = AsyncTryCatch(async (req, res, next) => {
-  console.log("in refresh token");
   const { refreshToken: clientRefreshToken } = req.body;
 
   if (!clientRefreshToken) {

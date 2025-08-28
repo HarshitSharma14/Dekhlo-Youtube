@@ -64,7 +64,6 @@ passport.use(
     loginSignup
   )
 );
-
 // App Routes ******************************************
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/channel", channelRoutes);

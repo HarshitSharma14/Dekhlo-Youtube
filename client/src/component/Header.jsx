@@ -178,6 +178,8 @@ const Header = ({ isDisabled }) => {
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
         navigate("/");
+        // remove all caching from the useQuery
+        queryClient.clear();
       }
     } catch (e) {
       toast.error("Logout failed", { id: toastId });

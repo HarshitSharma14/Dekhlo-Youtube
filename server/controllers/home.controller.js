@@ -29,7 +29,6 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
     }
   }
 
-  console.log("personalRecommendation", personalRecommendation);
   if (!personalRecommendation) {
     const parsedLimit = parseInt(limit);
     const query = {};
@@ -68,7 +67,6 @@ export const getVideosForHomePage = AsyncTryCatch(async (req, res, next) => {
     return res.status(200).json({ videos, hasMore, nextCursor });
   }
 
-  console.log("lastseenVideo", lastseenVideo);
   const similarVideosIds = lastseenVideo.videoId.similarVideos;
   let videosToSend = [];
   let nextCursor = cursor;

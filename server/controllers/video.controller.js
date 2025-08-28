@@ -301,110 +301,151 @@ export const getVideoDetails = AsyncTryCatch(async (req, res, next) => {
   return res.status(200).json({ videoDetails });
 });
 
+// export const searchVideo = AsyncTryCatch(async (req, res, next) => {
+//   const { s: searchText, cursor } = req.query;
+//   const limit = parseInt(req.query?.limit) || 10;
+
+//   // const results = await Video.aggregate([
+//   //   {
+//   //     $search: {
+//   //       // 🔥 Atlas Search with Fuzzy Matching
+//   //       index: "search",
+//   //       compound: {
+//   //         should: [
+//   //           {
+//   //             // ✅ Medium weight for title and category
+//   //             text: {
+//   //               query: searchText,
+//   //               path: ["title"],
+//   //               fuzzy: { maxEdits: 2 },
+//   //               score: { boost: { value: 1 } },
+//   //             },
+//   //           },
+//   //         ],
+//   //         minimumShouldMatch: 1,
+//   //       },
+//   //     },
+//   //   },
+//   //   // ✅ Cursor filter applied early for efficiency
+//   //   ...(cursor
+//   //     ? [{ $match: { _id: { $gt: new mongoose.Types.ObjectId(cursor) } } }]
+//   //     : []),
+//   //   {
+//   //     $lookup: {
+//   //       from: "channels", // ✅ Correct collection name
+//   //       localField: "channel", // ✅ Reference field in `videos`
+//   //       foreignField: "_id", // ✅ `_id` field in `channels`
+//   //       as: "channel",
+//   //     },
+//   //   },
+//   //   {
+//   //     $unwind: {
+//   //       path: "$channel",
+//   //       preserveNullAndEmptyArrays: true, // ✅ Avoid breaking if no match is found
+//   //     },
+//   //   },
+//   //   {
+//   //     $addFields: {
+//   //       // ✅ Add relevance score
+//   //       searchScore: { $meta: "searchScore" },
+//   //     },
+//   //   },
+//   //   {
+//   //     $facet: {
+//   //       // ✅ Parallel pipelines
+//   //       metadata: [
+//   //         {
+//   //           $group: {
+//   //             // ✅ Min/Max values for normalization
+//   //             _id: null,
+//   //             maxViews: { $max: "$views" },
+//   //             minViews: { $min: "$views" },
+//   //             maxScore: { $max: "$searchScore" },
+//   //             minScore: { $min: "$searchScore" },
+//   //           },
+//   //         },
+//   //       ],
+//   //       results: [
+//   //         { $limit: limit + 1 }, // ✅ Fetch one extra to check if more exist
+//   //       ],
+//   //     },
+//   //   },
+//   //   { $unwind: "$metadata" },
+//   //   { $unwind: "$results" },
+
+//   //   // ✅ Deduplicate by grouping on _id
+//   //   {
+//   //     $group: {
+//   //       _id: "$results._id",
+//   //       doc: { $first: "$results" }, // Keep only one instance
+//   //       combinedScore: { $first: "$searchScore" },
+//   //     },
+//   //   },
+
+//   //   // ✅ Flatten the grouped structure
+//   //   {
+//   //     $replaceRoot: {
+//   //       newRoot: {
+//   //         $mergeObjects: ["$doc", { combinedScore: "$combinedScore" }],
+//   //       },
+//   //     },
+//   //   },
+
+//   //   // ✅ Sort by combined score
+//   //   { $sort: { combinedScore: -1, _id: 1 } },
+
+//   //   // ✅ Limit results
+//   //   { $limit: limit + 1 },
+//   // ]);
+
+//   // Check if there are more results
+
+//   const
+//   const hasMore = results.length > limit;
+//   const videos = hasMore ? results.slice(0, limit) : results;
+//   const nextCursor = hasMore ? results[limit - 1]._id : null;
+
+//   return res.status(200).json({
+//     videos,
+//     hasMore,
+//     nextCursor,
+//     totalFound: results.length,
+//   });
+// });
+
 export const searchVideo = AsyncTryCatch(async (req, res, next) => {
   const { s: searchText, cursor } = req.query;
+  console.log("in search video", searchText);
   const limit = parseInt(req.query?.limit) || 10;
 
-  const results = await Video.aggregate([
-    {
-      $search: {
-        // 🔥 Atlas Search with Fuzzy Matching
-        index: "search",
-        compound: {
-          should: [
-            {
-              // ✅ Medium weight for title and category
-              text: {
-                query: searchText,
-                path: ["title"],
-                fuzzy: { maxEdits: 2 },
-                score: { boost: { value: 1 } },
-              },
-            },
-          ],
-          minimumShouldMatch: 1,
-        },
-      },
-    },
-    // ✅ Cursor filter applied early for efficiency
-    ...(cursor
-      ? [{ $match: { _id: { $gt: new mongoose.Types.ObjectId(cursor) } } }]
-      : []),
-    {
-      $lookup: {
-        from: "channels", // ✅ Correct collection name
-        localField: "channel", // ✅ Reference field in `videos`
-        foreignField: "_id", // ✅ `_id` field in `channels`
-        as: "channel",
-      },
-    },
-    {
-      $unwind: {
-        path: "$channel",
-        preserveNullAndEmptyArrays: true, // ✅ Avoid breaking if no match is found
-      },
-    },
-    {
-      $addFields: {
-        // ✅ Add relevance score
-        searchScore: { $meta: "searchScore" },
-      },
-    },
-    {
-      $facet: {
-        // ✅ Parallel pipelines
-        metadata: [
-          {
-            $group: {
-              // ✅ Min/Max values for normalization
-              _id: null,
-              maxViews: { $max: "$views" },
-              minViews: { $min: "$views" },
-              maxScore: { $max: "$searchScore" },
-              minScore: { $min: "$searchScore" },
-            },
-          },
-        ],
-        results: [
-          { $limit: limit + 1 }, // ✅ Fetch one extra to check if more exist
-        ],
-      },
-    },
-    { $unwind: "$metadata" },
-    { $unwind: "$results" },
+  const similarityArray = await fetch(
+    `${process.env.PYTHON_SERVER_URL}/get-search-results?search_text=${searchText}&limit=${limit}`
+  );
+  const similarity = await similarityArray.json();
+  // similarity is an array of objects with videoId and similarity score
+  console.log("similarity ", similarity?.similarVideo?.length);
+  const videoIds = similarity.similarVideo.map((video) => video.videoId);
+  // we need to get the videos from the videoIds
 
-    // ✅ Deduplicate by grouping on _id
-    {
-      $group: {
-        _id: "$results._id",
-        doc: { $first: "$results" }, // Keep only one instance
-        combinedScore: { $first: "$searchScore" },
-      },
-    },
+  const results = [];
 
-    // ✅ Flatten the grouped structure
-    {
-      $replaceRoot: {
-        newRoot: {
-          $mergeObjects: ["$doc", { combinedScore: "$combinedScore" }],
-        },
-      },
-    },
+  for (const videoId of videoIds) {
+    const video = await Video.findOne({
+      $or: [{ _id: videoId }],
+    }).populate("channel", "channelName profilePhoto _id");
+    results.push(video);
+  }
 
-    // ✅ Sort by combined score
-    { $sort: { combinedScore: -1, _id: 1 } },
+  console.log("results", results.length);
 
-    // ✅ Limit results
-    { $limit: limit + 1 },
-  ]);
-
-  // Check if there are more results
-  const hasMore = results.length > limit;
-  const videos = hasMore ? results.slice(0, limit) : results;
-  const nextCursor = hasMore ? results[limit - 1]._id : null;
+  // const hasMore = results.length > limit;
+  // const videos = hasMore ? results.slice(0, limit) : results;
+  // const nextCursor = hasMore ? results[limit - 1]._id : null;
+  const hasMore = false;
+  const nextCursor = null;
 
   return res.status(200).json({
-    videos,
+    videos: results,
     hasMore,
     nextCursor,
     totalFound: results.length,

@@ -29,14 +29,13 @@ if (token) {
 }
 ```
 
-### `generateAccessToken(channelId, tokenVersion)`
+### `generateAccessToken(channelId)`
 
-Generates a short-lived access token (15 minutes).
+Generates a short-lived access token (30 minutes).
 
 **Parameters:**
 
 - `channelId` (string): Channel ID to encode in token
-- `tokenVersion` (number, optional): Token version for revocation (default: 0)
 
 **Returns:**
 
@@ -47,17 +46,16 @@ Generates a short-lived access token (15 minutes).
 ```javascript
 import { generateAccessToken } from "../utils/utility.js";
 
-const accessToken = generateAccessToken(channel._id, channel.tokenVersion);
+const accessToken = generateAccessToken(channel._id);
 ```
 
-### `generateRefreshToken(channelId, tokenVersion)`
+### `generateRefreshToken(channelId)`
 
 Generates a long-lived refresh token (7 days).
 
 **Parameters:**
 
 - `channelId` (string): Channel ID to encode in token
-- `tokenVersion` (number, optional): Token version for revocation (default: 0)
 
 **Returns:**
 
@@ -68,7 +66,7 @@ Generates a long-lived refresh token (7 days).
 ```javascript
 import { generateRefreshToken } from "../utils/utility.js";
 
-const refreshToken = generateRefreshToken(channel._id, channel.tokenVersion);
+const refreshToken = generateRefreshToken(channel._id);
 ```
 
 ### `verifyToken(token, expectedType)`
@@ -91,28 +89,8 @@ import { verifyToken } from "../utils/utility.js";
 
 const decodedData = verifyToken(token, "access");
 if (decodedData) {
-  const { channelId, tokenVersion } = decodedData;
+  const { channelId } = decodedData;
 }
-```
-
-### `LogedInChannel(token)`
-
-Legacy function for backward compatibility. Verifies access token and returns channel ID.
-
-**Parameters:**
-
-- `token` (string): JWT access token
-
-**Returns:**
-
-- `string|null`: Channel ID or null if invalid
-
-**Usage:**
-
-```javascript
-import { LogedInChannel } from "../utils/utility.js";
-
-const channelId = LogedInChannel(token);
 ```
 
 ## Authentication Middleware
@@ -125,7 +103,6 @@ Strict authentication middleware that requires a valid access token.
 
 - Extracts token from Authorization header
 - Verifies token validity and expiration
-- Checks token version for revocation
 - Sets `req.channelId` if valid
 - Returns 401 for invalid/expired tokens
 
@@ -177,7 +154,7 @@ app.get("/public-route", optionalAuth, (req, res) => {
 
 ### Access Tokens
 
-- **Lifetime**: 15 minutes
+- **Lifetime**: 30 minutes
 - **Purpose**: Authorization for API requests
 - **Storage**: Frontend localStorage
 - **Security**: Short-lived to minimize exposure
@@ -186,14 +163,8 @@ app.get("/public-route", optionalAuth, (req, res) => {
 
 - **Lifetime**: 7 days
 - **Purpose**: Obtaining new access tokens
-- **Storage**: Frontend localStorage + Backend database
-- **Security**: Long-lived but revocable
-
-### Token Versioning
-
-- **Purpose**: Token revocation across all devices
-- **Implementation**: Incremented on logout/security events
-- **Effect**: All existing tokens become invalid
+- **Storage**: Frontend localStorage + Backend database (`Channel.refreshToken`)
+- **Security**: Long-lived but revocable per-device by clearing the DB copy on logout, and rotated automatically when close to expiry
 
 ## Frontend Integration
 
@@ -222,55 +193,30 @@ localStorage.removeItem("refreshToken");
 
 The API client automatically:
 
-1. Detects 401 responses (expired access token)
+1. Detects 401/498 responses (expired access token)
 2. Uses refresh token to get new access token
 3. Retries original request
 4. Handles refresh token expiration
 
-## Security Features
+## Security Notes
 
-### Token Revocation
+### Per-Device Revocation
 
-- Increment `tokenVersion` to invalidate all tokens
-- Useful for logout from all devices
-- Immediate effect across all sessions
+- `logout` clears the user's `refreshToken` field, blocking any future `/auth/refresh` calls from that token.
+- Already-issued access tokens remain valid until they naturally expire (≤ 30 minutes).
 
 ### Automatic Cleanup
 
-- Expired tokens are automatically rejected
-- Invalid tokens return 401 without database queries
-- Refresh tokens close to expiration are automatically renewed
-
-### Rate Limiting
-
-- Refresh endpoint should be rate-limited
-- Failed refresh attempts trigger logout
-- Queue system prevents multiple simultaneous refreshes
-
-## Migration Guide
-
-### From Single Token System
-
-1. Update database schema to include refresh token fields
-2. Replace `jwt` with `accessToken` in localStorage
-3. Add refresh token storage and handling
-4. Update API calls to use new token names
-5. Test automatic refresh functionality
-
-### Backward Compatibility
-
-- `LogedInChannel` function still works
-- Existing single-token endpoints continue to function
-- Gradual migration to new system possible
+- Expired tokens are automatically rejected by `verifyToken`.
+- Refresh tokens close to expiration (< 1 day) are rotated automatically on `/auth/refresh`.
 
 ## Best Practices
 
 ### Token Security
 
-- Never store tokens in plain text
+- Never store tokens in plain text on the server
 - Use HTTPS for all token transmission
 - Implement proper logout procedures
-- Monitor for suspicious token usage
 
 ### Error Handling
 
@@ -282,4 +228,3 @@ The API client automatically:
 
 - Minimize database queries in token verification
 - Use efficient token validation algorithms
-- Implement proper caching strategies

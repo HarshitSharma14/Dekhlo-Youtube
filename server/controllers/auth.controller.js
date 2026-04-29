@@ -1,5 +1,4 @@
-import { compare, hash } from "bcrypt";
-import jwt from "jsonwebtoken";
+import { compare } from "bcrypt";
 import Channel from "../models/channel.model.js";
 import Playlist from "../models/playlist.model.js";
 import Setting from "../models/setting.model.js";
@@ -10,115 +9,6 @@ import {
   generateRefreshToken,
   verifyToken,
 } from "../utils/utility.js";
-import {
-  ACCESS_TOKEN_EXPIRY,
-  REFRESH_TOKEN_EXPIRY,
-  REFRESH_TOKEN_REFRESH_THRESHOLD,
-} from "../utils/constants.js";
-
-// constants ******************************************************
-const clientURL = process.env.CLIENT_URL;
-
-// ✅✅
-export const loginSignup = async (accessToken, refreshToken, profile, cb) => {
-  try {
-    const email = profile.emails[0]?.value; // Extract email from Google profile
-
-    if (!email) {
-      return cb(null, false, {
-        message: "Google account does not have an email.",
-      });
-    }
-    let profileAlreadyExist = true;
-    // Check if a channel with this email already exists
-    let channel = await Channel.findOne({ email });
-
-    if (!channel) {
-      // If no channel exists, create a new one
-      channel = new Channel({
-        channelName: profile.displayName || "Unnamed Channel",
-        email: email,
-        profilePhoto: profile.photos[0]?.value || "", // Google profile picture
-      });
-
-      channel.permanentPlaylist = new Map();
-      const settings = new Setting();
-      await settings.save();
-      channel.settings = settings._id;
-
-      const watchLater = await Playlist.create({
-        name: "Watch later",
-        channel: channel._id,
-        videoCount: 0,
-        private: true,
-      });
-
-      channel.permanentPlaylist.set("watchLater", watchLater._id);
-      const watchHistory = await Playlist.create({
-        name: "Watch History",
-        channel: channel._id,
-        videoCount: 0,
-        private: true,
-      });
-      channel.permanentPlaylist.set("watchHistory", watchHistory._id);
-      const likedVideos = await Playlist.create({
-        name: "Liked Videos",
-        channel: channel._id,
-        videoCount: 0,
-        private: true,
-      });
-      channel.permanentPlaylist.set("likedVideos", likedVideos._id);
-      await channel.save();
-
-      profileAlreadyExist = false;
-    }
-
-    // Generate both tokens
-    const accessToken = generateAccessToken(channel._id, channel.tokenVersion);
-    const refreshToken = generateRefreshToken(
-      channel._id,
-      channel.tokenVersion
-    );
-
-    // Store refresh token in database
-    channel.refreshToken = refreshToken;
-    channel.refreshTokenExpiresAt = new Date(
-      Date.now() + 7 * 24 * 60 * 60 * 1000
-    ); // 7 days
-    await channel.save();
-
-    return cb(null, { accessToken, refreshToken, profileAlreadyExist });
-  } catch (err) {
-    return cb(err);
-  }
-};
-
-export const oauth2_redirect = (req, res) => {
-  if (!req.user || !req.user.accessToken) {
-    return res.redirect(`${clientURL}`);
-  }
-  const accessToken = req.user.accessToken;
-  const refreshToken = req.user.refreshToken;
-  const profileAlreadyExist = req.user.profileAlreadyExist;
-
-  // Set both tokens as HTTP-only cookies
-  res.cookie("accessToken", accessToken, {
-    httpOnly: true,
-    sameSite: "None",
-    secure: true,
-    maxAge: 15 * 60 * 1000, // 15 minutes
-  });
-
-  res.cookie("refreshToken", refreshToken, {
-    httpOnly: true,
-    sameSite: "None",
-    secure: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  });
-
-  if (!profileAlreadyExist) res.redirect(`${clientURL}/profile-setup`);
-  else res.redirect(`${clientURL}`);
-};
 
 export const logout = async (req, res) => {
   const channelId = req.channelId;
@@ -317,8 +207,7 @@ export const refreshToken = AsyncTryCatch(async (req, res, next) => {
     let newRefreshTokenExpiry = channel.refreshTokenExpiresAt;
 
     if (shouldRefreshRefreshToken) {
-      // Generate new refresh token
-      newRefreshToken = generateRefreshToken(channel._id, channel.tokenVersion);
+      newRefreshToken = generateRefreshToken(channel._id);
       newRefreshTokenExpiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
 
       // Update database

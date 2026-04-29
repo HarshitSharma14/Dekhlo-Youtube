@@ -1,11 +1,10 @@
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
 import Channel from "../models/channel.model.js";
 import Video from "../models/video.model.js";
-import { ErrorHandler, LogedInChannel } from "../utils/utility.js";
-import jwt from "jsonwebtoken";
+import { ErrorHandler } from "../utils/utility.js";
 import Comment from "../models/comment.model.js";
 import Subscription from "../models/subscription.model.js";
-import mongoose, { isValidObjectId, Types } from "mongoose";
+import { isValidObjectId, Types } from "mongoose";
 import Notification from "../models/notification.model.js";
 import { emitNotification } from "../socket.js";
 import Setting from "../models/setting.model.js";

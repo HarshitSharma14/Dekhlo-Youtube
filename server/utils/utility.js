@@ -13,17 +13,6 @@ export class ErrorHandler extends Error {
   }
 }
 
-export const sortByKey = (arr, key, order = "desc") => {
-  return arr.sort((a, b) => {
-    if (typeof a[key] === "string") {
-      return order === "desc"
-        ? b[key].localeCompare(a[key])
-        : a[key].localeCompare(b[key]);
-    }
-    return order === "desc" ? b[key] - a[key] : b[key] - a[key];
-  });
-};
-
 /**
  * Extracts JWT token from request Authorization header
  * @param {Object} req - Express request object
@@ -62,7 +51,7 @@ export const generateRefreshToken = (channelId) => {
 };
 
 /**
- * Verifies and extracts channel ID from a token
+ * Verifies a JWT and returns its decoded payload
  * @param {string} token - JWT token to verify
  * @param {string} expectedType - Expected token type ('access' or 'refresh')
  * @returns {Object|null} - Decoded token data or null if invalid
@@ -73,26 +62,12 @@ export const verifyToken = (token, expectedType = "access") => {
       expectedType === "access" ? ACCESS_TOKEN_SECRET : REFRESH_TOKEN_SECRET;
     const decoded = jwt.verify(token, secret);
 
-    // Check if token type matches expected type
     if (decoded.type !== expectedType) {
       return null;
     }
 
     return decoded;
   } catch (error) {
-    return null;
-  }
-};
-
-export const LogedInChannel = (token) => {
-  try {
-    const decodedData = verifyToken(token, "access");
-    if (!decodedData) return null;
-
-    const channelIdVisiting = decodedData.channelId;
-    return channelIdVisiting;
-  } catch (error) {
-    console.log("User not logged in");
     return null;
   }
 };

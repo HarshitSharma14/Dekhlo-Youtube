@@ -1,8 +1,5 @@
-import jwt from "jsonwebtoken";
 import { AsyncTryCatch } from "../middlewares/error.middlewares.js";
-import { extractTokenFromRequest, LogedInChannel } from "../utils/utility.js";
 import Channel from "../models/channel.model.js";
-import Subscription from "../models/subscription.model.js";
 import Video from "../models/video.model.js";
 import mongoose from "mongoose";
 import PlaylistVideos from "../models/playlistVideos.js";

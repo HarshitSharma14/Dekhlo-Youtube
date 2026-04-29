@@ -1,11 +1,8 @@
 import "dotenv/config";
-import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import mongoose from "mongoose";
-import passport from "passport";
 import cloudinary from "cloudinary";
-import { Strategy as GoogleStrategy } from "passport-google-oauth20";
 
 // importing Routes ******************************
 import authRoutes from "./routes/auth.route.js";
@@ -13,19 +10,15 @@ import channelRoutes from "./routes/channel.route.js";
 import videoRoutes from "./routes/video.route.js";
 
 // Other Imports *********************************
-import { loginSignup } from "./controllers/auth.controller.js";
 import { errorHandlerMiddleware } from "./middlewares/error.middlewares.js";
 import { getVideosForHomePage } from "./controllers/home.controller.js";
 import { setupSocket } from "./socket.js";
-import Channel from "./models/channel.model.js";
-import Setting from "./models/setting.model.js";
 import "./utils/features.js"; // Initialize cron jobs
 import { optionalAuth } from "./middlewares/auth.middleware.js";
 
 // localConstansts ************************************
 const app = express();
 const clientURL = process.env.CLIENT_URL;
-const serverURL = process.env.SERVER_URL;
 const databaseURI = process.env.DATABASE_URI;
 const databaseName = process.env.DATABASE_NAME;
 const databaseURL = `${databaseURI}/${databaseName}`;
@@ -34,9 +27,6 @@ const corsOptions = {
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH"], // Methods you want to allow
   credentials: true,
 };
-const clientID = process.env.GOOGLE_CLIENT_ID;
-const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-const callbackURL = `${serverURL}/api/v1/auth/oauth2/redirect/google`;
 
 // config ********************************************
 cloudinary.config({
@@ -47,23 +37,10 @@ cloudinary.config({
 });
 
 // Middleware ******************************************
-app.use(express.json());
-app.use(cookieParser());
-app.use(passport.initialize());
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "100mb" })); // Adjust as needed, e.g., '50mb', '100mb', etc.
 app.use(express.urlencoded({ limit: "100mb", extended: true }));
 
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID,
-      clientSecret,
-      callbackURL,
-    },
-    loginSignup
-  )
-);
 // App Routes ******************************************
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/channel", channelRoutes);
